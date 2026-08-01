@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-4f44a345-881a-4c32-87ab-c7884c647ec8/styles.css">
+<script src="_ds/nocturne-4f44a345-881a-4c32-87ab-c7884c647ec8/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/LINESeedSansTH/LINESeedSansTH.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/NotoSansThai/NotoSansThai.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+html, body { margin: 0; padding: 0; }
+body { background: #dfe3f2; font-family: "LINE Seed Sans TH", "Noto Sans Thai", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: #5d5294; text-decoration: none; }
+a:hover { color: #796cbf; }
+button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
+input { font-family: inherit; }
+*, *::before, *::after { box-sizing: border-box; }
+::selection { background: #e7e5fe; }
+:focus-visible { outline: 2px solid #796cbf; outline-offset: 2px; }
+@keyframes kd-pulse { 0%,100% { opacity: .5 } 50% { opacity: .85 } }
+@keyframes kd-up { from { transform: translateY(14px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes kd-sheet { from { transform: translateY(100%) } to { transform: translateY(0) } }
+@keyframes kd-scan { 0% { top: 12% } 100% { top: 82% } }
+@keyframes kd-spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; gap: 34px; align-items: flex-start; padding: 34px 40px 60px; color: #292b31;">
+
+  <aside style="width: 226px; flex: none; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 34px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #595d6c;">KinDee · P0</div>
+      <div style="font-size: 21px; line-height: 1.4; font-weight: 500;">วันนี้ · เพิ่มอาหาร · เลือกปริมาณ</div>
+      <div style="font-size: 12.5px; line-height: 1.6; color: #595d6c;">หน้า 11, 12, 13, 14, 18 — กดเดินได้ทั้ง flow จริง โหมดสว่าง 390×844</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #595d6c;">สถานะหน้าวันนี้</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+        <sc-for list="{{ scenes }}" as="s" hint-placeholder-count="6">
+          <button type="button" onClick="{{ s.go }}" style="border-radius: 999px; border: 1px solid {{ s.bd }}; background: {{ s.bg }}; color: {{ s.fg }}; font-size: 12.5px; line-height: 1.5; padding: 7px 13px; cursor: pointer;" style-hover="border-color: #968ae0;">{{ s.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #595d6c;">ทางเข้า flow เพิ่มอาหาร</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+        <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="4">
+          <button type="button" onClick="{{ j.go }}" style="border-radius: 999px; border: 1px solid {{ j.bd }}; background: {{ j.bg }}; color: {{ j.fg }}; font-size: 12.5px; line-height: 1.5; padding: 7px 13px; cursor: pointer;" style-hover="border-color: #968ae0;">{{ j.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #595d6c;">เข้าสู่ระบบ · ข้อกำหนด</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+        <sc-for list="{{ authJumps }}" as="a" hint-placeholder-count="6">
+          <button type="button" onClick="{{ a.go }}" style="border-radius: 999px; border: 1px solid {{ a.bd }}; background: {{ a.bg }}; color: {{ a.fg }}; font-size: 12.5px; line-height: 1.5; padding: 7px 13px; cursor: pointer;" style-hover="border-color: #968ae0;">{{ a.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 9px;">
+      <div style="font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #595d6c;">ตั้งค่าครั้งแรก</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+        <sc-for list="{{ obJumps }}" as="o" hint-placeholder-count="5">
+          <button type="button" onClick="{{ o.go }}" style="border-radius: 999px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }}; font-size: 12.5px; line-height: 1.5; padding: 7px 13px; cursor: pointer;" style-hover="border-color: #968ae0;">{{ o.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #cfd3e5; padding-top: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 12px; line-height: 1.6; color: #595d6c;">
+      <div style="color: #292b31; font-size: 12.5px;">ที่ตัดสินใจไว้ในรอบนี้</div>
+      <div>ปุ่มเพิ่มอยู่กลาง tab bar และมีปุ่มลัด <b style="font-weight: 500; color: #5d5294;">สแกน</b> บนหน้าวันนี้ เพราะสแกนคือทางเพิ่มอาหารหลัก</div>
+      <div>แถบ macro เปิดเป็นค่าเริ่มต้น</div>
+      <div>สีสถานะแคลอรีไล่ต่อเนื่อง ม่วง → เขียวอ่อน → เหลืองอำพัน ไม่มีแดง (แดงใช้เฉพาะปุ่มลบ)</div>
+      <div>ป้ายคุณภาพข้อมูลเป็นไอคอน + ข้อความ ไม่พึ่งสีอย่างเดียว</div>
+    </div>
+  </aside>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ w }}" height="{{ h }}" hint-size="390px,844px">
+      <div data-screen-label="11 วันนี้" style="position: relative; height: 100%; width: 100%; background: #f3f5fe; overflow: hidden; font-family: 'LINE Seed Sans TH', 'Noto Sans Thai', system-ui, sans-serif; color: #292b31; font-feature-settings: 'tnum' 1;">
+
+        <div style="position: absolute; inset: 0; display: flex; flex-direction: column;">
+          <div style="height: 47px; flex: none;"></div>
+
+          <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+            <div style="flex: none; display: flex; align-items: center; gap: 7px; padding: 7px 16px; background: #e7e5fe; color: #423a6a; font-size: 12px; line-height: 1.6;">
+              <i class="ph ph-cloud-arrow-up" style="font-size: 15px;"></i>
+              <span>ยังไม่ได้ซิงก์ · บันทึกไว้ในเครื่องแล้ว</span>
+            </div>
+          </sc-if>
+
+          <div style="flex: none; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 4px;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <button type="button" onClick="{{ prevDay }}" aria-label="ดูวันก่อนหน้า" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 18px;"></i></button>
+              <div style="display: flex; flex-direction: column; gap: 1px; min-width: 96px; text-align: center;">
+                <div style="font-size: 16px; line-height: 1.4; font-weight: 500;">{{ dateLabel }}</div>
+                <div style="font-size: 11.5px; line-height: 1.5; color: #595d6c;">{{ dateSub }}</div>
+              </div>
+              <button type="button" onClick="{{ nextDay }}" aria-label="ดูวันถัดไป" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-right" style="font-size: 18px;"></i></button>
+            </div>
+            <button type="button" onClick="{{ openScan }}" aria-label="สแกนบาร์โค้ด" style="height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 999px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 13.5px; cursor: pointer;" style-hover="background: #f5f4ff;">
+              <i class="ph ph-barcode" style="font-size: 17px;"></i><span>สแกน</span>
+            </button>
+          </div>
+
+          <div style="flex: 1; overflow: auto; padding: 0 16px 152px;">
+
+            <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 18px;">
+                <div style="width: 168px; height: 168px; border-radius: 999px; border: 12px solid #e4e7f5; animation: kd-pulse 1.6s ease-in-out infinite;"></div>
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+                  <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="4">
+                    <div style="height: {{ k.h }}; border-radius: 16px; background: #e4e7f5; animation: kd-pulse 1.6s ease-in-out infinite;"></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showRing }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 0 18px;">
+                <div style="position: relative; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
+                  <svg width="200" height="200" viewBox="0 0 200 200" style="position: absolute; inset: 0; transform: rotate(-90deg);" aria-hidden="true">
+                    <circle cx="100" cy="100" r="86" fill="none" stroke="#e4e7f5" stroke-width="13"></circle>
+                    <circle cx="100" cy="100" r="86" fill="none" stroke="{{ ringColor }}" stroke-width="13" stroke-linecap="round" stroke-dasharray="{{ ringDash }}" style="transition: stroke-dasharray .45s cubic-bezier(.22,.61,.36,1), stroke .3s;"></circle>
+                  </svg>
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 1;">
+                    <div style="font-size: 13px; line-height: 1.5; color: #595d6c;">{{ ringKicker }}</div>
+                    <div style="font-size: 46px; line-height: 1.1; font-weight: 500; letter-spacing: -.01em;">{{ ringBig }}</div>
+                    <div style="font-size: 13px; line-height: 1.5; color: #595d6c;">{{ ringSub }}</div>
+                  </div>
+                </div>
+                <div style="font-size: 12.5px; line-height: 1.6; color: #595d6c; text-align: center; max-width: 260px; text-wrap: pretty;">{{ ringNote }}</div>
+              </div>
+
+              <sc-if value="{{ macroOn }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 10px; padding: 0 2px 20px;">
+                  <sc-for list="{{ macros }}" as="m" hint-placeholder-count="3">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                      <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; line-height: 1.5;">
+                        <span style="color: #595d6c;">{{ m.label }}</span>
+                        <span style="color: #292b31;">{{ m.value }}</span>
+                      </div>
+                      <div style="height: 4px; border-radius: 999px; background: #e4e7f5; overflow: hidden;">
+                        <div style="height: 100%; width: {{ m.pct }}; border-radius: 999px; background: {{ m.color }};"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px 8px 0; text-align: center;">
+                <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true">
+                  <path d="M14 44h68c0 20-15.2 32-34 32S14 64 14 44z" fill="#e7e5fe"></path>
+                  <path d="M14 44h68" stroke="#b5abfc" stroke-width="3" stroke-linecap="round"></path>
+                  <circle cx="38" cy="56" r="3.4" fill="#5d5294"></circle>
+                  <circle cx="58" cy="56" r="3.4" fill="#5d5294"></circle>
+                  <path d="M41 65c2.2 2.2 5.8 2.2 8 0" stroke="#5d5294" stroke-width="3" stroke-linecap="round" fill="none"></path>
+                  <path d="M30 34c0-6 6-6 6-12M48 32c0-7 7-7 7-14M66 34c0-6 6-6 6-12" stroke="#b5abfc" stroke-width="3" stroke-linecap="round" fill="none"></path>
+                </svg>
+                <div style="font-size: 19px; line-height: 1.4; font-weight: 500;">ยังว่างอยู่เลย วันนี้กินอะไรมาบ้าง?</div>
+                <div style="font-size: 14px; line-height: 1.6; color: #595d6c; max-width: 268px; text-wrap: pretty;">เริ่มจากอันที่ง่ายสุดก็ได้ ถ้าเป็นของในร้านสะดวกซื้อ สแกนบาร์โค้ดหลังซองเร็วที่สุดเลย</div>
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; padding-top: 4px;">
+                  <button type="button" onClick="{{ openScan }}" style="height: 50px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;" style-hover="background: #5d5294;"><i class="ph ph-barcode" style="font-size: 19px;"></i>สแกนบาร์โค้ด</button>
+                  <button type="button" onClick="{{ openRecent }}" style="height: 50px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 15px; cursor: pointer;" style-hover="background: #f5f4ff;">บันทึกมื้อแรกด้วยวิธีอื่น</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showMeals }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 2px;">
+                      <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span style="font-size: 18px; line-height: 1.4; font-weight: 500; color: {{ g.titleColor }};">{{ g.label }}</span>
+                        <span style="font-size: 12.5px; line-height: 1.5; color: #595d6c;">{{ g.meta }}</span>
+                      </div>
+                      <button type="button" onClick="{{ g.add }}" aria-label="{{ g.addLabel }}" style="width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #796cbf; border-radius: 12px; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-plus" style="font-size: 17px;"></i></button>
+                    </div>
+                    <sc-if value="{{ g.hasItems }}" hint-placeholder-val="{{ true }}">
+                      <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                          <div style="position: relative; border-radius: 16px; overflow: hidden; background: #b4534c;">
+                            <button type="button" onClick="{{ it.remove }}" style="position: absolute; top: 0; right: 0; bottom: 0; width: 84px; border: 0; background: transparent; color: #fbfbfe; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer;"><i class="ph ph-trash" style="font-size: 17px;"></i>ลบ</button>
+                            <div onPointerDown="{{ it.down }}" onPointerMove="{{ it.move }}" onPointerUp="{{ it.up }}" onPointerCancel="{{ it.up }}" style="position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fbfbfe; border: 1px solid #e4e7f5; border-radius: 16px; touch-action: pan-y; cursor: grab; transform: {{ it.tx }}; transition: {{ it.trans }};">
+                              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                                <div style="font-size: 15px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ it.name }}</div>
+                                <sc-if value="{{ it.hasBrand }}" hint-placeholder-val="{{ false }}">
+                                  <div style="font-size: 11.5px; line-height: 1.5; color: #595d6c;">{{ it.brand }}</div>
+                                </sc-if>
+                                <div style="font-size: 12.5px; line-height: 1.5; color: #595d6c;">{{ it.qty }}</div>
+                              </div>
+                              <div style="flex: none; text-align: right; font-size: 15px; line-height: 1.5; color: #292b31;">{{ it.kcal }}</div>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ g.isEmpty }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" onClick="{{ g.add }}" style="text-align: left; border: 1px dashed #cfd3e5; background: transparent; border-radius: 16px; padding: 13px 14px; font-size: 13px; line-height: 1.6; color: #595d6c; cursor: pointer;" style-hover="border-color: #968ae0; color: #5d5294;">ยังไม่มีอะไรในมื้อนี้ · แตะเพื่อเพิ่ม</button>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ readOnly }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 18px; display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #e7e5fe; color: #423a6a; font-size: 12.5px; line-height: 1.6;">
+                <i class="ph ph-lock-simple" style="font-size: 15px;"></i><span>ดูย้อนหลังอยู่ · แก้ไขได้เฉพาะวันนี้</span>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; left: 12px; right: 12px; bottom: 108px; z-index: 4; display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 14px; border-radius: 16px; background: #292b31; color: #f3f5fe; box-shadow: 0 10px 30px rgba(41,43,49,.28); animation: kd-up .22s ease-out;">
+            <i class="ph ph-check-circle" style="font-size: 18px; color: #b5abfc;"></i>
+            <div style="flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ toastText }}</div>
+            <button type="button" onClick="{{ toastEdit }}" style="flex: none; height: 34px; padding: 0 10px; border-radius: 10px; border: 0; background: rgba(243,245,254,.12); color: #f3f5fe; font-size: 13px; cursor: pointer;">แก้ไข</button>
+            <button type="button" onClick="{{ toastUndo }}" style="flex: none; height: 34px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; color: #b5abfc; font-size: 13px; cursor: pointer;">เลิกทำ</button>
+          </div>
+        </sc-if>
+
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 8px 12px 34px; background: rgba(251,251,254,.92); backdrop-filter: blur(12px); border-top: 1px solid #e4e7f5;">
+          <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+              <button type="button" onClick="{{ t.go }}" aria-label="{{ t.label }}" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: transparent; color: {{ t.color }}; cursor: pointer;">
+                <i class="{{ t.icon }}" style="font-size: 22px;"></i>
+                <span style="font-size: 11px; line-height: 1.5;">{{ t.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <button type="button" onClick="{{ openRecent }}" aria-label="เพิ่มอาหาร" style="position: absolute; left: 50%; top: -22px; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 999px; border: 4px solid #f3f5fe; background: #796cbf; color: #f5f4ff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 22px rgba(121,108,191,.38); cursor: pointer;" style-hover="background: #5d5294;">
+            <i class="ph ph-plus" style="font-size: 26px;"></i>
+          </button>
+        </div>
+
+        <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="12-16 เพิ่มอาหาร" style="position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; background: {{ addBg }}; animation: kd-sheet .26s cubic-bezier(.22,.61,.36,1);">
+            <div style="flex: none; padding: 51px 12px 0;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" onClick="{{ closeAdd }}" aria-label="ปิด" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: {{ addChipBg }}; color: {{ addFg }}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="ph ph-x" style="font-size: 19px;"></i></button>
+                <div style="flex: 1; display: flex; gap: 6px; overflow: auto;">
+                  <sc-for list="{{ mealChips }}" as="c" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ c.go }}" style="flex: none; height: 36px; padding: 0 13px; border-radius: 999px; border: 1px solid {{ c.bd }}; background: {{ c.bg }}; color: {{ c.fg }}; font-size: 13px; cursor: pointer;">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: flex; gap: 4px; padding: 12px 2px 10px;">
+                <sc-for list="{{ addTabs }}" as="t" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ t.go }}" style="flex: 1; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; border-radius: 12px; background: {{ t.bg }}; color: {{ t.fg }}; cursor: pointer;">
+                    <i class="{{ t.icon }}" style="font-size: 19px;"></i>
+                    <span style="font-size: 11.5px; line-height: 1.4;">{{ t.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+
+            <sc-if value="{{ tabRecent }}" hint-placeholder-val="{{ true }}">
+              <div style="flex: 1; overflow: auto; padding: 4px 16px 40px;">
+                <div style="font-size: 12.5px; line-height: 1.6; color: #595d6c; padding-bottom: 12px;">แตะครั้งเดียวบันทึกเลย ด้วยปริมาณที่เคยกินล่าสุด</div>
+
+                <div style="font-size: 15px; line-height: 1.5; font-weight: 500; padding-bottom: 8px;">กินบ่อย</div>
+                <div style="display: flex; gap: 10px; overflow: auto; padding-bottom: 20px; margin: 0 -16px; padding-left: 16px; padding-right: 16px;">
+                  <sc-for list="{{ frequent }}" as="f" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ f.quick }}" style="flex: none; width: 138px; text-align: left; display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; border: 1px solid #e4e7f5; background: #fbfbfe; cursor: pointer;" style-hover="border-color: #968ae0;">
+                      <i class="{{ f.icon }}" style="font-size: 20px; color: #796cbf;"></i>
+                      <span style="font-size: 13.5px; line-height: 1.5; color: #292b31; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px;">{{ f.name }}</span>
+                      <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">{{ f.line }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 0 20px;">
+                  <div style="font-size: 15px; line-height: 1.5; font-weight: 500;">{{ yesterdayTitle }}</div>
+                  <div style="border-radius: 16px; border: 1px solid #e4e7f5; background: #fbfbfe; padding: 13px 14px; display: flex; flex-direction: column; gap: 10px;">
+                    <sc-for list="{{ yesterday }}" as="y" hint-placeholder-count="2">
+                      <div style="display: flex; align-items: baseline; gap: 10px; font-size: 13.5px; line-height: 1.5;">
+                        <span style="flex: 1; min-width: 0; color: #292b31;">{{ y.name }}</span>
+                        <span style="color: #595d6c;">{{ y.kcal }}</span>
+                      </div>
+                    </sc-for>
+                    <button type="button" onClick="{{ addYesterday }}" style="height: 44px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 14px; cursor: pointer;" style-hover="background: #f5f4ff;">บันทึกทั้งมื้อ · {{ yesterdayKcal }}</button>
+                  </div>
+                </div>
+
+                <div style="font-size: 15px; line-height: 1.5; font-weight: 500; padding-bottom: 8px;">ล่าสุด</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <sc-for list="{{ recent }}" as="r" hint-placeholder-count="5">
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 11px 12px 11px 14px; border-radius: 16px; border: 1px solid #e4e7f5; background: #fbfbfe;">
+                      <button type="button" onClick="{{ r.open }}" style="flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 0; display: flex; flex-direction: column; gap: 3px; cursor: pointer;">
+                        <span style="font-size: 14.5px; line-height: 1.5; color: #292b31; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ r.name }}</span>
+                        <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 1.5; color: #595d6c;">
+                          <span>{{ r.line }}</span>
+                          <span style="display: flex; align-items: center; gap: 3px; color: {{ r.qColor }};"><i class="{{ r.qIcon }}" style="font-size: 12px;"></i>{{ r.qLabel }}</span>
+                        </span>
+                      </button>
+                      <button type="button" onClick="{{ r.quick }}" aria-label="บันทึก {{ r.name }}" style="flex: none; width: 44px; height: 44px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; display: flex; align-items: center; justify-content: center; cursor: pointer;" style-hover="background: #f5f4ff;"><i class="ph ph-plus" style="font-size: 17px;"></i></button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabSearch }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div style="flex: none; padding: 0 16px 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 12px; border-radius: 12px; background: #fbfbfe; border: 1px solid #cfd3e5;">
+                    <i class="ph ph-magnifying-glass" style="font-size: 17px; color: #595d6c;"></i>
+                    <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="ชื่ออาหาร ชื่อสินค้า หรือแบรนด์" aria-label="ค้นหาอาหาร" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 15px; color: #292b31;">
+                    <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" onClick="{{ clearQuery }}" aria-label="ล้างคำค้น" style="width: 30px; height: 30px; border: 0; border-radius: 999px; background: #e4e7f5; color: #595d6c; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="ph ph-x" style="font-size: 13px;"></i></button>
+                    </sc-if>
+                  </div>
+                  <div style="display: flex; gap: 6px; overflow: auto; padding: 10px 0 2px; margin: 0 -16px; padding-left: 16px; padding-right: 16px;">
+                    <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+                      <button type="button" onClick="{{ f.go }}" style="flex: none; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid {{ f.bd }}; background: {{ f.bg }}; color: {{ f.fg }}; font-size: 12.5px; cursor: pointer;">{{ f.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="flex: 1; overflow: auto; padding: 0 16px 20px;">
+                  <sc-if value="{{ searchOffline }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 11px 13px; margin-bottom: 12px; border-radius: 12px; background: #e7e5fe; color: #423a6a; font-size: 12.5px; line-height: 1.6;">
+                      <i class="ph ph-wifi-slash" style="font-size: 15px;"></i><span>ออฟไลน์ · ค้นได้เฉพาะ 320 รายการที่เก็บไว้ในเครื่อง</span>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ searchIdle }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <div style="font-size: 12.5px; line-height: 1.6; color: #595d6c;">ยอดนิยมตอน{{ mealWord }}</div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <sc-for list="{{ popular }}" as="p" hint-placeholder-count="6">
+                          <button type="button" onClick="{{ p.go }}" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid #e4e7f5; background: #fbfbfe; color: #292b31; font-size: 13.5px; cursor: pointer;" style-hover="border-color: #968ae0;">{{ p.label }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ searching }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                      <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="4">
+                        <div style="height: 66px; border-radius: 16px; background: #e4e7f5; animation: kd-pulse 1.5s ease-in-out infinite;"></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                      <sc-for list="{{ results }}" as="r" hint-placeholder-count="4">
+                        <button type="button" onClick="{{ r.open }}" style="text-align: left; display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 16px; border: 1px solid #e4e7f5; background: #fbfbfe; cursor: pointer;" style-hover="border-color: #968ae0;">
+                          <div style="flex: none; width: 40px; height: 40px; border-radius: 12px; background: {{ r.thumbBg }}; color: {{ r.thumbFg }}; display: flex; align-items: center; justify-content: center;"><i class="{{ r.icon }}" style="font-size: 19px;"></i></div>
+                          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 14.5px; line-height: 1.5; color: #292b31; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ r.name }}</span>
+                            <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">{{ r.sub }}</span>
+                            <span style="display: flex; align-items: center; gap: 4px; font-size: 11.5px; line-height: 1.5; color: {{ r.qColor }};"><i class="{{ r.qIcon }}" style="font-size: 12px;"></i>{{ r.qLabel }}</span>
+                          </div>
+                          <div style="flex: none; text-align: right; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-size: 15px; line-height: 1.4; color: #292b31;">{{ r.kcal }}</span>
+                            <span style="font-size: 11px; line-height: 1.4; color: #595d6c;">{{ r.per }}</span>
+                          </div>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 4px; text-align: left;">
+                      <div style="font-size: 17px; line-height: 1.4; font-weight: 500;">ยังไม่มี “{{ query }}” ในคลัง</div>
+                      <div style="font-size: 13.5px; line-height: 1.6; color: #595d6c; text-wrap: pretty;">ถ้าเป็นของในร้าน สแกนบาร์โค้ดหลังซองจะได้ตัวเลขจากฉลากตรง ๆ แม่นกว่าเยอะ</div>
+                      <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button type="button" onClick="{{ goScan }}" style="height: 48px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 14.5px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><i class="ph ph-barcode" style="font-size: 18px;"></i>สแกนบาร์โค้ด</button>
+                        <button type="button" onClick="{{ noop }}" style="height: 48px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 14.5px; cursor: pointer;" style-hover="background: #f5f4ff;">เพิ่มเอง</button>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ showKeyboard }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex: none;">
+                    <x-import component-from-global-scope="IOSKeyboard" hint-size="100%,300px"></x-import>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabScan }}" hint-placeholder-val="{{ false }}">
+              <div data-screen-label="14 สแกนบาร์โค้ด" style="flex: 1; position: relative; margin: 0 12px 12px; border-radius: 22px; overflow: hidden; background: #1b1d26;">
+                <div style="position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 30%, #33364a 0%, #1b1d26 70%);"></div>
+
+                <sc-if value="{{ scanDenied }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 26px; color: #e9e9ed;">
+                    <i class="ph ph-camera-slash" style="font-size: 30px; color: #b5abfc;"></i>
+                    <div style="font-size: 17px; line-height: 1.4;">ยังเปิดกล้องให้ไม่ได้</div>
+                    <div style="font-size: 13px; line-height: 1.6; color: #b2b6ca; text-wrap: pretty;">เปิดสิทธิ์กล้องได้ที่ Safari › ตั้งค่าเว็บไซต์ › กล้อง แล้วเลือก “อนุญาต” หรือกรอกเลขบาร์โค้ดเองก็ได้เหมือนกัน</div>
+                    <div style="display: flex; flex-direction: column; gap: 9px; padding-top: 4px;">
+                      <button type="button" onClick="{{ retryCam }}" style="height: 46px; border-radius: 12px; border: 1px solid #b5abfc; background: transparent; color: #d2cefd; font-size: 14px; cursor: pointer;">ลองเปิดกล้องอีกครั้ง</button>
+                      <button type="button" onClick="{{ manualCode }}" style="height: 46px; border-radius: 12px; border: 0; background: rgba(233,233,237,.12); color: #e9e9ed; font-size: 14px; cursor: pointer;">กรอกเลขบาร์โค้ดเอง</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ scanCamera }}" hint-placeholder-val="{{ true }}">
+                  <div style="position: absolute; inset: 0; display: flex; flex-direction: column;">
+                    <div style="flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px;">
+                      <button type="button" onClick="{{ toggleTorch }}" aria-label="ไฟฉาย" style="width: 44px; height: 44px; border-radius: 999px; border: 0; background: {{ torchBg }}; color: {{ torchFg }}; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="ph ph-flashlight" style="font-size: 19px;"></i></button>
+                      <sc-if value="{{ scanCounted }}" hint-placeholder-val="{{ false }}">
+                        <div style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(181,171,252,.18); color: #d2cefd; font-size: 12.5px;">
+                          <i class="ph-fill ph-check-circle" style="font-size: 15px;"></i><span>เพิ่มไปแล้ว {{ scanCount }} ชิ้น</span>
+                        </div>
+                      </sc-if>
+                    </div>
+
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                      <div style="position: relative; width: 236px; height: 148px;">
+                        <div style="position: absolute; inset: 0; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(27,29,38,.45);"></div>
+                        <sc-for list="{{ corners }}" as="c" hint-placeholder-count="4">
+                          <div style="position: absolute; {{ c.pos }} width: 30px; height: 30px; border: 3px solid #b5abfc; {{ c.edge }}"></div>
+                        </sc-for>
+                        <sc-if value="{{ scanAiming }}" hint-placeholder-val="{{ true }}">
+                          <div style="position: absolute; left: 10px; right: 10px; height: 2px; background: #b5abfc; box-shadow: 0 0 14px #968ae0; animation: kd-scan 1.5s ease-in-out infinite alternate;"></div>
+                        </sc-if>
+                      </div>
+                    </div>
+
+                    <div style="flex: none; padding: 0 18px 18px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                      <div style="font-size: 13.5px; line-height: 1.6; color: #e9e9ed; text-align: center;">{{ scanHint }}</div>
+                      <button type="button" onClick="{{ simulateScan }}" style="height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid #b5abfc; background: rgba(181,171,252,.14); color: #d2cefd; font-size: 14px; cursor: pointer;">{{ scanCta }}</button>
+                      <button type="button" onClick="{{ manualCode }}" style="height: 44px; border: 0; background: transparent; color: #b2b6ca; font-size: 13.5px; text-decoration: underline; cursor: pointer;">กรอกเลขบาร์โค้ดเอง</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ scanFetching }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 12px; right: 12px; bottom: 12px; border-radius: 18px; background: #232532; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #3f424d; animation: kd-pulse 1.2s ease-in-out infinite;"></div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 7px;">
+                      <div style="height: 12px; width: 72%; border-radius: 6px; background: #3f424d; animation: kd-pulse 1.2s ease-in-out infinite;"></div>
+                      <div style="height: 10px; width: 44%; border-radius: 6px; background: #3f424d; animation: kd-pulse 1.2s ease-in-out infinite;"></div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ scanNotFound }}" hint-placeholder-val="{{ false }}">
+                  <div data-screen-label="15 ไม่พบบาร์โค้ด" style="position: absolute; left: 12px; right: 12px; bottom: 12px; border-radius: 18px; background: #fbfbfe; padding: 16px; display: flex; flex-direction: column; gap: 12px; animation: kd-up .2s ease-out;">
+                    <div style="font-size: 11.5px; line-height: 1.5; color: #595d6c; font-variant-numeric: tabular-nums;">บาร์โค้ด 8851234567890</div>
+                    <div style="font-size: 16.5px; line-height: 1.4; font-weight: 500;">ยังไม่มีสินค้านี้ในคลัง ช่วยเพิ่มหน่อยไหม?</div>
+                    <div style="font-size: 13px; line-height: 1.6; color: #595d6c; text-wrap: pretty;">ถ่ายรูปฉลากโภชนาการมาให้ เดี๋ยวอ่านตัวเลขให้เอง แค่ตรวจทานอีกรอบก็พอ</div>
+                    <button type="button" onClick="{{ noop }}" style="height: 48px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 14.5px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><i class="ph ph-camera" style="font-size: 18px;"></i>ถ่ายรูปฉลาก</button>
+                    <div style="display: flex; gap: 9px;">
+                      <button type="button" onClick="{{ noop }}" style="flex: 1; height: 44px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 13.5px; cursor: pointer;">กรอกเอง</button>
+                      <button type="button" onClick="{{ goSearch }}" style="flex: 1; height: 44px; border-radius: 12px; border: 1px solid #cfd3e5; background: transparent; color: #595d6c; font-size: 13.5px; cursor: pointer;">ค้นด้วยชื่อ</button>
+                    </div>
+                    <button type="button" onClick="{{ backToAim }}" style="height: 40px; border: 0; background: transparent; color: #595d6c; font-size: 13px; cursor: pointer;">สแกนชิ้นอื่นต่อ</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ scanOffline }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 12px; right: 12px; bottom: 12px; border-radius: 18px; background: #fbfbfe; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #423a6a;"><i class="ph ph-wifi-slash" style="font-size: 16px;"></i>เน็ตในห้างไม่ค่อยมา</div>
+                    <div style="font-size: 15.5px; line-height: 1.5; font-weight: 500;">เก็บเลขบาร์โค้ดไว้ให้แล้ว 3 ชิ้น</div>
+                    <div style="font-size: 13px; line-height: 1.6; color: #595d6c; text-wrap: pretty;">พอเน็ตกลับมาจะค้นข้อมูลให้อัตโนมัติ สแกนชิ้นต่อไปได้เลย ไม่ต้องรอ</div>
+                    <div style="display: flex; flex-direction: column; gap: 7px; padding-top: 2px;">
+                      <sc-for list="{{ queued }}" as="q" hint-placeholder-count="3">
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.5; color: #595d6c; font-variant-numeric: tabular-nums;">
+                          <i class="ph ph-clock-countdown" style="font-size: 14px; color: #595d6c;"></i>{{ q.code }}<span style="color: #595d6c;">· รอค้นหา</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <button type="button" onClick="{{ backToAim }}" style="height: 46px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 14px; cursor: pointer;">สแกนต่อ</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabPhoto }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; position: relative; margin: 0 12px 12px; border-radius: 22px; overflow: hidden; background: #1b1d26;">
+                <div style="position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 35%, #33364a 0%, #1b1d26 72%);"></div>
+                <div style="position: absolute; inset: 0; display: flex; flex-direction: column;">
+                  <div style="flex: none; display: flex; justify-content: center; padding: 14px;">
+                    <div style="height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 999px; background: rgba(233,233,237,.12); color: #e9e9ed; font-size: 12.5px;"><i class="ph ph-sparkle" style="font-size: 14px;"></i>เหลือ 3 ครั้งวันนี้</div>
+                  </div>
+                  <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 250px; height: 250px; border-radius: 20px; border: 1px dashed rgba(181,171,252,.6);"></div>
+                  </div>
+                  <div style="flex: none; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 18px 20px;">
+                    <div style="font-size: 13.5px; line-height: 1.6; color: #e9e9ed;">ถ่ายจากด้านบน ให้เห็นทั้งจาน</div>
+                    <div style="display: flex; align-items: center; gap: 22px;">
+                      <button type="button" onClick="{{ noop }}" aria-label="เลือกจากคลังภาพ" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: rgba(233,233,237,.12); color: #e9e9ed; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="ph ph-images" style="font-size: 19px;"></i></button>
+                      <button type="button" onClick="{{ noop }}" aria-label="ถ่ายรูป" style="width: 66px; height: 66px; border-radius: 999px; border: 4px solid rgba(233,233,237,.5); background: #e9e9ed; cursor: pointer;"></button>
+                      <div style="width: 44px;"></div>
+                    </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #b2b6ca; text-align: center; text-wrap: pretty;">ทายจากรูปแม่นน้อยที่สุด ถ้าของมีบาร์โค้ดแนะนำสแกนดีกว่า</div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ qtyOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="18 เลือกปริมาณ" style="position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; justify-content: flex-end;">
+            <button type="button" onClick="{{ closeQty }}" aria-label="ปิด" style="position: absolute; inset: 0; border: 0; background: rgba(41,43,49,.42); cursor: pointer;"></button>
+            <div style="position: relative; border-radius: 22px 22px 0 0; background: #fbfbfe; padding: 10px 16px 34px; box-shadow: 0 -12px 40px rgba(41,43,49,.18); animation: kd-sheet .24s cubic-bezier(.22,.61,.36,1);">
+              <div style="width: 42px; height: 4px; border-radius: 999px; background: #cfd3e5; margin: 0 auto 14px;"></div>
+
+              <div style="display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px;">
+                <div style="flex: none; width: 44px; height: 44px; border-radius: 12px; background: {{ qtyThumbBg }}; color: {{ qtyThumbFg }}; display: flex; align-items: center; justify-content: center;"><i class="{{ qtyIcon }}" style="font-size: 21px;"></i></div>
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+                  <div style="font-size: 16.5px; line-height: 1.4; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ qtyName }}</div>
+                  <div style="font-size: 12.5px; line-height: 1.5; color: #595d6c;">{{ qtySub }}</div>
+                  <div style="display: flex; align-items: center; gap: 4px; font-size: 11.5px; line-height: 1.5; color: {{ qtyQColor }};"><i class="{{ qtyQIcon }}" style="font-size: 12px;"></i>{{ qtyQLabel }}</div>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px;">
+                <div style="font-size: 12px; line-height: 1.5; color: #595d6c;">{{ unitTitle }}</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+                  <sc-for list="{{ units }}" as="u" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ u.go }}" style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid {{ u.bd }}; background: {{ u.bg }}; color: {{ u.fg }}; font-size: 13.5px; cursor: pointer;">{{ u.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px;">
+                <div style="font-size: 12px; line-height: 1.5; color: #595d6c;">จำนวน</div>
+                <div style="display: flex; gap: 7px;">
+                  <sc-for list="{{ amounts }}" as="a" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ a.go }}" style="flex: 1; min-height: 48px; border-radius: 12px; border: 1px solid {{ a.bd }}; background: {{ a.bg }}; color: {{ a.fg }}; font-size: 15px; cursor: pointer;">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <sc-if value="{{ qtyServingWarn }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; gap: 9px; padding: 11px 13px; margin-bottom: 12px; border-radius: 12px; background: #f5f4ff; border: 1px solid #d2cefd; font-size: 12.5px; line-height: 1.6; color: #423a6a;">
+                  <i class="ph ph-info" style="font-size: 15px; flex: none; margin-top: 2px;"></i>
+                  <span>{{ qtyServingText }}</span>
+                </div>
+              </sc-if>
+
+              <button type="button" onClick="{{ toggleGram }}" style="height: 40px; border: 0; background: transparent; color: #5d5294; font-size: 13.5px; text-decoration: underline; padding: 0; text-align: left; cursor: pointer;">{{ gramLabel }}</button>
+
+              <sc-if value="{{ gramOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 4px 0 12px;">
+                  <input value="{{ gramValue }}" onChange="{{ onGram }}" aria-label="น้ำหนักเป็นกรัม" style="flex: 1; height: 48px; border-radius: 12px; border: 1px solid #cfd3e5; background: #f3f5fe; padding: 0 14px; font-size: 16px; color: #292b31;">
+                  <span style="font-size: 14px; color: #595d6c;">กรัม</span>
+                </div>
+              </sc-if>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0 12px; border-top: 1px solid #e4e7f5;">
+                <div style="display: flex; flex-direction: column; gap: 1px;">
+                  <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">รวม{{ qtyMealWord }}</span>
+                  <span style="font-size: 15px; line-height: 1.5;">{{ qtyMealTotal }}</span>
+                </div>
+                <div style="text-align: right; display: flex; flex-direction: column; gap: 1px;">
+                  <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">รายการนี้</span>
+                  <span style="font-size: 26px; line-height: 1.2; font-weight: 500;">{{ qtyKcal }}</span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 9px;">
+                <sc-if value="{{ qtyEditing }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{ deleteEditing }}" aria-label="ลบรายการนี้" style="flex: none; width: 52px; height: 52px; border-radius: 12px; border: 1px solid #b4534c; background: transparent; color: #b4534c; display: flex; align-items: center; justify-content: center; cursor: pointer;" style-hover="background: #f9eeed;"><i class="ph ph-trash" style="font-size: 19px;"></i></button>
+                </sc-if>
+                <button type="button" onClick="{{ saveQty }}" style="flex: 1; height: 52px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15.5px; cursor: pointer;" style-hover="background: #5d5294;">{{ qtyCta }}</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ obOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="6-10 ตั้งค่าครั้งแรก" style="position: absolute; inset: 0; z-index: 7; background: #f3f5fe; display: flex; flex-direction: column;">
+            <div style="flex: none; padding: 51px 16px 0;">
+              <div style="display: flex; gap: 5px; padding-bottom: 14px;">
+                <sc-for list="{{ obProgress }}" as="p" hint-placeholder-count="5">
+                  <div style="flex: 1; height: 4px; border-radius: 999px; background: {{ p.bg }};"></div>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 10px;">
+                <button type="button" onClick="{{ obBack }}" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 19px;"></i></button>
+                <span style="font-size: 12.5px; line-height: 1.5; color: #595d6c;">{{ obStepLabel }}</span>
+              </div>
+            </div>
+
+            <div style="flex: 1; overflow: auto; padding: 0 16px 26px;">
+              <div style="font-size: 24px; line-height: 1.4; font-weight: 500; padding-bottom: 8px; text-wrap: pretty;">{{ obTitle }}</div>
+              <div style="font-size: 13.5px; line-height: 1.6; color: #595d6c; padding-bottom: 22px; text-wrap: pretty;">{{ obNote }}</div>
+
+              <sc-if value="{{ obBasic }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                  <div style="display: flex; flex-direction: column; gap: 9px;">
+                    <div style="font-size: 12px; line-height: 1.5; color: #595d6c;">เพศ · ใช้ในสูตรคำนวณพลังงานพื้นฐาน</div>
+                    <div style="display: flex; gap: 10px;">
+                      <sc-for list="{{ sexes }}" as="s" hint-placeholder-count="2">
+                        <button type="button" onClick="{{ s.go }}" style="flex: 1; min-height: 76px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 0 14px; border-radius: 16px; border: 1px solid {{ s.bd }}; background: {{ s.bg }}; cursor: pointer;" style-hover="border-color: #968ae0;">
+                          <i class="{{ s.icon }}" style="font-size: 20px; color: {{ s.fg }};"></i>
+                          <span style="font-size: 15px; line-height: 1.5; color: {{ s.fg }};">{{ s.label }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                      <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">วันเกิด · เลื่อนเลือกได้เลย</span>
+                      <span style="font-size: 13px; line-height: 1.5; color: #292b31;">{{ obAgeLabel }}</span>
+                    </div>
+                    <sc-for list="{{ birthRows }}" as="row" hint-placeholder-count="3">
+                      <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 11.5px; line-height: 1.5; color: #595d6c;">{{ row.label }}</span>
+                        <div style="display: flex; gap: 6px; overflow: auto; margin: 0 -16px; padding: 2px 16px 6px; scroll-snap-type: x proximity;">
+                          <sc-for list="{{ row.items }}" as="v" hint-placeholder-count="8">
+                            <button type="button" onClick="{{ v.go }}" style="flex: none; min-width: 44px; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid {{ v.bd }}; background: {{ v.bg }}; color: {{ v.fg }}; font-size: 14px; scroll-snap-align: center; cursor: pointer;">{{ v.label }}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ obBody }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 26px;">
+                  <sc-for list="{{ bodyFields }}" as="b" hint-placeholder-count="2">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                        <span style="font-size: 12px; line-height: 1.5; color: #595d6c;">{{ b.label }}</span>
+                        <div style="display: flex; align-items: baseline; gap: 6px;">
+                          <input value="{{ b.value }}" onChange="{{ b.onInput }}" aria-label="{{ b.label }}" style="width: 84px; height: 48px; border-radius: 12px; border: 1px solid #cfd3e5; background: #fbfbfe; padding: 0 12px; font-size: 19px; text-align: right; color: #292b31; font-variant-numeric: tabular-nums;">
+                          <span style="font-size: 14px; color: #595d6c;">{{ b.unit }}</span>
+                        </div>
+                      </div>
+                      <input type="range" min="{{ b.min }}" max="{{ b.max }}" step="{{ b.step }}" value="{{ b.value }}" onChange="{{ b.onInput }}" aria-label="{{ b.label }} แถบเลื่อน" style="width: 100%; height: 44px; accent-color: #796cbf; cursor: pointer;">
+                      <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #595d6c; font-variant-numeric: tabular-nums;">
+                        <span>{{ b.min }}</span><span>{{ b.max }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ obActivity }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <sc-for list="{{ activities }}" as="a" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ a.go }}" style="text-align: left; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid {{ a.bd }}; background: {{ a.bg }}; cursor: pointer;" style-hover="border-color: #968ae0;">
+                      <i class="{{ a.icon }}" style="font-size: 21px; color: {{ a.iconColor }};"></i>
+                      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 15.5px; line-height: 1.5; color: #292b31;">{{ a.label }}</span>
+                        <span style="font-size: 12.5px; line-height: 1.6; color: #595d6c;">{{ a.desc }}</span>
+                      </span>
+                      <i class="{{ a.check }}" style="font-size: 19px; color: {{ a.checkColor }};"></i>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ obGoal }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <sc-for list="{{ goals }}" as="g" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ g.go }}" style="text-align: left; display: flex; align-items: center; gap: 12px; padding: 16px 14px; border-radius: 16px; border: 1px solid {{ g.bd }}; background: {{ g.bg }}; cursor: pointer;" style-hover="border-color: #968ae0;">
+                      <i class="{{ g.icon }}" style="font-size: 21px; color: {{ g.iconColor }};"></i>
+                      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 15.5px; line-height: 1.5; color: #292b31;">{{ g.label }}</span>
+                        <span style="font-size: 12.5px; line-height: 1.6; color: #595d6c;">{{ g.desc }}</span>
+                      </span>
+                      <i class="{{ g.check }}" style="font-size: 19px; color: {{ g.checkColor }};"></i>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ obSummary }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                  <div style="display: flex; flex-direction: column; gap: 2px; padding: 18px; border-radius: 16px; border: 1px solid #e4e7f5; background: #fbfbfe;">
+                    <span style="font-size: 12.5px; line-height: 1.5; color: #595d6c;">กินได้วันละ</span>
+                    <span style="font-size: 44px; line-height: 1.15; font-weight: 500; letter-spacing: -.01em; font-variant-numeric: tabular-nums;">{{ obTarget }}</span>
+                    <span style="font-size: 13px; line-height: 1.5; color: #595d6c;">kcal · {{ obTargetSource }}</span>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="font-size: 12px; line-height: 1.5; color: #595d6c;">ตัวเลขนี้มาจากไหน</div>
+                    <sc-for list="{{ obBreakdown }}" as="b" hint-placeholder-count="3">
+                      <div style="display: flex; align-items: baseline; gap: 10px; padding-bottom: 9px; border-bottom: 1px solid #e4e7f5;">
+                        <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                          <span style="font-size: 14px; line-height: 1.5; color: #292b31;">{{ b.label }}</span>
+                          <span style="font-size: 11.5px; line-height: 1.6; color: #595d6c;">{{ b.note }}</span>
+                        </span>
+                        <span style="font-size: 15px; line-height: 1.5; color: #292b31; font-variant-numeric: tabular-nums;">{{ b.value }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+
+                  <sc-if value="{{ obFloor }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; gap: 9px; padding: 13px; border-radius: 16px; background: #f5f4ff; border: 1px solid #d2cefd; font-size: 13px; line-height: 1.6; color: #423a6a; text-wrap: pretty;">
+                      <i class="ph ph-heart" style="font-size: 16px; flex: none; margin-top: 2px;"></i>
+                      <span>{{ obFloorText }}</span>
+                    </div>
+                  </sc-if>
+
+                  <button type="button" onClick="{{ obToggleManual }}" style="height: 44px; border: 0; background: transparent; color: #5d5294; font-size: 13.5px; text-decoration: underline; text-align: left; padding: 0; cursor: pointer;">{{ obManualLabel }}</button>
+
+                  <sc-if value="{{ obManualOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <input value="{{ obManualValue }}" onChange="{{ obOnManual }}" aria-label="เป้าหมายที่ตั้งเอง" style="flex: 1; height: 52px; border-radius: 12px; border: 1px solid #cfd3e5; background: #fbfbfe; padding: 0 14px; font-size: 19px; color: #292b31; font-variant-numeric: tabular-nums;">
+                        <span style="font-size: 14px; color: #595d6c;">kcal</span>
+                      </div>
+                      <div style="font-size: 12px; line-height: 1.6; color: #595d6c;">ถ้ามีเป้าจากนักกำหนดอาหารอยู่แล้ว ใส่ตัวเลขนั้นเลยได้</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex: none; padding: 12px 16px 34px; border-top: 1px solid #e4e7f5; background: #fbfbfe; display: flex; flex-direction: column; gap: 8px;">
+              <button type="button" onClick="{{ obNext }}" style="height: 52px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15.5px; cursor: pointer;" style-hover="background: #5d5294;">{{ obCta }}</button>
+              <div style="font-size: 11.5px; line-height: 1.6; color: #595d6c; text-align: center; text-wrap: pretty;">{{ obFootnote }}</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ authOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="1-4 เข้าสู่ระบบ" style="position: absolute; inset: 0; z-index: 9; background: #f3f5fe; display: flex; flex-direction: column;">
+
+            <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 51px 26px 34px; text-align: center;">
+                <div style="width: 76px; height: 76px; border-radius: 24px; background: #796cbf; color: #f5f4ff; display: flex; align-items: center; justify-content: center;"><i class="ph-fill ph-bowl-food" style="font-size: 36px;"></i></div>
+                <div style="font-size: 30px; line-height: 1.3; font-weight: 500; letter-spacing: -.01em;">KinDee</div>
+                <div style="font-size: 14.5px; line-height: 1.6; color: #595d6c; max-width: 264px; text-wrap: pretty;">นับแคลแบบไม่ต้องคิดเยอะ อาหารไทยกับของในร้านสะดวกซื้อก็เจอ</div>
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; padding-top: 18px;">
+                  <button type="button" onClick="{{ goSignup }}" style="height: 52px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15.5px; cursor: pointer;" style-hover="background: #5d5294;">เริ่มใช้งาน</button>
+                  <button type="button" onClick="{{ goLogin }}" style="height: 52px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 15.5px; cursor: pointer;" style-hover="background: #f5f4ff;">เข้าสู่ระบบ</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.6; color: #595d6c; padding-top: 10px;">
+                  <i class="ph ph-arrows-clockwise" style="font-size: 14px;"></i><span>ข้อมูลซิงก์ให้อัตโนมัติ เปลี่ยนเครื่องก็ใช้ต่อได้</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; overflow: auto; display: flex; flex-direction: column; padding: 51px 20px 26px;">
+                <button type="button" onClick="{{ authBack }}" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 19px;"></i></button>
+                <div style="font-size: 24px; line-height: 1.4; font-weight: 500; padding: 12px 0 6px;">{{ loginTitle }}</div>
+                <div style="font-size: 13.5px; line-height: 1.6; color: #595d6c; padding-bottom: 20px; text-wrap: pretty;">{{ loginSub }}</div>
+
+                <button type="button" onClick="{{ googleAuth }}" style="height: 52px; border-radius: 12px; border: 1px solid #cfd3e5; background: #fbfbfe; color: #292b31; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;" style-hover="border-color: #968ae0;">
+                  <svg width="19" height="19" viewBox="0 0 18 18" aria-hidden="true"><path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.32-1.58-5.03-3.7H1.05v2.34A8.99 8.99 0 009 18z" fill="#34A853"/><path d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.11-1.18.29-1.72V4.94H1.05A8.99 8.99 0 000 9c0 1.45.35 2.82.96 4.04l3.01-2.32z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A8.99 8.99 0 001.05 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/></svg>
+                  ดำเนินการต่อด้วย Google
+                </button>
+
+                <div style="display: flex; align-items: center; gap: 12px; padding: 18px 0;">
+                  <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, #cfd3e5);"></div>
+                  <span style="font-size: 12px; color: #595d6c;">หรือ</span>
+                  <div style="flex: 1; height: 1px; background: linear-gradient(to left, transparent, #cfd3e5);"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <label for="kd-email" style="font-size: 12px; line-height: 1.5; color: #595d6c;">อีเมล</label>
+                    <input id="kd-email" value="{{ email }}" onChange="{{ onEmail }}" placeholder="you@example.com" style="height: 52px; border-radius: 12px; border: 1px solid {{ emailBd }}; background: #fbfbfe; padding: 0 14px; font-size: 16px; color: #292b31;">
+                    <sc-if value="{{ emailErr }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; line-height: 1.6; color: #8a5a2a;"><i class="ph ph-warning-circle" style="font-size: 14px;"></i>{{ emailErrText }}</div>
+                    </sc-if>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <label for="kd-pass" style="font-size: 12px; line-height: 1.5; color: #595d6c;">รหัสผ่าน</label>
+                    <div style="display: flex; align-items: center; gap: 8px; height: 52px; border-radius: 12px; border: 1px solid {{ passBd }}; background: #fbfbfe; padding: 0 8px 0 14px;">
+                      <input id="kd-pass" type="{{ passType }}" value="{{ pass }}" onChange="{{ onPass }}" placeholder="{{ passHint }}" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 16px; color: #292b31;">
+                      <button type="button" onClick="{{ togglePass }}" aria-label="สลับการมองเห็นรหัสผ่าน" style="width: 44px; height: 44px; border: 0; background: transparent; border-radius: 10px; color: #595d6c; display: flex; align-items: center; justify-content: center; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="{{ passIcon }}" style="font-size: 18px;"></i></button>
+                    </div>
+                    <sc-if value="{{ passErr }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; line-height: 1.6; color: #8a5a2a;"><i class="ph ph-warning-circle" style="font-size: 14px;"></i>{{ passErrText }}</div>
+                    </sc-if>
+                  </div>
+
+                  <sc-if value="{{ authOffline }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; gap: 8px; padding: 12px 13px; border-radius: 12px; background: #e7e5fe; color: #423a6a; font-size: 12.5px; line-height: 1.6;">
+                      <i class="ph ph-wifi-slash" style="font-size: 15px; flex: none; margin-top: 2px;"></i><span>ตอนนี้ต่อเน็ตไม่ได้ เลยยังเข้าระบบให้ไม่ได้ ระหว่างนี้บันทึกอาหารในเครื่องได้ปกติ เดี๋ยวค่อยซิงก์ให้</span>
+                    </div>
+                  </sc-if>
+
+                  <button type="button" onClick="{{ submitAuth }}" style="height: 52px; border-radius: 12px; border: 0; background: {{ submitBg }}; color: #f5f4ff; font-size: 15.5px; display: flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer;" style-hover="background: #5d5294;">
+                    <sc-if value="{{ authLoading }}" hint-placeholder-val="{{ false }}">
+                      <i class="ph ph-circle-notch" style="font-size: 18px; animation: kd-spin 1s linear infinite;"></i>
+                    </sc-if>
+                    {{ submitLabel }}
+                  </button>
+
+                  <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ false }}">
+                    <button type="button" onClick="{{ goForgot }}" style="height: 44px; border: 0; background: transparent; color: #5d5294; font-size: 13.5px; cursor: pointer;">ลืมรหัสผ่าน</button>
+                  </sc-if>
+
+                  <button type="button" onClick="{{ toggleMode }}" style="height: 44px; border: 0; background: transparent; color: #292b31; font-size: 13.5px; cursor: pointer;">{{ switchLabel }}</button>
+                </div>
+
+                <div style="padding-top: 16px; font-size: 11.5px; line-height: 1.7; color: #595d6c; text-wrap: pretty;">
+                  การใช้งานต่อถือว่ายอมรับ <a href="#terms" onClick="{{ openTerms }}" style="color: #5d5294; text-decoration: underline;">เงื่อนไขการใช้งาน</a> และ <a href="#privacy" onClick="{{ openPrivacy }}" style="color: #5d5294; text-decoration: underline;">นโยบายความเป็นส่วนตัว</a> · ข้อมูลน้ำหนักและมื้ออาหารเก็บในบัญชีของคุณ ซิงก์ให้เฉพาะอุปกรณ์ที่คุณล็อกอิน
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; display: flex; flex-direction: column; padding: 51px 20px 26px;">
+                <button type="button" onClick="{{ authBack }}" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 19px;"></i></button>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+                  <div style="width: 60px; height: 60px; border-radius: 18px; background: #e7e5fe; color: #5d5294; display: flex; align-items: center; justify-content: center;"><i class="ph ph-envelope-simple-open" style="font-size: 28px;"></i></div>
+                  <div style="font-size: 24px; line-height: 1.4; font-weight: 500;">ส่งลิงก์ไปแล้วนะ</div>
+                  <div style="font-size: 14px; line-height: 1.6; color: #595d6c; text-wrap: pretty;">เช็กอีเมล <b style="font-weight: 500; color: #292b31;">{{ emailShown }}</b> แล้วกดลิงก์ยืนยัน พอยืนยันแล้วข้อมูลจะซิงก์ให้ทุกเครื่องที่ล็อกอินด้วยอีเมลนี้</div>
+                  <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 8px;">
+                    <button type="button" onClick="{{ verified }}" style="height: 52px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15.5px; cursor: pointer;" style-hover="background: #5d5294;">ยืนยันแล้ว ไปตั้งค่าต่อ</button>
+                    <button type="button" onClick="{{ resend }}" style="height: 52px; border-radius: 12px; border: 1px solid {{ resendBd }}; background: transparent; color: {{ resendFg }}; font-size: 15px; cursor: {{ resendCursor }};">{{ resendLabel }}</button>
+                    <button type="button" onClick="{{ goSignup }}" style="height: 44px; border: 0; background: transparent; color: #5d5294; font-size: 13.5px; cursor: pointer;">ใช้อีเมลอื่น</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; display: flex; flex-direction: column; padding: 51px 20px 26px;">
+                <button type="button" onClick="{{ goLogin }}" aria-label="ย้อนกลับ" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 19px;"></i></button>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+                  <sc-if value="{{ forgotSent }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                      <div style="width: 60px; height: 60px; border-radius: 18px; background: #e7e5fe; color: #5d5294; display: flex; align-items: center; justify-content: center;"><i class="ph ph-paper-plane-tilt" style="font-size: 28px;"></i></div>
+                      <div style="font-size: 24px; line-height: 1.4; font-weight: 500;">ส่งลิงก์ตั้งรหัสใหม่แล้ว</div>
+                      <div style="font-size: 14px; line-height: 1.6; color: #595d6c; text-wrap: pretty;">ถ้ามีบัญชีที่ใช้ {{ emailShown }} อยู่ จะได้อีเมลภายในไม่กี่นาที ถ้าไม่เจอลองดูในโฟลเดอร์ขยะด้วยนะ</div>
+                      <button type="button" onClick="{{ goLogin }}" style="height: 52px; border-radius: 12px; border: 1px solid #968ae0; background: transparent; color: #5d5294; font-size: 15px; cursor: pointer;" style-hover="background: #f5f4ff;">กลับไปเข้าสู่ระบบ</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ forgotForm }}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                      <div style="font-size: 24px; line-height: 1.4; font-weight: 500;">ลืมรหัสผ่าน ไม่เป็นไร</div>
+                      <div style="font-size: 14px; line-height: 1.6; color: #595d6c;">ใส่อีเมลที่ใช้สมัคร เดี๋ยวส่งลิงก์ตั้งรหัสใหม่ไปให้</div>
+                      <input value="{{ email }}" onChange="{{ onEmail }}" placeholder="you@example.com" aria-label="อีเมล" style="height: 52px; border-radius: 12px; border: 1px solid #cfd3e5; background: #fbfbfe; padding: 0 14px; font-size: 16px; color: #292b31;">
+                      <button type="button" onClick="{{ sendForgot }}" style="height: 52px; border-radius: 12px; border: 0; background: #796cbf; color: #f5f4ff; font-size: 15.5px; cursor: pointer;" style-hover="background: #5d5294;">ส่งลิงก์ตั้งรหัสใหม่</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isTerms }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div style="flex: none; padding: 51px 16px 0;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" onClick="{{ closeTerms }}" aria-label="ปิด" style="width: 44px; height: 44px; margin-left: -10px; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 12px; color: #595d6c; cursor: pointer;" style-hover="background: #e7e5fe;"><i class="ph ph-caret-left" style="font-size: 19px;"></i></button>
+                    <span style="font-size: 16px; line-height: 1.4; font-weight: 500;">ข้อกำหนดและความเป็นส่วนตัว</span>
+                  </div>
+                  <div style="display: flex; gap: 6px; padding: 12px 0 12px;">
+                    <sc-for list="{{ termTabs }}" as="t" hint-placeholder-count="2">
+                      <button type="button" onClick="{{ t.go }}" style="flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid {{ t.bd }}; background: {{ t.bg }}; color: {{ t.fg }}; font-size: 13.5px; cursor: pointer;">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="flex: 1; overflow: auto; padding: 0 16px 34px;">
+                  <div style="font-size: 11.5px; line-height: 1.6; color: #595d6c; padding-bottom: 14px;">{{ termsMeta }}</div>
+                  <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; margin-bottom: 18px; border-radius: 16px; background: #f5f4ff; border: 1px solid #d2cefd;">
+                    <div style="font-size: 13.5px; line-height: 1.5; font-weight: 500; color: #423a6a;">สรุปสั้น ๆ</div>
+                    <sc-for list="{{ termsSummary }}" as="s" hint-placeholder-count="3">
+                      <div style="display: flex; gap: 8px; font-size: 12.5px; line-height: 1.7; color: #423a6a;">
+                        <i class="ph ph-check" style="font-size: 14px; flex: none; margin-top: 3px;"></i><span>{{ s.text }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 18px;">
+                    <sc-for list="{{ termsSections }}" as="sec" hint-placeholder-count="5">
+                      <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="font-size: 15.5px; line-height: 1.5; font-weight: 500;">{{ sec.title }}</div>
+                        <div style="font-size: 13.5px; line-height: 1.75; color: #45485a; text-wrap: pretty;">{{ sec.body }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="padding-top: 22px; font-size: 12px; line-height: 1.7; color: #595d6c;">{{ termsContact }}</div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </x-import>
+
+    <div style="font-size: 12px; line-height: 1.6; color: #595d6c; max-width: 390px; text-wrap: pretty;">ลองเลย: ปุ่ม <b style="font-weight: 500; color: #292b31;">+</b> กลาง tab bar → ล่าสุด → แตะการ์ด “กินบ่อย” ครั้งเดียวก็บันทึก · ปัดแถวอาหารไปทางซ้ายเพื่อลบ · แท็บสแกนกดปุ่มจำลองได้ทุกสถานะ</div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;macroVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;หน้าวันนี้&quot;},&quot;targetKcal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1850,&quot;min&quot;:1200,&quot;max&quot;:3200,&quot;step&quot;:50,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;หน้าวันนี้&quot;}}">
+class Component extends DCLogic {
+  state = {
+    scene: 'normal', addOpen: false, addTab: 'recent', meal: 'lunch',
+    entries: null, query: '', filter: 'all', searching: false,
+    scan: 'aiming', scanCount: 0, torch: false,
+    qty: null, gramOpen: false, gram: '150', unitIx: 0, amount: 1,
+    toast: null, swipeId: null, swipeDx: 0, dragging: false,
+    day: 0, keyboard: false,
+    ob: null, obStep: 1, obEdit: false, manualOpen: false, manual: '',
+    sex: 'female', bDay: 14, bMonth: 6, bYear: 1997,
+    height: 165, weight: 62, activity: 'light', goal: 'lose', targetSet: null,
+    auth: null, authMode: 'signup', authErr: null, authLoading: false,
+    email: '', pass: '', showPass: false, resendLeft: 0, forgotSent: false,
+    termsTab: 'terms', termsBack: null,
+  };
+
+  termsDoc = {
+    terms: {
+      meta: 'เงื่อนไขการใช้งาน · ปรับปรุง 31 กรกฎาคม 2026',
+      summary: [
+        'KinDee เป็นเครื่องมือช่วยบันทึกอาหาร ไม่ใช่คำแนะนำทางการแพทย์',
+        'บัญชีเป็นของคุณ ลบบัญชีและข้อมูลได้ตลอดเวลาในหน้าตั้งค่า',
+        'ตัวเลขโภชนาการมาจากหลายแหล่งคุณภาพไม่เท่ากัน เราแสดงที่มาให้เห็นทุกรายการ',
+      ],
+      sections: [
+        { title: '1. การใช้บริการ', body: 'KinDee ให้บริการเป็นเว็บแอป (PWA) สำหรับบันทึกอาหารและติดตามพลังงานที่ได้รับ คุณใช้บริการได้ตราบเท่าที่ไม่ละเมิดกฎหมายและไม่รบกวนผู้ใช้อื่นหรือระบบของเรา' },
+        { title: '2. บัญชีผู้ใช้', body: 'คุณต้องให้อีเมลที่ใช้งานได้จริงและดูแลรหัสผ่านของตัวเอง ถ้าสงสัยว่ามีคนอื่นเข้าถึงบัญชี เปลี่ยนรหัสผ่านและแจ้งเราได้ทันที เราอาจระงับบัญชีที่ใช้ในทางที่ผิดหรือส่งข้อมูลเท็จเข้าคลังสินค้าซ้ำ ๆ' },
+        { title: '3. ข้อมูลโภชนาการ ไม่ใช่คำแนะนำทางการแพทย์', body: 'ตัวเลขในแอปเป็นค่าประมาณเพื่อการติดตามส่วนตัว ไม่ใช้แทนคำวินิจฉัยหรือคำแนะนำจากแพทย์ นักกำหนดอาหาร หรือผู้เชี่ยวชาญ ถ้าคุณตั้งครรภ์ มีโรคประจำตัว หรืออยากตั้งเป้าต่ำกว่าเกณฑ์ปลอดภัย ควรปรึกษาผู้เชี่ยวชาญก่อน' },
+        { title: '4. ข้อมูลที่ผู้ใช้ช่วยเพิ่ม', body: 'เมื่อคุณเลือก “แชร์ให้คนอื่นด้วย” ตอนเพิ่มสินค้า คุณอนุญาตให้เราใช้และเผยแพร่ข้อมูลสินค้านั้น (ชื่อ แบรนด์ ขนาดบรรจุ ค่าโภชนาการ รูปฉลาก) ในคลังกลาง โดยไม่ผูกกับชื่อของคุณ ถ้าเลือก “บันทึกไว้ใช้เองก่อน” ข้อมูลจะอยู่ในบัญชีคุณเท่านั้น' },
+        { title: '5. แหล่งข้อมูลและเครดิต', body: 'คลังข้อมูลของเราประกอบด้วยข้อมูลจากฐานข้อมูลเปิด ฉลากโภชนาการของผู้ผลิต และข้อมูลที่ผู้ใช้ช่วยกันกรอก รายชื่อแหล่งข้อมูลและสัญญาอนุญาตทั้งหมดอยู่ในหน้า ตั้งค่า › เกี่ยวกับ' },
+        { title: '6. การเปลี่ยนแปลงและการยกเลิก', body: 'ถ้าเงื่อนไขมีการเปลี่ยนแปลงที่มีผลกับคุณ เราจะแจ้งในแอปล่วงหน้าอย่างน้อย 14 วัน คุณเลิกใช้บริการและลบบัญชีได้ทุกเมื่อ โดยข้อมูลจะถูกลบตามที่ระบุในนโยบายความเป็นส่วนตัว' },
+      ],
+      contact: 'มีคำถามเรื่องเงื่อนไข ส่งมาที่ hello@kindee.app เราตอบภายใน 3 วันทำการ',
+    },
+    privacy: {
+      meta: 'นโยบายความเป็นส่วนตัว · ปรับปรุง 31 กรกฎาคม 2026 · สอดคล้อง พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)',
+      summary: [
+        'เก็บเท่าที่จำเป็นต่อการคำนวณเป้าและซิงก์ข้ามเครื่อง',
+        'ไม่ขายข้อมูลของคุณ และไม่ส่งให้ผู้โฆษณา',
+        'ขอสำเนาข้อมูลหรือสั่งลบทั้งหมดได้เองในแอป',
+      ],
+      sections: [
+        { title: '1. ข้อมูลที่เก็บ', body: 'อีเมลและวิธีเข้าสู่ระบบ · ข้อมูลที่ใช้คำนวณเป้า (เพศ วันเกิด ส่วนสูง น้ำหนัก ระดับกิจกรรม เป้าหมาย) · รายการอาหารและน้ำหนักที่คุณบันทึก · ข้อมูลอุปกรณ์แบบไม่ระบุตัวตนเพื่อแก้บั๊ก เราไม่เก็บตำแหน่งที่อยู่ และรูปที่คุณถ่ายเพื่อให้ AI ทายจะถูกลบหลังประมวลผลเสร็จภายใน 24 ชั่วโมง' },
+        { title: '2. ใช้ข้อมูลทำอะไร', body: 'คำนวณเป้าพลังงาน แสดงประวัติของคุณ ซิงก์ข้อมูลระหว่างอุปกรณ์ที่คุณล็อกอิน และปรับปรุงคุณภาพคลังข้อมูล เราไม่ใช้ข้อมูลสุขภาพของคุณเพื่อโฆษณา และไม่ขายข้อมูลให้ใคร' },
+        { title: '3. การซิงก์ข้ามอุปกรณ์', body: 'เมื่อคุณล็อกอิน ข้อมูลจะถูกเก็บไว้ในบัญชีบนเซิร์ฟเวอร์ (ประเทศสิงคโปร์) เพื่อให้เปิดจากเครื่องอื่นได้ต่อเนื่อง ตอนออฟไลน์ข้อมูลจะพักไว้ในเครื่องก่อนแล้วซิงก์ให้เมื่อเน็ตกลับมา การเชื่อมต่อเข้ารหัสด้วย TLS และข้อมูลที่พักในฐานข้อมูลถูกเข้ารหัสไว้' },
+        { title: '4. ผู้ให้บริการที่เกี่ยวข้อง', body: 'เราใช้ผู้ให้บริการภายนอกเท่าที่จำเป็น เช่น ระบบยืนยันตัวตน อีเมลแจ้งเตือน และฐานข้อมูลบนคลาวด์ ทุกรายผูกด้วยสัญญาให้ประมวลผลข้อมูลตามคำสั่งของเราเท่านั้น' },
+        { title: '5. ระยะเวลาเก็บและการลบ', body: 'ข้อมูลอยู่กับเราตราบที่บัญชียังใช้งาน เมื่อคุณสั่งลบบัญชี เราจะลบข้อมูลส่วนบุคคลภายใน 30 วัน ยกเว้นข้อมูลสินค้าที่คุณเลือกแชร์ให้คลังกลางซึ่งจะอยู่ต่อในรูปแบบที่ไม่ระบุตัวตน' },
+        { title: '6. สิทธิของคุณ', body: 'คุณขอเข้าถึง ขอสำเนา (ส่งออกเป็น CSV ได้เองในหน้าตั้งค่า) ขอแก้ไข ขอให้ลบ หรือคัดค้านการประมวลผลได้ และถอนความยินยอมได้ทุกเมื่อ ถ้าเห็นว่าเราทำไม่ถูกต้อง ร้องเรียนต่อสำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคลได้' },
+      ],
+      contact: 'เรื่องข้อมูลส่วนบุคคล ติดต่อ privacy@kindee.app · ผู้ควบคุมข้อมูล: KinDee Co., Ltd. กรุงเทพฯ',
+    },
+  };
+
+  authFlow = (view, patch) => {
+    clearTimeout(this._a);
+    this.setState(Object.assign({ auth: view, addOpen: false, qty: null, ob: null, toast: null, authLoading: false }, patch || {}));
+    if (view !== 'verify') this.stopResend();
+  };
+
+  startResend = () => {
+    this.stopResend();
+    this.setState({ resendLeft: 60 });
+    this._r = setInterval(() => this.setState(s => {
+      if (s.resendLeft <= 1) { this.stopResend(); return { resendLeft: 0 }; }
+      return { resendLeft: s.resendLeft - 1 };
+    }), 1000);
+  };
+  stopResend = () => { clearInterval(this._r); this._r = null; };
+  componentWillUnmount() { this.stopResend(); clearTimeout(this._a); clearTimeout(this._t); }
+
+  submitAuth = () => {
+    const st = this.state;
+    if (st.authErr === 'offline') return;
+    const email = st.email.trim();
+    if (email.indexOf('@') < 0 || email.indexOf('.') < 0) return this.setState({ authErr: 'email' });
+    if (st.authMode === 'login' && st.pass.length < 8) return this.setState({ authErr: 'pass' });
+    if (st.authMode === 'signup' && st.pass.length < 8) return this.setState({ authErr: 'weak' });
+    this.setState({ authErr: null, authLoading: true });
+    clearTimeout(this._a);
+    this._a = setTimeout(() => {
+      if (st.authMode === 'signup') { this.authFlow('verify'); this.startResend(); }
+      else { this.authFlow(null); this.showToast('ยินดีต้อนรับกลับ ข้อมูลซิงก์เรียบร้อยแล้ว', null); }
+    }, 950);
+  };
+
+  googleAuth = () => {
+    this.setState({ authErr: null, authLoading: true, email: 'ploy.k@gmail.com' });
+    clearTimeout(this._a);
+    this._a = setTimeout(() => {
+      if (this.state.authMode === 'signup') { this.authFlow(null); this.openOb(1); }
+      else { this.authFlow(null); this.showToast('เข้าสู่ระบบด้วย Google แล้ว', null); }
+    }, 900);
+  };
+
+  activityDefs = [
+    ['sedentary', 'นั่งทำงานเป็นหลัก', 'แทบไม่ได้ออกกำลังกาย', 1.2, 'ph ph-desktop'],
+    ['light', 'เบา', 'ออกกำลังกาย 1–3 วัน/สัปดาห์', 1.375, 'ph ph-person-simple-walk'],
+    ['moderate', 'ปานกลาง', 'ออกกำลังกาย 3–5 วัน/สัปดาห์', 1.55, 'ph ph-person-simple-run'],
+    ['heavy', 'หนัก', 'ออกกำลังกาย 6–7 วัน/สัปดาห์', 1.725, 'ph ph-barbell'],
+  ];
+  goalDefs = [
+    ['lose', 'ลดน้ำหนัก', 'ตั้งให้ต่ำกว่าที่ใช้จริงวันละ 500 kcal', 'ph ph-trend-down'],
+    ['keep', 'คงน้ำหนัก', 'ตั้งเท่ากับพลังงานที่ใช้จริงต่อวัน', 'ph ph-equals'],
+    ['gain', 'เพิ่มน้ำหนัก', 'ตั้งให้สูงกว่าที่ใช้จริงวันละ 350 kcal', 'ph ph-trend-up'],
+  ];
+  monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+  age() {
+    const st = this.state;
+    let a = 2026 - st.bYear;
+    if (st.bMonth > 7 || (st.bMonth === 7 && st.bDay > 31)) a -= 1;
+    return a;
+  }
+  bmr() {
+    const st = this.state;
+    const base = 10 * st.weight + 6.25 * st.height - 5 * this.age();
+    return Math.round(st.sex === 'male' ? base + 5 : base - 161);
+  }
+  actFactor() { return (this.activityDefs.find(a => a[0] === this.state.activity) || this.activityDefs[1])[3]; }
+  tdee() { return Math.round(this.bmr() * this.actFactor()); }
+  goalDelta() { return this.state.goal === 'lose' ? -500 : this.state.goal === 'gain' ? 350 : 0; }
+  floorValue() { return this.state.sex === 'male' ? 1500 : 1200; }
+  rawTarget() { return this.tdee() + this.goalDelta(); }
+  computedTarget() { return Math.max(this.floorValue(), Math.round(this.rawTarget() / 10) * 10); }
+  finalTarget() {
+    const m = parseInt(this.state.manual, 10);
+    return this.state.manualOpen && m > 0 ? m : this.computedTarget();
+  }
+
+  openOb = (step, edit) => this.setState({
+    ob: true, obStep: step, obEdit: !!edit, addOpen: false, qty: null, toast: null, auth: null,
+    manual: String(this.computedTarget()),
+  });
+
+  obNext = () => {
+    const st = this.state;
+    if (st.obStep < 5) return this.setState({ obStep: st.obStep + 1, manual: String(this.computedTarget()) });
+    const t = this.finalTarget();
+    this.setState({ ob: null, targetSet: t, scene: st.obEdit ? this.state.scene : 'empty', entries: st.obEdit ? this.state.entries : [] });
+    this.showToast(st.obEdit ? 'อัปเดตเป้าเป็น ' + this.num(t) + ' kcal แล้ว' : 'เริ่มได้เลย เป้าวันละ ' + this.num(t) + ' kcal', null);
+  };
+  obBack = () => {
+    const st = this.state;
+    if (st.obStep > 1) this.setState({ obStep: st.obStep - 1 });
+    else this.setState({ ob: null });
+  };
+
+  foods = [
+    { id: 'kaprao', name: 'ข้าวกะเพราหมูสับไข่ดาว', kcal: 620, kind: 'dish', q: 'verified', icon: 'ph ph-bowl-food', cat: 'dish',
+      units: [{ label: 'จาน', f: 1 }, { label: 'ทัพพี', f: 0.42 }, { label: 'ถ้วย', f: 0.6 }] },
+    { id: 'moo-ping', name: 'หมูปิ้ง + ข้าวเหนียว', kcal: 410, kind: 'dish', q: 'verified', icon: 'ph ph-fire', cat: 'dish',
+      units: [{ label: 'ไม้ + ห่อ', f: 1 }, { label: 'ไม้', f: 0.36 }] },
+    { id: 'somtam', name: 'ส้มตำไทย', kcal: 120, kind: 'dish', q: 'verified', icon: 'ph ph-carrot', cat: 'dish',
+      units: [{ label: 'จาน', f: 1 }, { label: 'ถ้วย', f: 0.7 }] },
+    { id: 'joke', name: 'โจ๊กหมูใส่ไข่', kcal: 280, kind: 'dish', q: 'open', icon: 'ph ph-bowl-steam', cat: 'dish',
+      units: [{ label: 'ถ้วย', f: 1 }, { label: 'ชาม', f: 1.5 }] },
+    { id: 'khao-man-kai', name: 'ข้าวมันไก่ต้ม', kcal: 590, kind: 'dish', q: 'verified', icon: 'ph ph-bowl-food', cat: 'dish',
+      units: [{ label: 'จาน', f: 1 }, { label: 'ทัพพี', f: 0.4 }] },
+    { id: 'cha-yen', name: 'ชาไทยเย็น หวานน้อย', kcal: 180, kind: 'dish', q: 'open', icon: 'ph ph-cup', cat: 'drink',
+      units: [{ label: 'แก้ว', f: 1 }, { label: 'แก้วใหญ่', f: 1.4 }] },
+    { id: 'americano', name: 'อเมริกาโน่เย็น ไม่หวาน', kcal: 10, kind: 'dish', q: 'verified', icon: 'ph ph-coffee', cat: 'drink',
+      units: [{ label: 'แก้ว', f: 1 }] },
+    { id: 'khai-tom', name: 'ไข่ต้ม', kcal: 78, kind: 'dish', q: 'verified', icon: 'ph ph-egg', cat: 'dish',
+      units: [{ label: 'ฟอง', f: 1 }] },
+    { id: 'foremost', name: 'นมพร่องมันเนย UHT รสจืด ตราโฟร์โมสต์ 180 มล.', brand: 'โฟร์โมสต์', pack: '1 กล่อง = 180 มล.', kcal: 92, kind: 'pack', q: 'verified', icon: 'ph ph-drop', cat: 'store',
+      units: [{ label: 'ทั้งกล่อง', f: 1 }, { label: 'ครึ่งกล่อง', f: 0.5 }, { label: 'ต่อ 100 มล.', f: 0.51 }] },
+    { id: 'taokaenoi', name: 'สาหร่ายทอด เถ้าแก่น้อย รสดั้งเดิม 32 ก.', brand: 'เถ้าแก่น้อย', pack: '1 ซอง = 32 ก. · ฉลากระบุ 2 หน่วยบริโภค', kcal: 178, kind: 'pack', q: 'open', icon: 'ph ph-package', cat: 'store', servings: 2,
+      units: [{ label: 'ทั้งซอง', f: 1 }, { label: 'ครึ่งซอง', f: 0.5 }, { label: 'ต่อหน่วยบริโภค', f: 0.5 }, { label: 'ต่อ 100 ก.', f: 3.13 }] },
+    { id: 'mama-cup', name: 'มาม่า คัพ ต้มยำกุ้ง 60 ก.', brand: 'มาม่า', pack: '1 ถ้วย = 60 ก.', kcal: 350, kind: 'pack', q: 'verified', icon: 'ph ph-bowl-steam', cat: 'store',
+      units: [{ label: 'ทั้งถ้วย', f: 1 }, { label: 'ครึ่งถ้วย', f: 0.5 }, { label: 'ต่อ 100 ก.', f: 1.67 }] },
+    { id: 'vitamilk', name: 'นมถั่วเหลืองไวตามิ้ลค์ สูตรน้ำตาลน้อย 300 มล.', brand: 'ไวตามิ้ลค์', pack: '1 ขวด = 300 มล.', kcal: 165, kind: 'pack', q: 'open', icon: 'ph ph-drop', cat: 'store',
+      units: [{ label: 'ทั้งขวด', f: 1 }, { label: 'ครึ่งขวด', f: 0.5 }, { label: 'ต่อ 100 มล.', f: 0.33 }] },
+    { id: 'dutchmill', name: 'นมเปรี้ยวดัชมิลล์ รสสตรอว์เบอร์รี 180 มล.', brand: 'ดัชมิลล์', pack: '1 ขวด = 180 มล.', kcal: 145, kind: 'pack', q: 'user', icon: 'ph ph-drop', cat: 'store',
+      units: [{ label: 'ทั้งขวด', f: 1 }, { label: 'ครึ่งขวด', f: 0.5 }] },
+    { id: 'sandwich', name: 'แซนด์วิชแฮมชีส 7-Eleven', brand: '7-Eleven', pack: '1 ชิ้น = 118 ก.', kcal: 289, kind: 'pack', q: 'verified', icon: 'ph ph-hamburger', cat: 'store',
+      units: [{ label: 'ทั้งชิ้น', f: 1 }, { label: 'ครึ่งชิ้น', f: 0.5 }] },
+    { id: 'banana', name: 'กล้วยน้ำว้า', kcal: 100, kind: 'dish', q: 'verified', icon: 'ph ph-leaf', cat: 'fruit',
+      units: [{ label: 'ลูก', f: 1 }, { label: 'ลูกใหญ่', f: 1.3 }] },
+    { id: 'khanom-tuay', name: 'ขนมถ้วย', kcal: 130, kind: 'dish', q: 'open', icon: 'ph ph-cookie', cat: 'sweet',
+      units: [{ label: 'ถ้วย', f: 1 }, { label: '2 ถ้วย', f: 2 }] },
+  ];
+
+  target = 1850;
+
+  baseEntries = [
+    { uid: 1, meal: 'breakfast', id: 'joke', unitIx: 0, amount: 1 },
+    { uid: 2, meal: 'breakfast', id: 'americano', unitIx: 0, amount: 1 },
+    { uid: 3, meal: 'lunch', id: 'kaprao', unitIx: 0, amount: 1 },
+    { uid: 4, meal: 'lunch', id: 'cha-yen', unitIx: 0, amount: 1 },
+    { uid: 5, meal: 'snack', id: 'taokaenoi', unitIx: 0, amount: 1 },
+  ];
+  overEntries = [
+    { uid: 1, meal: 'breakfast', id: 'khao-man-kai', unitIx: 0, amount: 1 },
+    { uid: 2, meal: 'lunch', id: 'kaprao', unitIx: 0, amount: 1 },
+    { uid: 3, meal: 'lunch', id: 'cha-yen', unitIx: 0, amount: 1 },
+    { uid: 4, meal: 'dinner', id: 'moo-ping', unitIx: 0, amount: 2 },
+    { uid: 5, meal: 'snack', id: 'mama-cup', unitIx: 0, amount: 1 },
+    { uid: 6, meal: 'snack', id: 'taokaenoi', unitIx: 0, amount: 1 },
+  ];
+
+  uid = 100;
+  meals = [['breakfast', 'เช้า'], ['lunch', 'กลางวัน'], ['dinner', 'เย็น'], ['snack', 'ของว่าง']];
+  quality = {
+    verified: { label: 'ตรวจสอบแล้ว', icon: 'ph-fill ph-seal-check', color: '#456349' },
+    open: { label: 'ฐานข้อมูลเปิด', icon: 'ph ph-globe-hemisphere-east', color: '#5d5294' },
+    user: { label: 'ผู้ใช้เพิ่มเอง', icon: 'ph ph-user-circle', color: '#5f5c46' },
+  };
+
+  food(id) { return this.foods.find(f => f.id === id); }
+  entryList() { return this.state.entries || (this.state.scene === 'over' ? this.overEntries : this.baseEntries); }
+  entryKcal(e) { const f = this.food(e.id); return Math.round(f.kcal * f.units[e.unitIx].f * e.amount); }
+  amountLabel(a) { return a === 0.5 ? '½' : a === 1.5 ? '1½' : String(a); }
+  num(n) { return n.toLocaleString('en-US'); }
+
+  set(patch) { this.setState(patch); }
+
+  showToast(text, undo) {
+    clearTimeout(this._t);
+    this.setState({ toast: { text, undo } });
+    this._t = setTimeout(() => this.setState(s => (s.toast ? { toast: null } : null)), 4200);
+  }
+
+  addEntry(food, unitIx, amount, meal) {
+    const e = { uid: ++this.uid, meal: meal || this.state.meal, id: food.id, unitIx, amount };
+    const list = this.entryList().concat([e]);
+    this.setState({ entries: list, scene: this.state.scene === 'empty' || this.state.scene === 'loading' ? 'normal' : this.state.scene });
+    return e;
+  }
+
+  quickAdd = (food) => {
+    const e = this.addEntry(food, 0, 1);
+    this.showToast('เพิ่ม ' + food.name + ' แล้ว', e.uid);
+    if (this.state.addTab !== 'scan') this.setState({ addOpen: false });
+  };
+
+  openQty = (food, editing) => {
+    const defIx = 0;
+    this.setState({
+      qty: { id: food.id, editing: editing || null },
+      unitIx: editing ? editing.unitIx : defIx,
+      amount: editing ? editing.amount : 1,
+      gramOpen: false, gram: '150',
+    });
+  };
+
+  saveQty = () => {
+    const q = this.state.qty; if (!q) return;
+    const food = this.food(q.id);
+    if (q.editing) {
+      const list = this.entryList().map(e => e.uid === q.editing.uid ? Object.assign({}, e, { unitIx: this.state.unitIx, amount: this.state.amount }) : e);
+      this.setState({ entries: list, qty: null });
+      this.showToast('แก้ ' + food.name + ' แล้ว', null);
+    } else {
+      const e = this.addEntry(food, this.state.unitIx, this.state.amount);
+      const inScan = this.state.addTab === 'scan';
+      this.setState({ qty: null, addOpen: inScan, scan: inScan ? 'aiming' : this.state.scan, scanCount: inScan ? this.state.scanCount + 1 : this.state.scanCount });
+      this.showToast('เพิ่ม ' + food.name + ' แล้ว', e.uid);
+    }
+  };
+
+  removeEntry = (uid) => {
+    const list = this.entryList().filter(e => e.uid !== uid);
+    this.setState({ entries: list, swipeId: null, swipeDx: 0, qty: null });
+    this.showToast('ลบออกแล้ว', null);
+  };
+
+  undo = () => {
+    const t = this.state.toast;
+    if (t && t.undo) this.setState({ entries: this.entryList().filter(e => e.uid !== t.undo) });
+    this.setState({ toast: null });
+  };
+
+  editFromToast = () => {
+    const t = this.state.toast; if (!t || !t.undo) return;
+    const e = this.entryList().find(x => x.uid === t.undo);
+    if (e) { this.setState({ toast: null, addOpen: false }); this.openQty(this.food(e.id), e); }
+  };
+
+  scene = (name) => {
+    const patch = { scene: name, addOpen: false, qty: null, toast: null, day: 0, entries: null, ob: null, obEdit: false, auth: null };
+    if (name === 'empty') patch.entries = [];
+    this.setState(patch);
+  };
+
+  openAdd = (tab, meal) => {
+    const p = { addOpen: true, addTab: tab, query: '', searching: false, keyboard: tab === 'search', scan: 'aiming', scanCount: 0, ob: null, obEdit: false, auth: null };
+    if (meal) p.meal = meal;
+    this.setState(p);
+  };
+
+  onQuery = (ev) => {
+    const v = ev.target.value;
+    this.setState({ query: v, searching: v.length > 0 });
+    clearTimeout(this._q);
+    this._q = setTimeout(() => this.setState({ searching: false }), 420);
+  };
+
+  results() {
+    const q = this.state.query.trim();
+    let list = this.foods;
+    const f = this.state.filter;
+    if (f !== 'all') list = list.filter(x => x.cat === f);
+    if (q) list = list.filter(x => x.name.indexOf(q) >= 0 || (x.brand && x.brand.indexOf(q) >= 0));
+    return q ? list : [];
+  }
+
+  simulate = () => {
+    const s = this.state.scan;
+    if (s === 'aiming') {
+      this.setState({ scan: 'fetching' });
+      clearTimeout(this._s);
+      this._s = setTimeout(() => { this.setState({ scan: 'aiming' }); this.openQty(this.food('mama-cup')); }, 900);
+    } else this.setState({ scan: 'aiming' });
+  };
+
+  swipeDown = (uid) => (ev) => { this._x0 = ev.clientX; this.setState({ swipeId: uid, dragging: true, swipeDx: 0 }); };
+  swipeMove = (uid) => (ev) => {
+    if (!this.state.dragging || this.state.swipeId !== uid) return;
+    const dx = Math.min(0, Math.max(-90, ev.clientX - this._x0));
+    this.setState({ swipeDx: dx });
+  };
+  swipeUp = (uid) => () => {
+    if (this.state.swipeId !== uid) return;
+    this.setState({ dragging: false, swipeDx: this.state.swipeDx < -44 ? -84 : 0 });
+  };
+
+  renderVals() {
+    const st = this.state;
+    const macroOn = this.props.macroVisible !== false;
+    const scene = st.scene;
+    const loading = scene === 'loading';
+    const empty = scene === 'empty' && !loading;
+    const offline = scene === 'offline';
+    const readOnly = scene === 'past';
+    const target = st.targetSet || this.props.targetKcal || this.target;
+    const step = st.obStep;
+    const range = (a, b) => { const out = []; for (let i = a; i <= b; i++) out.push(i); return out; };
+    const pick = (on) => on
+      ? { bg: '#e7e5fe', fg: '#423a6a', bd: '#968ae0' }
+      : { bg: '#fbfbfe', fg: '#292b31', bd: '#e4e7f5' };
+    const obTitles = {
+      1: 'เริ่มจากข้อมูลพื้นฐานก่อนนะ',
+      2: 'ส่วนสูงกับน้ำหนักตอนนี้',
+      3: 'ปกติขยับตัวเยอะแค่ไหน',
+      4: 'อยากให้น้ำหนักไปทางไหน',
+      5: 'เป้าหมายของคุณคือเท่านี้',
+    };
+    const obNotes = {
+      1: 'ใช้แค่ในสูตรคำนวณพลังงานพื้นฐาน เก็บไว้ในบัญชีคุณเท่านั้น',
+      2: 'ใส่คร่าว ๆ ก็ได้ แก้ทีหลังได้ตลอด',
+      3: 'เลือกที่ใกล้ชีวิตจริงที่สุด ไม่ต้องเลือกที่ดูดี',
+      4: 'สามอย่างนี้ไม่มีอันไหนดีกว่ากัน เลือกที่ตรงกับที่คุณอยากได้',
+      5: 'อยากรู้ว่ามาจากไหน ดูรายละเอียดด้านล่างได้เลย',
+    };
+
+    const list = readOnly ? this.baseEntries : this.entryList();
+    const consumed = list.reduce((a, e) => a + this.entryKcal(e), 0);
+    const left = target - consumed;
+    const pct = Math.max(0, Math.min(1.18, consumed / target));
+    const C = 2 * Math.PI * 86;
+    const ringColor = left < 0 ? '#c08b3e' : pct > 0.85 ? '#6f9b78' : pct > 0.45 ? '#968ae0' : '#b5abfc';
+
+    const sceneDefs = [['normal', 'ปกติ'], ['over', 'เกินเป้า'], ['empty', 'ผู้ใช้ใหม่'], ['loading', 'กำลังโหลด'], ['offline', 'ออฟไลน์'], ['past', 'ดูย้อนหลัง']];
+    const chip = (on) => on
+      ? { bg: '#292b31', fg: '#f3f5fe', bd: '#292b31' }
+      : { bg: 'transparent', fg: '#595d6c', bd: '#cfd3e5' };
+
+    const groups = this.meals.map(([key, label]) => {
+      const items = list.filter(e => e.meal === key).map(e => {
+        const f = this.food(e.id);
+        const active = st.swipeId === e.uid;
+        return {
+          name: f.name, hasBrand: !!f.brand, brand: f.brand || '',
+          qty: this.amountLabel(e.amount) + ' ' + f.units[e.unitIx].label,
+          kcal: this.num(this.entryKcal(e)),
+          tx: 'translateX(' + (active ? st.swipeDx : 0) + 'px)',
+          trans: st.dragging && active ? 'none' : 'transform .2s ease',
+          remove: () => this.removeEntry(e.uid),
+          down: readOnly ? undefined : this.swipeDown(e.uid),
+          move: readOnly ? undefined : this.swipeMove(e.uid),
+          up: readOnly ? undefined : this.swipeUp(e.uid),
+        };
+      });
+      const kcal = list.filter(e => e.meal === key).reduce((a, e) => a + this.entryKcal(e), 0);
+      return {
+        label, items, hasItems: items.length > 0, isEmpty: items.length === 0 && !readOnly,
+        meta: items.length ? this.num(kcal) + ' kcal' : '',
+        titleColor: items.length ? '#292b31' : '#595d6c',
+        addLabel: 'เพิ่มอาหารมื้อ' + label,
+        add: () => this.openAdd('recent', key),
+      };
+    }).filter(g => !(readOnly && !g.hasItems));
+
+    const mealWordMap = { breakfast: 'เช้า', lunch: 'กลางวัน', dinner: 'เย็น', snack: 'ของว่าง' };
+    const qtyFood = st.qty ? this.food(st.qty.id) : null;
+    const unit = qtyFood ? qtyFood.units[st.unitIx] : null;
+    const qtyKcal = qtyFood ? Math.round(qtyFood.kcal * unit.f * st.amount) : 0;
+    const mealTotal = list.filter(e => e.meal === st.meal).reduce((a, e) => a + this.entryKcal(e), 0);
+    const q = (f) => this.quality[f.q];
+
+    const res = this.results();
+    const showKb = st.addTab === 'search' && !st.qty;
+
+    return {
+      w: 390, h: 844, macroOn,
+      dateLabel: st.day === 0 ? 'วันนี้' : 'เมื่อวาน',
+      dateSub: st.day === 0 ? 'ศ 31 ก.ค.' : 'พฤ 30 ก.ค.',
+      prevDay: () => this.setState({ day: 1, scene: 'past' }),
+      nextDay: () => this.setState({ day: 0, scene: 'normal' }),
+      offline, loading, empty, readOnly,
+      showRing: !loading && !empty, showMeals: !loading && !empty,
+      ringKicker: left < 0 ? 'เกินมา' : 'เหลืออีก',
+      ringBig: this.num(Math.abs(left)),
+      ringSub: 'จาก ' + this.num(target),
+      ringNote: left < 0
+        ? 'ค่าเฉลี่ยสัปดาห์นี้ยังอยู่ในช่วงเป้าหมาย พรุ่งนี้ค่อยว่ากันใหม่ก็ได้'
+        : 'บันทึกมา ' + this.num(consumed) + ' kcal จาก ' + list.length + ' รายการ',
+      ringColor, ringDash: (C * pct) + ' ' + C,
+      macros: [
+        { label: 'โปรตีน', value: Math.round(consumed * 0.052) + ' ก.', pct: Math.min(100, Math.round(pct * 88)) + '%', color: '#968ae0' },
+        { label: 'คาร์บ', value: Math.round(consumed * 0.118) + ' ก.', pct: Math.min(100, Math.round(pct * 96)) + '%', color: '#6f9b78' },
+        { label: 'ไขมัน', value: Math.round(consumed * 0.036) + ' ก.', pct: Math.min(100, Math.round(pct * 74)) + '%', color: '#c08b3e' },
+      ],
+      skeletons: [{ h: '86px' }, { h: '66px' }, { h: '66px' }, { h: '86px' }],
+      groups,
+      scenes: sceneDefs.map(([k, label]) => Object.assign({ label, go: () => this.scene(k) }, chip(scene === k))),
+      jumps: [
+        Object.assign({ label: '12 ล่าสุด', go: () => this.openAdd('recent') }, chip(st.addOpen && st.addTab === 'recent')),
+        Object.assign({ label: '13 ค้นหา', go: () => this.openAdd('search') }, chip(st.addOpen && st.addTab === 'search')),
+        Object.assign({ label: '14 สแกน', go: () => this.openAdd('scan') }, chip(st.addOpen && st.addTab === 'scan')),
+        Object.assign({ label: '18 เลือกปริมาณ (หน่วยไทย)', go: () => { this.setState({ addOpen: false, ob: null }); this.openQty(this.food('kaprao')); } }, chip(!!st.qty && st.qty.id === 'kaprao')),
+        Object.assign({ label: '18 เลือกปริมาณ (สินค้าซอง)', go: () => { this.setState({ addOpen: false, ob: null }); this.openQty(this.food('taokaenoi')); } }, chip(!!st.qty && st.qty.id === 'taokaenoi')),
+        Object.assign({ label: 'สแกน · ไม่พบสินค้า', go: () => this.setState({ ob: null, addOpen: true, addTab: 'scan', scan: 'notfound' }) }, chip(st.scan === 'notfound')),
+        Object.assign({ label: 'สแกน · ออฟไลน์', go: () => this.setState({ ob: null, addOpen: true, addTab: 'scan', scan: 'offline' }) }, chip(st.scan === 'offline')),
+        Object.assign({ label: 'สแกน · ไม่ได้สิทธิ์กล้อง', go: () => this.setState({ ob: null, addOpen: true, addTab: 'scan', scan: 'denied' }) }, chip(st.scan === 'denied')),
+        Object.assign({ label: 'ค้นหา · ไม่พบผลลัพธ์', go: () => this.setState({ ob: null, addOpen: true, addTab: 'search', query: 'ข้าวยำไก่แซ่บ', searching: false, keyboard: true }) }, chip(false)),
+      ],
+      tabs: [
+        { label: 'วันนี้', icon: 'ph-fill ph-house', color: '#5d5294', go: () => this.setState({ addOpen: false }) },
+        { label: 'ประวัติ', icon: 'ph ph-chart-bar', color: '#595d6c', go: () => this.showToast('หน้าประวัติอยู่ใน P1 รอบถัดไปนะ', null) },
+        { label: 'ฉัน', icon: 'ph ph-user', color: '#595d6c', go: () => this.openOb(5, true) },
+      ],
+      openRecent: () => this.openAdd('recent'),
+      openScan: () => this.openAdd('scan'),
+      closeAdd: () => this.setState({ addOpen: false, toast: null }),
+      addOpen: st.addOpen,
+      addBg: '#f3f5fe',
+      addFg: '#292b31',
+      addChipBg: '#e4e7f5',
+      mealChips: this.meals.map(([k, label]) => {
+        const on = st.meal === k;
+        const dark = false;
+        return {
+          label, go: () => this.setState({ meal: k }),
+          bg: on ? (dark ? '#e9e9ed' : '#292b31') : 'transparent',
+          fg: on ? (dark ? '#1b1d26' : '#f3f5fe') : (dark ? '#b2b6ca' : '#595d6c'),
+          bd: on ? (dark ? '#e9e9ed' : '#292b31') : (dark ? 'rgba(233,233,237,.28)' : '#cfd3e5'),
+        };
+      }),
+      addTabs: [['recent', 'ล่าสุด', 'ph ph-clock-counter-clockwise'], ['search', 'ค้นหา', 'ph ph-magnifying-glass'], ['scan', 'สแกน', 'ph ph-barcode'], ['photo', 'ถ่ายรูป', 'ph ph-camera']].map(([k, label, icon]) => {
+        const on = st.addTab === k;
+        const dark = false;
+        return {
+          label, icon, go: () => this.setState({ addTab: k, keyboard: k === 'search', scan: 'aiming' }),
+          bg: on ? (dark ? 'rgba(233,233,237,.14)' : '#e7e5fe') : 'transparent',
+          fg: on ? (dark ? '#e9e9ed' : '#5d5294') : (dark ? '#8d90a3' : '#595d6c'),
+        };
+      }),
+      tabRecent: st.addTab === 'recent', tabSearch: st.addTab === 'search',
+      tabScan: st.addTab === 'scan', tabPhoto: st.addTab === 'photo',
+      frequent: ['kaprao', 'foremost', 'americano', 'somtam', 'sandwich'].map(id => {
+        const f = this.food(id);
+        return { name: f.name, icon: f.icon, line: this.num(f.kcal) + ' kcal · 1 ' + f.units[0].label, quick: () => this.quickAdd(f) };
+      }),
+      yesterdayTitle: 'มื้อ' + mealWordMap[st.meal] + 'เมื่อวาน',
+      yesterday: [this.food('khao-man-kai'), this.food('cha-yen')].map(f => ({ name: f.name, kcal: this.num(f.kcal) + ' kcal' })),
+      yesterdayKcal: this.num(this.food('khao-man-kai').kcal + this.food('cha-yen').kcal) + ' kcal',
+      addYesterday: () => {
+        this.addEntry(this.food('khao-man-kai'), 0, 1);
+        const e = this.addEntry(this.food('cha-yen'), 0, 1);
+        this.setState({ addOpen: false });
+        this.showToast('บันทึกทั้งมื้อแล้ว 2 รายการ', e.uid);
+      },
+      recent: ['taokaenoi', 'moo-ping', 'vitamilk', 'khai-tom', 'dutchmill', 'joke'].map(id => {
+        const f = this.food(id); const qq = q(f);
+        return {
+          name: f.name, line: this.num(f.kcal) + ' kcal · ' + (f.pack || '1 ' + f.units[0].label),
+          qLabel: qq.label, qIcon: qq.icon, qColor: qq.color,
+          quick: () => this.quickAdd(f), open: () => this.openQty(f),
+        };
+      }),
+      query: st.query, hasQuery: st.query.length > 0, onQuery: this.onQuery,
+      clearQuery: () => this.setState({ query: '', searching: false }),
+      mealWord: mealWordMap[st.meal],
+      filters: [['all', 'ทั้งหมด'], ['dish', 'อาหารจานเดียว'], ['store', 'สินค้าในร้าน'], ['drink', 'เครื่องดื่ม'], ['sweet', 'ของหวาน'], ['fruit', 'ผลไม้']].map(([k, label]) => {
+        const on = st.filter === k;
+        return { label, go: () => this.setState({ filter: k }), bg: on ? '#292b31' : '#fbfbfe', fg: on ? '#f3f5fe' : '#595d6c', bd: on ? '#292b31' : '#e4e7f5' };
+      }),
+      searchOffline: offline,
+      searchIdle: st.query.length === 0 && !st.searching,
+      searching: st.searching,
+      hasResults: !st.searching && st.query.length > 0 && res.length > 0,
+      noResults: !st.searching && st.query.length > 0 && res.length === 0,
+      popular: ['ข้าวกะเพรา', 'ชาไทย', 'ส้มตำ', 'นมกล่อง', 'สาหร่ายทอด', 'แซนด์วิช'].map(label => ({ label, go: () => this.setState({ query: label, searching: true, filter: 'all' }, () => { clearTimeout(this._q); this._q = setTimeout(() => this.setState({ searching: false }), 380); }) })),
+      results: res.map(f => {
+        const qq = q(f);
+        return {
+          name: f.name, icon: f.icon,
+          sub: f.kind === 'pack' ? (f.brand + ' · ' + f.pack) : ('อาหารปรุงสำเร็จ · 1 ' + f.units[0].label),
+          kcal: this.num(f.kcal), per: f.kind === 'pack' ? 'ต่อหน่วยบรรจุ' : 'ต่อ ' + f.units[0].label,
+          qLabel: qq.label, qIcon: qq.icon, qColor: qq.color,
+          thumbBg: f.kind === 'pack' ? '#e7e5fe' : '#e9efe9', thumbFg: f.kind === 'pack' ? '#5d5294' : '#4f6b55',
+          open: () => this.openQty(f),
+        };
+      }),
+      showKeyboard: showKb,
+      goScan: () => this.setState({ addTab: 'scan', scan: 'aiming', keyboard: false }),
+      goSearch: () => this.setState({ addTab: 'search', keyboard: true, scan: 'aiming', query: '' }),
+      scanCamera: st.scan === 'aiming' || st.scan === 'fetching',
+      scanAiming: st.scan === 'aiming',
+      scanFetching: st.scan === 'fetching',
+      scanNotFound: st.scan === 'notfound',
+      scanOffline: st.scan === 'offline',
+      scanDenied: st.scan === 'denied',
+      scanHint: st.scan === 'fetching' ? 'เจอแล้ว กำลังดึงข้อมูลจากฉลาก…' : 'เล็งไปที่บาร์โค้ดหลังซอง',
+      scanCta: st.scan === 'fetching' ? 'กำลังดึงข้อมูล…' : 'จำลองว่าสแกนเจอ',
+      scanCount: st.scanCount, scanCounted: st.scanCount > 0,
+      corners: [
+        { pos: 'top: -3px; left: -3px;', edge: 'border-right: 0; border-bottom: 0; border-radius: 14px 0 0 0;' },
+        { pos: 'top: -3px; right: -3px;', edge: 'border-left: 0; border-bottom: 0; border-radius: 0 14px 0 0;' },
+        { pos: 'bottom: -3px; left: -3px;', edge: 'border-right: 0; border-top: 0; border-radius: 0 0 0 14px;' },
+        { pos: 'bottom: -3px; right: -3px;', edge: 'border-left: 0; border-top: 0; border-radius: 0 0 14px 0;' },
+      ],
+      queued: [{ code: '8851234567890' }, { code: '8850124003179' }, { code: '8858891302015' }],
+      torchBg: st.torch ? '#e9e9ed' : 'rgba(233,233,237,.12)',
+      torchFg: st.torch ? '#1b1d26' : '#e9e9ed',
+      toggleTorch: () => this.setState({ torch: !st.torch }),
+      simulateScan: this.simulate,
+      backToAim: () => this.setState({ scan: 'aiming' }),
+      retryCam: () => this.setState({ scan: 'aiming' }),
+      manualCode: () => this.showToast('หน้ากรอกเลขบาร์โค้ดเองอยู่ในรอบถัดไป', null),
+      noop: () => this.showToast('หน้านี้อยู่นอกขอบเขต P0 รอบนี้', null),
+
+      qtyOpen: !!st.qty,
+      closeQty: () => this.setState({ qty: null }),
+      qtyName: qtyFood ? qtyFood.name : '',
+      qtySub: qtyFood ? (qtyFood.kind === 'pack' ? qtyFood.pack : 'อาหารปรุงสำเร็จ · อัปเดต 12 ก.ค. 2026') : '',
+      qtyIcon: qtyFood ? qtyFood.icon : 'ph ph-bowl-food',
+      qtyThumbBg: qtyFood && qtyFood.kind === 'pack' ? '#e7e5fe' : '#e9efe9',
+      qtyThumbFg: qtyFood && qtyFood.kind === 'pack' ? '#5d5294' : '#4f6b55',
+      qtyQLabel: qtyFood ? q(qtyFood).label : '', qtyQIcon: qtyFood ? q(qtyFood).icon : '', qtyQColor: qtyFood ? q(qtyFood).color : '#595d6c',
+      unitTitle: qtyFood && qtyFood.kind === 'pack' ? 'นับแบบไหน' : 'หน่วย',
+      units: qtyFood ? qtyFood.units.map((u, i) => {
+        const on = st.unitIx === i;
+        return { label: u.label, go: () => this.setState({ unitIx: i }), bg: on ? '#292b31' : 'transparent', fg: on ? '#f3f5fe' : '#595d6c', bd: on ? '#292b31' : '#cfd3e5' };
+      }) : [],
+      amounts: [0.5, 1, 1.5, 2].map(a => {
+        const on = st.amount === a;
+        return { label: this.amountLabel(a), go: () => this.setState({ amount: a }), bg: on ? '#e7e5fe' : 'transparent', fg: on ? '#423a6a' : '#595d6c', bd: on ? '#968ae0' : '#cfd3e5' };
+      }),
+      qtyServingWarn: !!(qtyFood && qtyFood.servings),
+      qtyServingText: qtyFood && qtyFood.servings ? ('ซองนี้ ' + qtyFood.pack.split('·')[0].trim() + ' แต่ฉลากคิดเป็น ' + qtyFood.servings + ' หน่วยบริโภค ตอนนี้กำลังนับแบบ “' + (unit ? unit.label : '') + '”') : '',
+      gramOpen: st.gramOpen, gramValue: st.gram,
+      gramLabel: st.gramOpen ? 'ซ่อนช่องกรัม' : (qtyFood && qtyFood.kind === 'pack' ? 'ระบุเป็นกรัมเอง' : 'ระบุเป็นกรัม'),
+      toggleGram: () => this.setState({ gramOpen: !st.gramOpen }),
+      onGram: (ev) => this.setState({ gram: ev.target.value }),
+      qtyKcal: this.num(qtyKcal) + ' kcal',
+      qtyMealWord: mealWordMap[st.meal],
+      qtyMealTotal: this.num(mealTotal + qtyKcal) + ' kcal',
+      qtyEditing: !!(st.qty && st.qty.editing),
+      qtyCta: st.qty && st.qty.editing ? 'บันทึกการแก้ไข' : 'บันทึกลงมื้อ' + mealWordMap[st.meal],
+      saveQty: this.saveQty,
+      deleteEditing: () => st.qty && st.qty.editing && this.removeEntry(st.qty.editing.uid),
+
+      authOpen: !!st.auth,
+      isSplash: st.auth === 'splash', isLogin: st.auth === 'login',
+      isVerify: st.auth === 'verify', isForgot: st.auth === 'forgot', isTerms: st.auth === 'terms',
+      isLoginMode: st.authMode === 'login',
+      loginTitle: st.authMode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครใช้งาน',
+      loginSub: st.authMode === 'login'
+        ? 'ล็อกอินแล้วข้อมูลที่บันทึกไว้จะกลับมาครบ ใช้เครื่องไหนก็ต่อได้เลย'
+        : 'สมัครไว้เพื่อให้ข้อมูลไม่หายเวลาเปลี่ยนเครื่อง ใช้ Google เร็วสุด',
+      goSplash: () => this.authFlow('splash'),
+      goLogin: () => this.authFlow('login', { authMode: 'login', authErr: null, pass: '', forgotSent: false }),
+      goSignup: () => this.authFlow('login', { authMode: 'signup', authErr: null, pass: '', forgotSent: false }),
+      goForgot: () => this.authFlow('forgot', { forgotSent: false }),
+      sendForgot: () => this.setState({ forgotSent: true }),
+      forgotSent: st.forgotSent, forgotForm: !st.forgotSent,
+      toggleMode: () => this.setState({ authMode: st.authMode === 'login' ? 'signup' : 'login', authErr: null }),
+      switchLabel: st.authMode === 'login' ? 'ยังไม่มีบัญชี? สมัครเลย' : 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ',
+      authBack: () => this.authFlow('splash', { authErr: null }),
+      email: st.email, pass: st.pass,
+      emailShown: st.email || 'you@example.com',
+      onEmail: (ev) => this.setState({ email: ev.target.value, authErr: st.authErr === 'email' ? null : st.authErr }),
+      onPass: (ev) => this.setState({ pass: ev.target.value, authErr: st.authErr === 'pass' || st.authErr === 'weak' ? null : st.authErr }),
+      passType: st.showPass ? 'text' : 'password',
+      passIcon: st.showPass ? 'ph ph-eye-slash' : 'ph ph-eye',
+      passHint: st.authMode === 'signup' ? 'อย่างน้อย 8 ตัวอักษร' : 'รหัสผ่านของคุณ',
+      togglePass: () => this.setState({ showPass: !st.showPass }),
+      emailErr: st.authErr === 'email' || st.authErr === 'exists',
+      emailErrText: st.authErr === 'exists' ? 'อีเมลนี้มีบัญชีอยู่แล้ว เข้าสู่ระบบได้เลย หรือกดลืมรหัสผ่าน' : 'อีเมลยังไม่ถูกรูปแบบ ตรวจอีกทีนะ',
+      emailBd: (st.authErr === 'email' || st.authErr === 'exists') ? '#c08b3e' : '#cfd3e5',
+      passErr: st.authErr === 'pass' || st.authErr === 'weak',
+      passErrText: st.authErr === 'weak' ? 'ตั้งให้ยาวอย่างน้อย 8 ตัวอักษรนะ' : 'รหัสผ่านยังไม่ตรง ลองอีกครั้ง หรือกดลืมรหัสผ่านก็ได้',
+      passBd: (st.authErr === 'pass' || st.authErr === 'weak') ? '#c08b3e' : '#cfd3e5',
+      authOffline: st.authErr === 'offline',
+      authLoading: st.authLoading,
+      submitBg: st.authErr === 'offline' ? '#b2a9d6' : '#796cbf',
+      submitLabel: st.authLoading ? 'กำลังดำเนินการ…' : (st.authMode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครด้วยอีเมล'),
+      submitAuth: this.submitAuth, googleAuth: this.googleAuth,
+      verified: () => { this.authFlow(null); this.openOb(1); },
+      resend: () => { if (st.resendLeft === 0) { this.startResend(); this.showToast('ส่งลิงก์ยืนยันไปอีกครั้งแล้ว', null); } },
+      resendLabel: st.resendLeft > 0 ? 'ส่งอีกครั้งได้ในอีก ' + st.resendLeft + ' วิ' : 'ส่งอีกครั้ง',
+      resendBd: st.resendLeft > 0 ? '#cfd3e5' : '#968ae0',
+      resendFg: st.resendLeft > 0 ? '#595d6c' : '#5d5294',
+      resendCursor: st.resendLeft > 0 ? 'default' : 'pointer',
+      openTerms: (ev) => { if (ev && ev.preventDefault) ev.preventDefault(); this.setState({ termsBack: st.auth, auth: 'terms', termsTab: 'terms' }); },
+      openPrivacy: (ev) => { if (ev && ev.preventDefault) ev.preventDefault(); this.setState({ termsBack: st.auth, auth: 'terms', termsTab: 'privacy' }); },
+      closeTerms: () => this.setState({ auth: st.termsBack || 'login' }),
+      termTabs: [['terms', 'เงื่อนไขการใช้งาน'], ['privacy', 'ความเป็นส่วนตัว']].map(([k, label]) => {
+        const on = st.termsTab === k;
+        return { label, go: () => this.setState({ termsTab: k }), bg: on ? '#e7e5fe' : 'transparent', fg: on ? '#423a6a' : '#595d6c', bd: on ? '#968ae0' : '#cfd3e5' };
+      }),
+      termsMeta: this.termsDoc[st.termsTab].meta,
+      termsSummary: this.termsDoc[st.termsTab].summary.map(text => ({ text })),
+      termsSections: this.termsDoc[st.termsTab].sections,
+      termsContact: this.termsDoc[st.termsTab].contact,
+      authJumps: [
+        Object.assign({ label: '1 Splash', go: () => this.authFlow('splash') }, chip(st.auth === 'splash')),
+        Object.assign({ label: '2 สมัครสมาชิก', go: () => this.authFlow('login', { authMode: 'signup', authErr: null }) }, chip(st.auth === 'login' && st.authMode === 'signup' && !st.authErr)),
+        Object.assign({ label: '2 เข้าสู่ระบบ', go: () => this.authFlow('login', { authMode: 'login', authErr: null }) }, chip(st.auth === 'login' && st.authMode === 'login' && !st.authErr)),
+        Object.assign({ label: 'อีเมลผิดรูปแบบ', go: () => this.authFlow('login', { authMode: 'login', authErr: 'email', email: 'ploy.k@gmail' }) }, chip(st.authErr === 'email')),
+        Object.assign({ label: 'รหัสผ่านไม่ถูก', go: () => this.authFlow('login', { authMode: 'login', authErr: 'pass', email: 'ploy.k@gmail.com', pass: '1234567890' }) }, chip(st.authErr === 'pass')),
+        Object.assign({ label: 'บัญชีนี้มีอยู่แล้ว', go: () => this.authFlow('login', { authMode: 'signup', authErr: 'exists', email: 'ploy.k@gmail.com' }) }, chip(st.authErr === 'exists')),
+        Object.assign({ label: 'ออฟไลน์', go: () => this.authFlow('login', { authMode: 'login', authErr: 'offline', email: 'ploy.k@gmail.com' }) }, chip(st.authErr === 'offline')),
+        Object.assign({ label: '3 ยืนยันอีเมล', go: () => { this.authFlow('verify', { email: st.email || 'ploy.k@gmail.com' }); this.startResend(); } }, chip(st.auth === 'verify')),
+        Object.assign({ label: '4 ลืมรหัสผ่าน', go: () => this.authFlow('forgot', { forgotSent: false, email: 'ploy.k@gmail.com' }) }, chip(st.auth === 'forgot' && !st.forgotSent)),
+        Object.assign({ label: 'ส่งลิงก์แล้ว', go: () => this.authFlow('forgot', { forgotSent: true, email: 'ploy.k@gmail.com' }) }, chip(st.auth === 'forgot' && st.forgotSent)),
+        Object.assign({ label: 'เงื่อนไขการใช้งาน', go: () => this.authFlow('terms', { termsTab: 'terms', termsBack: 'login' }) }, chip(st.auth === 'terms' && st.termsTab === 'terms')),
+        Object.assign({ label: 'นโยบายความเป็นส่วนตัว', go: () => this.authFlow('terms', { termsTab: 'privacy', termsBack: 'login' }) }, chip(st.auth === 'terms' && st.termsTab === 'privacy')),
+      ],
+
+      obOpen: !!st.ob,
+      obProgress: [1, 2, 3, 4, 5].map(i => ({ bg: i <= step ? '#796cbf' : '#e4e7f5' })),
+      obStepLabel: st.obEdit ? 'แก้เป้าหมาย' : 'ขั้นที่ ' + step + ' จาก 5',
+      obTitle: obTitles[step], obNote: obNotes[step],
+      obBasic: step === 1, obBody: step === 2, obActivity: step === 3, obGoal: step === 4, obSummary: step === 5,
+      obBack: this.obBack, obNext: this.obNext,
+      obCta: step < 5 ? 'ถัดไป' : (st.obEdit ? 'บันทึกเป้าหมาย' : 'เริ่มใช้งาน'),
+      obFootnote: step === 5
+        ? 'แก้ได้ทีหลังที่ ฉัน › เป้าหมาย'
+        : 'ทุกค่าจำเป็นต่อการคำนวณ เลยยังข้ามไม่ได้ ขอโทษด้วยนะ',
+      sexes: [['female', 'หญิง', 'ph ph-gender-female'], ['male', 'ชาย', 'ph ph-gender-male']].map(([k, label, icon]) => {
+        const p = pick(st.sex === k);
+        return { label, icon, go: () => this.setState({ sex: k }), bg: p.bg, bd: p.bd, fg: st.sex === k ? '#423a6a' : '#292b31' };
+      }),
+      obAgeLabel: 'อายุ ' + this.age() + ' ปี',
+      birthRows: [
+        { label: 'วัน', items: range(1, 31).map(d => Object.assign({ label: String(d), go: () => this.setState({ bDay: d }) }, pick(st.bDay === d))) },
+        { label: 'เดือน', items: this.monthNames.map((m, i) => Object.assign({ label: m, go: () => this.setState({ bMonth: i + 1 }) }, pick(st.bMonth === i + 1))) },
+        { label: 'ปี', items: range(1970, 2008).map(y => Object.assign({ label: String(y), go: () => this.setState({ bYear: y }) }, pick(st.bYear === y))) },
+      ],
+      bodyFields: [
+        { label: 'ส่วนสูง', unit: 'ซม.', value: String(st.height), min: '130', max: '200', step: '1', onInput: (ev) => this.setState({ height: Number(ev.target.value) || st.height }) },
+        { label: 'น้ำหนักตอนนี้', unit: 'กก.', value: String(st.weight), min: '35', max: '150', step: '0.1', onInput: (ev) => this.setState({ weight: Number(ev.target.value) || st.weight }) },
+      ],
+      activities: this.activityDefs.map(([k, label, desc, f, icon]) => {
+        const on = st.activity === k; const p = pick(on);
+        return { label, desc, icon, go: () => this.setState({ activity: k }), bg: p.bg, bd: p.bd, iconColor: on ? '#5d5294' : '#595d6c', check: on ? 'ph-fill ph-check-circle' : 'ph ph-circle', checkColor: on ? '#796cbf' : '#cfd3e5' };
+      }),
+      goals: this.goalDefs.map(([k, label, desc, icon]) => {
+        const on = st.goal === k; const p = pick(on);
+        return { label, desc, icon, go: () => this.setState({ goal: k }), bg: p.bg, bd: p.bd, iconColor: on ? '#5d5294' : '#595d6c', check: on ? 'ph-fill ph-check-circle' : 'ph ph-circle', checkColor: on ? '#796cbf' : '#cfd3e5' };
+      }),
+      obTarget: this.num(this.finalTarget()),
+      obTargetSource: st.manualOpen && parseInt(st.manual, 10) > 0 ? 'ตั้งเอง' : 'คำนวณอัตโนมัติ',
+      obBreakdown: [
+        { label: 'พลังงานพื้นฐาน (BMR)', note: this.age() + ' ปี · ' + st.height + ' ซม. · ' + st.weight + ' กก.', value: this.num(this.bmr()) },
+        { label: 'คูณระดับกิจกรรม', note: (this.activityDefs.find(a => a[0] === st.activity) || [])[1] + ' × ' + this.actFactor(), value: this.num(this.tdee()) },
+        { label: 'ปรับตามเป้าหมาย', note: (this.goalDefs.find(g => g[0] === st.goal) || [])[1] + (this.goalDelta() === 0 ? ' · ไม่ปรับ' : ' · ' + (this.goalDelta() > 0 ? '+' : '') + this.goalDelta() + ' kcal'), value: this.num(this.rawTarget()) },
+      ],
+      obFloor: this.rawTarget() < this.floorValue(),
+      obFloorText: 'ปรับขึ้นมาที่ ' + this.num(this.floorValue()) + ' kcal ให้แล้ว เพราะต่ำกว่านี้ร่างกายมักได้สารอาหารไม่ครบ ถ้าอยากได้เป้าที่ต่ำกว่านี้จริง ๆ คุยกับแพทย์หรือนักกำหนดอาหารก่อนน่าจะดีที่สุด',
+      obManualOpen: st.manualOpen, obManualValue: st.manual,
+      obManualLabel: st.manualOpen ? 'กลับไปใช้ค่าที่คำนวณให้' : 'ปรับเอง',
+      obToggleManual: () => this.setState({ manualOpen: !st.manualOpen, manual: String(this.computedTarget()) }),
+      obOnManual: (ev) => this.setState({ manual: ev.target.value }),
+      obJumps: [
+        Object.assign({ label: '6 ข้อมูลพื้นฐาน', go: () => this.openOb(1) }, chip(!!st.ob && step === 1)),
+        Object.assign({ label: '7 ร่างกาย', go: () => this.openOb(2) }, chip(!!st.ob && step === 2)),
+        Object.assign({ label: '8 กิจกรรม', go: () => this.openOb(3) }, chip(!!st.ob && step === 3)),
+        Object.assign({ label: '9 เป้าหมาย', go: () => this.openOb(4) }, chip(!!st.ob && step === 4)),
+        Object.assign({ label: '10 สรุปเป้า', go: () => this.openOb(5) }, chip(!!st.ob && step === 5)),
+        Object.assign({ label: 'สรุปเป้า · ต่ำกว่าเกณฑ์ปลอดภัย', go: () => this.setState({ ob: true, obStep: 5, obEdit: false, sex: 'female', height: 152, weight: 46, activity: 'sedentary', goal: 'lose', manualOpen: false, addOpen: false, qty: null }) }, chip(false)),
+      ],
+
+      toast: !!st.toast, toastText: st.toast ? st.toast.text : '',
+      toastUndo: this.undo, toastEdit: this.editFromToast,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
