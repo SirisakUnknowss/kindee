@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/ui'
 import { ACTIVITY, GOALS, computeTarget, num } from '../lib/calc'
 import type { Profile } from '../lib/types'
@@ -20,45 +20,7 @@ const DEFAULT: Profile = {
   targetSource: 'auto',
 }
 
-function ScrollPicker<T>({
-  label,
-  items,
-  value,
-  render,
-  onPick,
-}: {
-  label: string
-  items: T[]
-  value: T
-  render: (v: T) => string
-  onPick: (v: T) => void
-}) {
-  const wrap = useRef<HTMLDivElement>(null)
-  // เลื่อนค่าที่เลือกอยู่ให้เห็นตั้งแต่เปิดหน้า
-  useEffect(() => {
-    wrap.current?.querySelector<HTMLElement>('[data-on="1"]')?.scrollIntoView({ block: 'nearest', inline: 'center' })
-  }, [])
 
-  return (
-    <div>
-      <span className="kd-field-label">{label}</span>
-      <div className="kd-hscroll kd-snap" style={{ paddingBottom: 4 }} ref={wrap}>
-        {items.map((it, i) => (
-          <button
-            key={i}
-            className={`kd-chip${it === value ? ' on' : ''}`}
-            data-on={it === value ? '1' : '0'}
-            aria-pressed={it === value}
-            onClick={() => onPick(it)}
-            style={{ minWidth: 56 }}
-          >
-            {render(it)}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function SliderField({
   label,
@@ -193,16 +155,70 @@ export function Onboarding({
               <span className="kd-h2">วันเกิด</span>
               <span className="kd-label kd-muted tnum">อายุ {calc.age} ปี</span>
             </div>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <ScrollPicker label="วัน" items={DAYS} value={p.bDay} render={String} onPick={(v) => set({ bDay: v })} />
-              <ScrollPicker
-                label="เดือน"
-                items={MONTHS.map((_, i) => i + 1)}
-                value={p.bMonth}
-                render={(v) => MONTHS[v - 1]}
-                onPick={(v) => set({ bMonth: v })}
+
+            {/* 3-Column Dropdown Select (วัน / เดือน / ปี พ.ศ.-ค.ศ.) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr 1.2fr', gap: 8, marginBottom: 12 }}>
+              <div>
+                <label className="kd-field-label">วัน</label>
+                <select
+                  className="kd-select tnum"
+                  value={p.bDay}
+                  onChange={(e) => set({ bDay: Number(e.target.value) })}
+                >
+                  {DAYS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="kd-field-label">เดือน</label>
+                <select
+                  className="kd-select"
+                  value={p.bMonth}
+                  onChange={(e) => set({ bMonth: Number(e.target.value) })}
+                >
+                  {MONTHS.map((m, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="kd-field-label">ปีเกิด</label>
+                <select
+                  className="kd-select tnum"
+                  value={p.bYear}
+                  onChange={(e) => set({ bYear: Number(e.target.value) })}
+                >
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>
+                      {y} ({y + 543})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Calendar Native Picker Choice */}
+            <div className="kd-row" style={{ gap: 8, marginTop: 4, alignItems: 'center' }}>
+              <Icon name="ph ph-calendar" size={18} color="var(--text-muted)" />
+              <span className="kd-caption kd-muted">หรือเลือกจากปฏิทิน:</span>
+              <input
+                type="date"
+                className="kd-input tnum"
+                style={{ minHeight: 38, padding: '0 10px', fontSize: 13, width: 'auto' }}
+                value={`${p.bYear}-${String(p.bMonth).padStart(2, '0')}-${String(p.bDay).padStart(2, '0')}`}
+                onChange={(e) => {
+                  if (!e.target.value) return
+                  const [y, m, d] = e.target.value.split('-').map(Number)
+                  if (y && m && d) set({ bYear: y, bMonth: m, bDay: d })
+                }}
               />
-              <ScrollPicker label="ปี" items={YEARS} value={p.bYear} render={String} onPick={(v) => set({ bYear: v })} />
             </div>
           </>
         )}
