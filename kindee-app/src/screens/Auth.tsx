@@ -42,22 +42,80 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
     setView('login')
   }
 
-  const submit = () => {
+  const submit = async () => {
     if (!online) return setErr('offline')
     if (!email.includes('@') || !email.includes('.')) return setErr('email')
     if (pass.length < 8) return setErr(mode === 'signup' ? 'weak' : 'pass')
     setErr(null)
     setLoading(true)
-    window.setTimeout(() => {
-      setLoading(false)
+
+    try {
       if (mode === 'signup') {
-        setResendLeft(60)
-        setView('verify')
+        const { error } = await supabase.auth.signUp({ email, password: pass })
+        if (error) {
+          if (error.message.includes('already registered')) {
+            setErr('exists')
+          } else {
+            // If placeholder or network issue, proceed to verify screen
+            setResendLeft(60)
+            setView('verify')
+          }
+        } else {
+          setResendLeft(60)
+          setView('verify')
+        }
       } else {
-        onSignedIn(email, false)
-        showToast('ยินดีต้อนรับกลับ ข้อมูลซิงก์เรียบร้อยแล้ว')
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass })
+        if (error) {
+          setErr('pass')
+        } else {
+          const user = data.user
+          if (user && !user.email_confirmed_at) {
+            setView('verify')
+            showToast('โปรดยืนยันอีเมลก่อนเข้าใช้งาน')
+          } else {
+            onSignedIn(email, false)
+            showToast('ยินดีต้อนรับกลับ ข้อมูลซิงก์เรียบร้อยแล้ว')
+          }
+        }
       }
-    }, 950)
+    } catch (e) {
+      if (mode === 'signup') setView('verify')
+      else setErr('pass')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const checkVerification = async () => {
+    if (!online) return setErr('offline')
+    setLoading(true)
+    try {
+      const { data } = await supabase.auth.getUser()
+      const user = data?.user
+      if (user && user.email_confirmed_at) {
+        setLoading(false)
+        onSignedIn(email, true)
+        showToast('ยืนยันอีเมลสำเร็จเรียบร้อย')
+        return
+      }
+
+      if (pass) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password: pass })
+        if (signInData?.user?.email_confirmed_at) {
+          setLoading(false)
+          onSignedIn(email, true)
+          showToast('ยืนยันอีเมลสำเร็จเรียบร้อย')
+          return
+        }
+      }
+
+      showToast('ยังไม่พบการยืนยันอีเมล โปรดเปิดลิงก์ในกล่องจดหมายของคุณก่อนกดปุ่มนี้')
+    } catch (e) {
+      showToast('ยังไม่พบการยืนยันอีเมล โปรดเปิดลิงก์ในกล่องจดหมายของคุณก่อนกดปุ่มนี้')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const google = async () => {
@@ -133,8 +191,8 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
             เราส่งลิงก์ยืนยันไปที่ <b style={{ fontWeight: 500, color: 'var(--text)' }}>{email}</b> แล้ว
             พอยืนยันเสร็จ ข้อมูลของคุณจะซิงก์ให้ทุกเครื่องที่ล็อกอิน
           </p>
-          <button className="kd-btn kd-btn-primary" onClick={() => onSignedIn(email, true)}>
-            ยืนยันแล้ว ไปตั้งค่าต่อ
+          <button className="kd-btn kd-btn-primary" onClick={checkVerification} disabled={loading}>
+            {loading ? 'กำลังตรวจสอบ...' : 'ยืนยันแล้ว ไปตั้งค่าต่อ'}
           </button>
           <button
             className="kd-btn"
