@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/ui'
 import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
 import { Terms } from './Terms'
 
 type Mode = 'signup' | 'login'
@@ -59,13 +60,28 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
     }, 950)
   }
 
-  const google = () => {
+  const google = async () => {
     if (!online) return setErr('offline')
     setLoading(true)
-    window.setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+        },
+      })
+      if (error) {
+        console.warn('Supabase Google OAuth fallback to demo login:', error.message)
+        onSignedIn(email || 'user@gmail.com', false)
+        showToast('เข้าสู่ระบบสำเร็จ (Demo)')
+      }
+    } catch (e: any) {
+      console.warn('OAuth Exception:', e)
+      onSignedIn(email || 'user@gmail.com', false)
+      showToast('เข้าสู่ระบบสำเร็จ (Demo)')
+    } finally {
       setLoading(false)
-      onSignedIn(email || 'you@gmail.com', mode === 'signup')
-    }, 900)
+    }
   }
 
   const openTerms = () => {
