@@ -102,10 +102,10 @@ export const num = (n: number) => Math.round(n).toLocaleString('en-US')
 export const amountLabel = (a: number) => (a === 0.5 ? '½' : a === 1.5 ? '1½' : String(a))
 
 export const MEALS = [
-  { id: 'breakfast', label: 'เช้า' },
-  { id: 'lunch', label: 'กลางวัน' },
-  { id: 'dinner', label: 'เย็น' },
-  { id: 'snack', label: 'ของว่าง' },
+  { id: 'breakfast', label: 'เช้า', icon: 'ph ph-sun-dim' },
+  { id: 'lunch', label: 'กลางวัน', icon: 'ph ph-sun' },
+  { id: 'dinner', label: 'เย็น', icon: 'ph ph-moon' },
+  { id: 'snack', label: 'ของว่าง', icon: 'ph ph-cookie' },
 ] as const
 
 export const mealLabel = (id: Entry['meal']) => MEALS.find((m) => m.id === id)!.label
