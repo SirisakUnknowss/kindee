@@ -14,7 +14,7 @@ export default defineConfig({
         short_name: 'KinDee',
         description: 'บันทึกมื้ออาหารใน 3 วินาที เข้าใจอาหารไทยและสินค้าในร้าน',
         lang: 'th',
-        start_url: '/',
+        start_url: '/kindee/',
         display: 'standalone',
         background_color: '#f3f5fe',
         theme_color: '#796cbf',
