@@ -1,0 +1,8 @@
+# Cloudflare Pages Functions local config — copy to .dev.vars
+# Never commit the real .dev.vars file.
+SUPABASE_URL="https://your-local-or-dev-project.supabase.co"
+SUPABASE_PUBLISHABLE_KEY="sb_publishable_your_development_key"
+SUPABASE_SERVICE_ROLE_KEY="your_development_service_role_key"
+BARCODE_PROVIDER_URL="https://world.openfoodfacts.org/api/v2/product"
+GEMINI_API_KEY="your_development_gemini_key"
+GEMINI_MODEL="gemini-2.5-flash"

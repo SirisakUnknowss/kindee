@@ -1,0 +1,33 @@
+name: KinDee CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kindee-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kindee-app/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Reject privileged credentials and demo fallbacks in browser bundle
+        shell: bash
+        run: |
+          if grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|เข้าสู่ระบบสำเร็จ \(Demo\)|source.:.demo' dist; then
+            echo 'Privileged credential marker or demo fallback found in browser bundle.' >&2
+            exit 1
+          fi

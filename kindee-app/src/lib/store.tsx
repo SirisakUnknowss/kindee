@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { liveQuery } from 'dexie'
 import { entryKcal } from './calc'
+import { foodById } from '../data/foods'
 import { db } from './db'
-import { deleteLocalEntry, flushOutbox, saveLocalEntry } from './sync'
+import { deleteLocalEntry, flushOutbox, retryFailedSync, saveLocalEntry } from './sync'
 import type { Entry, Meal, Profile, Session, Toast } from './types'
 
 const KEY = 'kindee.v1'
@@ -43,6 +45,8 @@ type Store = Persisted & {
   online: boolean
   toast: Toast
   pendingCount: number
+  syncFailedCount: number
+  retrySync: () => void
   setSession: (s: Session | null) => void
   setProfile: (p: Profile | null) => void
   setShowMacros: (v: boolean) => void
@@ -62,6 +66,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Persisted>(load)
   const [online, setOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
   const [toast, setToast] = useState<Toast>(null)
+  const [outboxCount, setOutboxCount] = useState(0)
+  const [syncFailedCount, setSyncFailedCount] = useState(0)
   const toastTimer = useRef<number>()
 
   useEffect(() => {
@@ -71,21 +77,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const up = () => {
       setOnline(true)
-      flushOutbox().catch(console.error)
+      void flushOutbox()
     }
     const down = () => setOnline(false)
+    const visible = () => { if (document.visibilityState === 'visible') void flushOutbox() }
+    const interval = window.setInterval(() => { if (navigator.onLine) void flushOutbox() }, 30_000)
     window.addEventListener('online', up)
     window.addEventListener('offline', down)
+    document.addEventListener('visibilitychange', visible)
+    void navigator.storage?.persist?.()
     return () => {
+      window.clearInterval(interval)
       window.removeEventListener('online', up)
       window.removeEventListener('offline', down)
+      document.removeEventListener('visibilitychange', visible)
     }
   }, [])
 
-  // Sync Dexie to state on mount
+  // IndexedDB is the source of truth for entries. liveQuery also reflects remote
+  // reconciliation and lets the UI stop showing "pending" after a flush.
   useEffect(() => {
-    db.entries.toArray().then((dexieEntries) => {
-      if (dexieEntries && dexieEntries.length > 0) {
+    const entriesSubscription = liveQuery(() => db.entries.toArray()).subscribe({
+      next: (dexieEntries) => {
         const mapped: Entry[] = dexieEntries
           .filter((d) => !d.deleted_at)
           .map((d) => ({
@@ -99,12 +112,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             pending: d.dirty === 1,
           }))
 
-        setState((prev) => ({
-          ...prev,
-          entries: mapped,
-        }))
-      }
+        setState((prev) => ({ ...prev, entries: mapped }))
+      },
+      error: console.error,
     })
+    const outboxSubscription = liveQuery(async () => ({
+      total: await db.outbox.count(),
+      failed: await db.outbox.where('tries').aboveOrEqual(10).count(),
+    })).subscribe({
+      next: ({ total, failed }) => {
+        setOutboxCount(total)
+        setSyncFailedCount(failed)
+      },
+      error: console.error,
+    })
+    return () => {
+      entriesSubscription.unsubscribe()
+      outboxSubscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
@@ -121,13 +146,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<Store>(() => {
-    const onlineNow = online
     return {
       ...state,
       online,
       toast,
-      pendingCount: state.entries.filter((e) => e.pending).length,
-      setSession: (session) => setState((s) => ({ ...s, session })),
+      pendingCount: state.session?.kind === 'account' ? outboxCount : 0,
+      syncFailedCount: state.session?.kind === 'account' ? syncFailedCount : 0,
+      retrySync: () => { void retryFailedSync() },
+      setSession: (session) => {
+        setState((s) => ({ ...s, session }))
+        if (session?.kind === 'account') void flushOutbox(true)
+      },
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
       setShowMacros: (showMacros) => setState((s) => ({ ...s, showMacros })),
       entriesFor: (day) => state.entries.filter((e) => e.day === day),
@@ -142,11 +171,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           amount: e.amount,
           day,
           kcal: 0,
-          pending: !onlineNow,
+          pending: state.session?.kind === 'account',
         }
         entry.kcal = entryKcal(entry)
 
         // Save to Dexie IndexedDB + Outbox queue
+        const food = foodById(e.foodId)
         saveLocalEntry({
           client_id: uid,
           food_id: e.foodId,
@@ -154,9 +184,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           meal: e.meal,
           eaten_at: new Date().toISOString(),
           eaten_on: day,
-          food_name: e.foodId,
+          food_name: food.name,
           kcal: entry.kcal,
-          entry_source: 'manual',
+          protein: food.protein * food.units[e.unitIx].f * e.amount,
+          carb: food.carb * food.units[e.unitIx].f * e.amount,
+          fat: food.fat * food.units[e.unitIx].f * e.amount,
+          entry_source: 'search',
         }).catch(console.error)
 
         setState((s) => ({ ...s, entries: [...s.entries, entry] }))
@@ -170,6 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const next = { ...e, ...patch }
             const calculatedKcal = entryKcal(next)
 
+            const food = foodById(next.foodId)
             saveLocalEntry({
               client_id: uid,
               food_id: next.foodId,
@@ -177,12 +211,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               meal: next.meal,
               eaten_at: new Date().toISOString(),
               eaten_on: next.day,
-              food_name: next.foodId,
+              food_name: food.name,
               kcal: calculatedKcal,
-              entry_source: 'manual',
+              protein: food.protein * food.units[next.unitIx].f * next.amount,
+              carb: food.carb * food.units[next.unitIx].f * next.amount,
+              fat: food.fat * food.units[next.unitIx].f * next.amount,
+              entry_source: 'search',
             }).catch(console.error)
 
-            return { ...next, kcal: calculatedKcal, pending: !onlineNow }
+            return { ...next, kcal: calculatedKcal, pending: state.session?.kind === 'account' }
           }),
         })),
       removeEntry: (uid) => {
@@ -194,7 +231,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       hideToast,
       reset: () => setState(empty),
     }
-  }, [state, online, toast, showToast, hideToast])
+  }, [state, online, toast, outboxCount, syncFailedCount, showToast, hideToast])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

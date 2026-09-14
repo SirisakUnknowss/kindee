@@ -32,5 +32,9 @@ export function normalizeThai(str: string): string {
   s = s.replace(/ฏ/g, 'ต')
   s = s.replace(/ฬ/g, 'ล')
 
+  // Common spelling variants seen in Thai food search.
+  s = s.replace(/กระเพรา/g, 'กะเพรา')
+  s = s.replace(/กระเพา/g, 'กะเพรา')
+
   return s
 }

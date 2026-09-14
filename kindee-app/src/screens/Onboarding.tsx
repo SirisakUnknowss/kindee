@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/ui'
 import { ACTIVITY, GOALS, computeTarget, num } from '../lib/calc'
 import type { Profile } from '../lib/types'
+import { TDEE_EXPLAINER } from '../content/tdee'
 
 const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const YEARS = Array.from({ length: 2008 - 1970 + 1 }, (_, i) => 1970 + i)
@@ -94,8 +95,8 @@ export function Onboarding({
 }) {
   const [p, setP] = useState<Profile>(initial ?? DEFAULT)
   const [step, setStep] = useState(editMode ? 5 : 1)
-  const [manualOpen, setManualOpen] = useState(false)
-  const [manual, setManual] = useState('')
+  const [manualOpen, setManualOpen] = useState(initial?.targetSource === 'manual')
+  const [manual, setManual] = useState(initial?.targetSource === 'manual' ? String(initial.target) : '')
 
   const calc = useMemo(() => computeTarget(p), [p])
   const target = manualOpen && Number(manual) > 0 ? Math.round(Number(manual)) : calc.target
@@ -302,6 +303,31 @@ export function Onboarding({
               </div>
             </div>
 
+            <div className="kd-card" style={{ padding: 14, marginBottom: 16 }}>
+              <div className="kd-row" style={{ alignItems: 'flex-start', gap: 10 }}>
+                <Icon name="ph ph-wallet" size={22} color="var(--accent-pressed)" />
+                <div>
+                  <h2 className="kd-h2">{TDEE_EXPLAINER.title}</h2>
+                  <p className="kd-body kd-muted" style={{ marginTop: 4 }}>{TDEE_EXPLAINER.intro}</p>
+                </div>
+              </div>
+              <details className="kd-details">
+                <summary>ดูวิธีคิดแบบบัญชีและตัวอย่าง</summary>
+                <div className="kd-details-body">
+                  <ul>
+                    {TDEE_EXPLAINER.budget.map((item) => (
+                      <li key={item.label}><b>{item.label}</b> = {item.detail}</li>
+                    ))}
+                  </ul>
+                  <p><b>{TDEE_EXPLAINER.exampleTitle}</b></p>
+                  <ul>{TDEE_EXPLAINER.examples.map((example) => <li key={example}>{example}</li>)}</ul>
+                  <p>{TDEE_EXPLAINER.variableNote}</p>
+                  <p>{TDEE_EXPLAINER.allocation}</p>
+                  <p className="kd-caption kd-muted">เป้าที่ KinDee แสดงด้านบนคือ TDEE ที่ปรับตามเป้าหมายลด คง หรือเพิ่มน้ำหนักแล้ว</p>
+                </div>
+              </details>
+            </div>
+
             <h2 className="kd-h2" style={{ marginBottom: 8 }}>ตัวเลขนี้มาจากไหน</h2>
             <div className="kd-card" style={{ padding: '4px 14px' }}>
               {[
@@ -327,7 +353,7 @@ export function Onboarding({
               <div
                 style={{
                   background: 'var(--accent-tint-soft)',
-                  border: '1px solid #d2cefd',
+                  border: '1px solid var(--accent-line)',
                   borderRadius: 'var(--r-card)',
                   padding: 14,
                   marginTop: 14,

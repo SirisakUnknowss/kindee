@@ -80,7 +80,7 @@ export function Header({
   )
 }
 
-/** วงแหวนความคืบหน้าแคลอรี — โทนต่อเนื่อง ไม่มีแดง */
+/** วงแหวนงบแคลอรี — โทนต่อเนื่อง ไม่มีแดง */
 export function CalorieRing({
   consumed,
   target,
@@ -135,9 +135,9 @@ export function CalorieRing({
           </>
         ) : (
           <>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{over ? 'เกินมา' : 'เหลืออีก'}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{over ? 'ใช้เกินงบ' : 'งบคงเหลือ'}</div>
             <div className="kd-display tnum">{num(left)}</div>
-            <div className="kd-body kd-muted tnum">จาก {num(target)}</div>
+            <div className="kd-body kd-muted tnum">จากงบ {num(target)} kcal</div>
           </>
         )}
       </div>
@@ -189,20 +189,15 @@ export function OfflineBar({ text }: { text: string }) {
   )
 }
 
-export function Mascot({ size = 96 }: { size?: number }) {
+export function BrandLogo({ size = 96 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 96 96" aria-hidden="true">
-      <path
-        d="M16 44h64a4 4 0 0 1 4 4 32 32 0 0 1-32 32H44A32 32 0 0 1 12 48a4 4 0 0 1 4-4Z"
-        fill="var(--accent-tint)"
-        stroke="var(--accent-line)"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <circle cx="38" cy="58" r="3" fill="var(--accent-pressed)" />
-      <circle cx="58" cy="58" r="3" fill="var(--accent-pressed)" />
-      <path d="M40 66q8 6 16 0" fill="none" stroke="var(--accent-pressed)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M36 34c-5-6 5-9 0-16M48 34c-5-6 5-9 0-16M60 34c-5-6 5-9 0-16" fill="none" stroke="var(--decor)" strokeWidth="3" strokeLinecap="round" />
-    </svg>
+    <img
+      src="/logo.png"
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+      style={{ display: 'block', objectFit: 'contain' }}
+    />
   )
 }

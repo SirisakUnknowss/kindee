@@ -84,6 +84,13 @@ export const FOODS: Food[] = [
 export const foodById = (id: string): Food =>
   FOODS.find((f) => f.id === id) ?? FOODS[0]
 
+export function registerRuntimeFood(food: Food) {
+  const index = FOODS.findIndex((item) => item.id === food.id)
+  if (index >= 0) FOODS[index] = food
+  else FOODS.push(food)
+  return food
+}
+
 /** คลังที่ bundle มากับแอป ใช้ได้ตอนออฟไลน์ */
 export const OFFLINE_COUNT = 320
 

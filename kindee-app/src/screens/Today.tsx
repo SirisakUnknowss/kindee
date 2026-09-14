@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { CalorieRing, Icon, MacroBar, Mascot, OfflineBar } from '../components/ui'
+import { BrandLogo, CalorieRing, Icon, MacroBar, OfflineBar } from '../components/ui'
 import { foodById } from '../data/foods'
 import { MEALS, amountLabel, mealLabel, num, ringTone, totalMacros } from '../lib/calc'
 import { useStore } from '../lib/store'
@@ -19,6 +19,7 @@ function EntryRow({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const { session } = useStore()
   const food = foodById(entry.foodId)
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
@@ -75,7 +76,7 @@ function EntryRow({
             {food.brand && <span className="kd-caption kd-muted" style={{ display: 'block' }}>{food.brand}</span>}
             <span className="kd-label kd-muted" style={{ display: 'block' }}>
               {amountLabel(entry.amount)} {food.units[entry.unitIx].label}
-              {entry.pending && (
+              {session?.kind === 'account' && entry.pending && (
                 <>
                   {' · '}
                   <span style={{ color: 'var(--accent-pressed)' }}>
@@ -85,7 +86,7 @@ function EntryRow({
               )}
             </span>
           </span>
-          <span className="tnum" style={{ fontSize: 15, fontWeight: 500 }}>{num(entry.kcal)}</span>
+          <span className="tnum kd-ledger-debit" style={{ fontSize: 15, fontWeight: 500 }}>−{num(entry.kcal)}</span>
         </button>
       </div>
     </div>
@@ -107,7 +108,7 @@ export function Today({
   onEditEntry: (uid: string) => void
   loading?: boolean
 }) {
-  const { profile, entriesFor, removeEntry, online, showMacros, pendingCount } = useStore()
+  const { profile, entriesFor, entries: allEntries, session, setSession, removeEntry, online, showMacros, pendingCount, syncFailedCount, retrySync } = useStore()
   const target = profile?.target ?? 1850
 
   const d = new Date()
@@ -127,7 +128,14 @@ export function Today({
     <div className="kd-screen">
       <div style={{ paddingTop: 'var(--safe-top)' }}>
         {!online && <OfflineBar text="ยังไม่ได้ซิงก์ · บันทึกไว้ในเครื่องแล้ว" />}
-        {online && pendingCount > 0 && <OfflineBar text={`กำลังซิงก์ ${pendingCount} รายการ`} />}
+        {online && pendingCount > 0 && syncFailedCount === 0 && <OfflineBar text={`กำลังซิงก์ ${pendingCount} รายการ`} />}
+        {online && syncFailedCount > 0 && (
+          <div className="kd-offline" role="status">
+            <Icon name="ph ph-cloud-x" size={15} />
+            ซิงก์ยังไม่สำเร็จ ข้อมูลยังอยู่ในเครื่อง
+            <button className="kd-btn-text" style={{ marginLeft: 'auto' }} onClick={retrySync}>ลองอีกครั้ง</button>
+          </div>
+        )}
         {readOnly && (
           <div className="kd-offline" style={{ background: 'var(--border)', color: 'var(--text-body-alt)' }} role="status">
             <Icon name="ph ph-clock-counter-clockwise" size={15} />
@@ -160,14 +168,33 @@ export function Today({
       </div>
 
       <div className="kd-scroll" style={{ padding: '0 16px 152px' }}>
+        {session?.kind === 'guest' && allEntries.length >= 3 && (
+          <div className="kd-card kd-row" style={{ padding: 12, marginTop: 8, gap: 10 }}>
+            <Icon name="ph ph-cloud-arrow-up" size={22} color="var(--accent-pressed)" />
+            <div style={{ flex: 1 }}>
+              <div className="kd-body" style={{ fontWeight: 500 }}>สำรองรายการที่บันทึกไว้</div>
+              <div className="kd-caption kd-muted">สร้างบัญชีฟรีเพื่อใช้ต่อบนเครื่องอื่น ข้อมูลในเครื่องจะไม่ถูกลบ</div>
+            </div>
+            <button className="kd-btn-text" onClick={() => setSession(null)}>สำรองฟรี</button>
+          </div>
+        )}
         <div style={{ padding: '8px 0 4px' }}>
           <CalorieRing consumed={consumed} target={target} tone={tone} loading={loading} />
           {!loading && (
-            <p className="kd-label kd-muted" style={{ textAlign: 'center', marginTop: 4 }}>
-              {over
-                ? 'ค่าเฉลี่ยสัปดาห์นี้ยังอยู่ในช่วงเป้าหมาย'
-                : `บันทึกไปแล้ว ${num(consumed)} kcal จากทั้งวัน`}
-            </p>
+            <div className="kd-budget-ledger" aria-label="สรุปบัญชีแคลอรีวันนี้">
+              <div className="kd-budget-row">
+                <span><Icon name="ph ph-wallet" size={16} /> งบวันนี้</span>
+                <strong className="tnum kd-ledger-credit">+{num(target)}</strong>
+              </div>
+              <div className="kd-budget-row">
+                <span><Icon name="ph ph-receipt" size={16} /> ใช้ไป</span>
+                <strong className="tnum kd-ledger-debit">−{num(consumed)}</strong>
+              </div>
+              <div className="kd-budget-row kd-budget-balance">
+                <span>{over ? 'ใช้เกินงบ' : 'คงเหลือ'}</span>
+                <strong className="tnum">{over ? '−' : ''}{num(Math.abs(target - consumed))} kcal</strong>
+              </div>
+            </div>
           )}
         </div>
 
@@ -179,7 +206,7 @@ export function Today({
           </div>
         ) : entries.length === 0 && !readOnly ? (
           <div style={{ textAlign: 'center', marginTop: 24, display: 'grid', gap: 12, justifyItems: 'center' }}>
-            <Mascot />
+            <BrandLogo size={112} />
             <h2 className="kd-h2">เริ่มจากมื้อแรกกันเลย</h2>
             <p className="kd-body kd-muted" style={{ maxWidth: 280 }}>
               สแกนบาร์โค้ดของในร้านได้เลย หรือค้นหาชื่ออาหารก็ได้ ใช้เวลาไม่กี่วินาที
@@ -203,7 +230,7 @@ export function Today({
                   <div className="kd-row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
                     <div className="kd-row" style={{ gap: 8 }}>
                       <h2 className="kd-h2" style={{ opacity: list.length ? 1 : 0.6 }}>{m.label}</h2>
-                      {list.length > 0 && <span className="kd-label kd-muted tnum">{num(sum)} kcal</span>}
+                      {list.length > 0 && <span className="kd-label kd-muted tnum">ใช้ไป −{num(sum)} kcal</span>}
                     </div>
                     {!readOnly && (
                       <button className="kd-icon-btn" onClick={() => onAdd(m.id)} aria-label={`เพิ่มอาหารมื้อ${m.label}`}>

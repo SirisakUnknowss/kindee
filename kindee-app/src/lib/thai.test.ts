@@ -1,20 +1,23 @@
+import { describe, expect, it } from 'vitest'
 import { normalizeThai } from './thai'
 
-function runTests() {
-  const cases = [
-    { input: 'กระเพรา', expectedContains: 'กะเพรา' },
-    { input: 'ข้าวมันไก่ต้ม', expectedContains: 'ข้าวมันไก่ต้ม' },
-    { input: ' somtam ', expectedContains: 'somtam' },
-    { input: 'นมโฟร์โมสต์', expectedContains: 'นมโฟรโมสต' },
-  ]
+describe('normalizeThai', () => {
+  it.each([
+    ['กระเพรา', 'กะเพรา'],
+    ['กะเพรา', 'กะเพรา'],
+    ['กระเพา', 'กะเพรา'],
+    ['ข้าวมันไก่ต้ม', 'ขาวมันไกตม'],
+    [' somtam ', 'somtam'],
+    ['นมโฟร์โมสต์', 'นมโฟรโมสต'],
+  ])('normalizes %s', (input, expected) => {
+    expect(normalizeThai(input)).toBe(expected)
+  })
 
-  let passed = 0
-  for (const c of cases) {
-    const res = normalizeThai(c.input)
-    console.log(`Input: "${c.input}" -> Normalized: "${res}"`)
-    passed++
-  }
-  console.log(`All ${passed} Thai normalization test cases executed cleanly.`)
-}
+  it('makes common spellings match the canonical food name', () => {
+    expect(normalizeThai('ผัดกะเพรา')).toContain(normalizeThai('กระเพา'))
+  })
 
-runTests()
+  it('supports prefix matching', () => {
+    expect(normalizeThai('ผัดกะเพรา')).toContain(normalizeThai('กะเพ'))
+  })
+})

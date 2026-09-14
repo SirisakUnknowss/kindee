@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, QualityBadge, Thumb } from '../components/ui'
-import { FILTERS, FOODS, type Food, type FoodCat } from '../data/foods'
+import { FILTERS, FOODS, registerRuntimeFood, type Food, type FoodCat } from '../data/foods'
 import { MEALS, num } from '../lib/calc'
 import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
+import { normalizeThai } from '../lib/thai'
+import { db } from '../lib/db'
 import type { Meal } from '../lib/types'
 
 type Tab = 'recent' | 'search' | 'scan' | 'photo'
@@ -61,7 +64,7 @@ export function AddPanel({
   onQuickAdd: (foodId: string, meal: Meal) => void
   onQuickAddMany?: (foodIds: string[], meal: Meal) => void
 }) {
-  const { entries, showToast } = useStore()
+  const { entries, session, online, showToast } = useStore()
   const [tab, setTab] = useState<Tab>(initialTab)
   const [meal, setMeal] = useState<Meal>(initialMeal)
   const [query, setQuery] = useState('')
@@ -73,6 +76,7 @@ export function AddPanel({
   const [scan, setScan] = useState<'aiming' | 'fetching' | 'notfound' | 'denied'>('aiming')
   const [scanCount, setScanCount] = useState<number>(0)
   const [manualBarcode, setManualBarcode] = useState('')
+  const lastDetected = useRef<{ code: string; at: number } | null>(null)
 
   // Photo states
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -83,9 +87,11 @@ export function AddPanel({
     if (tab === 'search') searchRef.current?.focus()
   }, [tab])
 
-  // Camera stream setup for Scan tab
+  // Camera access starts only after the user opens Scan and is always released.
   useEffect(() => {
     let stream: MediaStream | null = null
+    let timer: number | undefined
+    let cancelled = false
     if (tab === 'scan') {
       navigator.mediaDevices
         ?.getUserMedia({ video: { facingMode: 'environment' } })
@@ -94,10 +100,29 @@ export function AddPanel({
           if (videoRef.current) {
             videoRef.current.srcObject = s
           }
+          const NativeDetector = (window as typeof window & {
+            BarcodeDetector?: new (options: { formats: string[] }) => {
+              detect(source: HTMLVideoElement): Promise<Array<{ rawValue: string }>>
+            }
+          }).BarcodeDetector
+          if (NativeDetector) {
+            const detector = new NativeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] })
+            timer = window.setInterval(async () => {
+              if (cancelled || !videoRef.current || videoRef.current.readyState < 2) return
+              const [result] = await detector.detect(videoRef.current).catch(() => [])
+              if (!result?.rawValue) return
+              const previous = lastDetected.current
+              if (previous?.code === result.rawValue && Date.now() - previous.at < 2_000) return
+              lastDetected.current = { code: result.rawValue, at: Date.now() }
+              void handleBarcodeLookup(result.rawValue)
+            }, 200)
+          }
         })
         .catch(() => setScan('denied'))
     }
     return () => {
+      cancelled = true
+      if (timer) window.clearInterval(timer)
       stream?.getTracks().forEach((t) => t.stop())
     }
   }, [tab])
@@ -105,13 +130,34 @@ export function AddPanel({
   // Barcode Lookup Handler
   const handleBarcodeLookup = async (code: string) => {
     if (!code) return
+    if (!online) {
+      await db.scan_queue.add({ barcode: code, scanned_at: new Date().toISOString() })
+      setScanCount((count) => count + 1)
+      setScan('aiming')
+      return showToast('เก็บบาร์โค้ดไว้แล้ว จะค้นหาให้เมื่อกลับมาออนไลน์')
+    }
     setScan('fetching')
     try {
-      const res = await fetch(`/api/barcode?code=${encodeURIComponent(code)}`)
+      const res = await fetch(`/api/barcode/${encodeURIComponent(code)}`)
       const data = await res.json()
       if (res.ok && data.food) {
-        showToast(`เจอสินค้า: ${data.food.name_th}`)
-        onQuickAdd('milk-foremost', meal)
+        const packageGrams = Number(data.food.package_size_g ?? data.food.serving_size_g ?? 100)
+        const kcal100g = Number(data.food.kcal_100g)
+        if (!Number.isFinite(kcal100g)) throw new Error('incomplete_nutrition')
+        const runtime = registerRuntimeFood({
+          id: data.food.id ?? `barcode:${code}`,
+          name: data.food.name_th,
+          brand: data.food.brand ?? undefined,
+          pack: `${packageGrams} ก.`,
+          kcal: Math.round(kcal100g * packageGrams / 100),
+          protein: Number(data.food.protein_100g ?? 0) * packageGrams / 100,
+          carb: Number(data.food.carb_100g ?? 0) * packageGrams / 100,
+          fat: Number(data.food.fat_100g ?? 0) * packageGrams / 100,
+          kind: 'pack', cat: 'store', q: data.food.quality === 'verified' ? 'verified' : 'open',
+          icon: 'ph ph-package', units: [{ label: 'ทั้งบรรจุภัณฑ์', f: 1 }, { label: 'ครึ่งหนึ่ง', f: 0.5 }],
+        })
+        showToast(`เจอสินค้า: ${runtime.name}`)
+        onPickFood(runtime.id, meal)
         setScanCount((c) => c + 1)
         setScan('aiming')
       } else {
@@ -126,15 +172,26 @@ export function AddPanel({
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (session?.kind !== 'account' || !supabase) {
+      showToast('การวิเคราะห์รูปต้องใช้บัญชีฟรี เพื่อควบคุมโควตาและปกป้องข้อมูล')
+      return
+    }
+    const authClient = supabase
+    if (file.size > 2_000_000) {
+      showToast('รูปใหญ่เกิน 2 MB ลองเลือกรูปที่เล็กลงนะ')
+      return
+    }
 
     setPhotoLoading(true)
     const reader = new FileReader()
     reader.onload = async () => {
       const base64 = reader.result as string
       try {
+        const { data: { session: authSession } } = await authClient.auth.getSession()
+        if (!authSession) throw new Error('auth_required')
         const res = await fetch('/api/photo', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` },
           body: JSON.stringify({ imageBase64: base64 }),
         })
         const data = await res.json()
@@ -143,7 +200,7 @@ export function AddPanel({
         } else {
           showToast('ไม่สามารถวิเคราะห์รูปอาหารได้ ลองใหม่อีกครั้ง')
         }
-      } catch (err) {
+      } catch {
         showToast('เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร')
       } finally {
         setPhotoLoading(false)
@@ -153,10 +210,11 @@ export function AddPanel({
   }
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = normalizeThai(query)
     return FOODS.filter((f) => {
       const catOk = filter === 'all' || f.cat === filter
-      const qOk = !q || f.name.toLowerCase().includes(q) || (f.brand ?? '').toLowerCase().includes(q)
+      const haystack = normalizeThai(`${f.name} ${f.brand ?? ''}`)
+      const qOk = !q || haystack.includes(q)
       return catOk && qOk
     })
   }, [query, filter])
@@ -313,9 +371,9 @@ export function AddPanel({
             </div>
 
             <div>
-              <h2 className="kd-h2">ถ่ายรูปอาหารด้วย Gemini 1.5 Flash</h2>
+              <h2 className="kd-h2">ช่วยหาเมนูจากรูปอาหาร</h2>
               <p className="kd-body kd-muted" style={{ marginTop: 4 }}>
-                ถ่ายหรือเลือกรูปอาหารในจานของคุณ ระบบจะทายเมนูและคำนวณแคลอรีให้อัตโนมัติ
+                ระบบจะแนะนำเมนูจากคลังอาหาร คุณเป็นคนเลือกและยืนยันก่อนบันทึกเสมอ
               </p>
             </div>
 
@@ -327,17 +385,20 @@ export function AddPanel({
             {photoCandidates && (
               <div style={{ textAlign: 'left', display: 'grid', gap: 10, marginTop: 16 }}>
                 <h3 className="kd-h2">ผลการวิเคราะห์จาก AI:</h3>
-                {photoCandidates.map((c, i) => (
-                  <div key={i} className="kd-card kd-row" style={{ padding: 12, justifyContent: 'space-between' }}>
+                {photoCandidates.map((c, i) => {
+                  const matched = FOODS.find((food) => normalizeThai(food.name) === normalizeThai(c.name_th))
+                  return <div key={i} className="kd-card kd-row" style={{ padding: 12, justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 500 }}>{c.name_th}</div>
                       <div className="kd-caption kd-muted">โปรตีน {c.protein}g · คาร์บ {c.carb}g · ไขมัน {c.fat}g</div>
                     </div>
-                    <button className="kd-btn kd-btn-primary" style={{ width: 'auto', minHeight: 36, padding: '0 12px' }} onClick={() => { onQuickAdd('krapao', meal); showToast(`บันทึก ${c.name_th} แล้ว`) }}>
-                      {c.kcal} kcal +
+                    <button className="kd-btn kd-btn-primary" disabled={!matched} style={{ width: 'auto', minHeight: 36, padding: '0 12px' }} onClick={() => {
+                      if (matched) onPickFood(matched.id, meal)
+                    }}>
+                      {matched ? `${c.kcal} kcal · เลือก` : 'ค้นหาแทน'}
                     </button>
                   </div>
-                ))}
+                })}
               </div>
             )}
           </div>

@@ -5,17 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b && tsc -p tsconfig.functions.json",
+    "test": "vitest run",
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "build": "npm run typecheck && vite build",
+    "build:development": "npm run typecheck && vite build --mode development",
+    "build:staging": "npm run typecheck && vite build --mode staging",
+    "build:production": "npm run typecheck && vite build --mode production",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "pages:dev": "npm run build:development && npx wrangler pages dev dist",
+    "deploy:preview": "npm run build:staging && npx wrangler pages deploy dist --branch staging",
+    "deploy:production": "npm run build:production && npx wrangler pages deploy dist --branch main"
   },
   "dependencies": {
-    "@google/genai": "^2.15.0",
     "@supabase/supabase-js": "^2.111.0",
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
-    "next": "^16.2.12",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -23,9 +28,11 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "gh-pages": "^6.3.0",
+    "playwright-core": "^1.63.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^2.1.9",
+    "wrangler": "^4.131.2"
   }
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../components/ui'
+import { BrandLogo, Icon } from '../components/ui'
 import { useStore } from '../lib/store'
-import { supabase } from '../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { Terms } from './Terms'
+import type { Profile } from '../lib/types'
 
 type Mode = 'signup' | 'login'
 type AuthErr = null | 'email' | 'pass' | 'weak' | 'exists' | 'offline'
@@ -17,7 +18,13 @@ const GoogleLogo = () => (
   </svg>
 )
 
-export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolean) => void }) {
+export function Auth({
+  onSignedIn,
+  onGuest,
+}: {
+  onSignedIn: (account: { email: string; userId: string; profile?: Profile }) => void
+  onGuest: () => void
+}) {
   const { online, showToast } = useStore()
   const [view, setView] = useState<View>('splash')
   const [termsBack, setTermsBack] = useState<View>('login')
@@ -29,6 +36,37 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
   const [loading, setLoading] = useState(false)
   const [resendLeft, setResendLeft] = useState(60)
   const [forgotSent, setForgotSent] = useState(false)
+
+  const finishSignIn = async (user: { id: string; email?: string }) => {
+    if (!supabase) return
+    const [{ data }, { data: weights }] = await Promise.all([
+      supabase.from('profiles').select('sex,birth_date,height_cm,activity,goal,target_kcal,target_source').eq('id', user.id).maybeSingle(),
+      supabase.from('weight_logs').select('weight_kg').eq('user_id', user.id).order('logged_on', { ascending: false }).limit(1),
+    ])
+    const birth = data?.birth_date ? new Date(`${data.birth_date}T00:00:00Z`) : null
+    const profile = data && birth ? {
+      sex: data.sex,
+      bDay: birth.getUTCDate(),
+      bMonth: birth.getUTCMonth() + 1,
+      bYear: birth.getUTCFullYear(),
+      height: Number(data.height_cm),
+      weight: Number(weights?.[0]?.weight_kg ?? 60),
+      activity: data.activity,
+      goal: data.goal,
+      target: data.target_kcal,
+      targetSource: data.target_source,
+    } as Profile : undefined
+    onSignedIn({ email: user.email ?? email, userId: user.id, profile })
+  }
+
+  useEffect(() => {
+    if (!supabase) return
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) void finishSignIn(data.session.user)
+    })
+  // The callback intentionally runs once to restore an existing browser session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (view !== 'verify') return
@@ -50,16 +88,16 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
     setLoading(true)
 
     try {
+      if (!supabase) {
+        showToast('ยังไม่ได้ตั้งค่า Supabase สำหรับบัญชี ใช้งานแบบไม่สมัครสมาชิกได้ก่อนนะ')
+        return
+      }
       if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({ email, password: pass })
         if (error) {
           if (error.message.includes('already registered')) {
             setErr('exists')
-          } else {
-            // If placeholder or network issue, proceed to verify screen
-            setResendLeft(60)
-            setView('verify')
-          }
+          } else setErr('pass')
         } else {
           setResendLeft(60)
           setView('verify')
@@ -74,14 +112,13 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
             setView('verify')
             showToast('โปรดยืนยันอีเมลก่อนเข้าใช้งาน')
           } else {
-            onSignedIn(email, false)
+            await finishSignIn(user)
             showToast('ยินดีต้อนรับกลับ ข้อมูลซิงก์เรียบร้อยแล้ว')
           }
         }
       }
-    } catch (e) {
-      if (mode === 'signup') setView('verify')
-      else setErr('pass')
+    } catch {
+      setErr(online ? 'pass' : 'offline')
     } finally {
       setLoading(false)
     }
@@ -89,13 +126,14 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
 
   const checkVerification = async () => {
     if (!online) return setErr('offline')
+    if (!supabase) return showToast('ยังไม่ได้ตั้งค่า Supabase')
     setLoading(true)
     try {
       const { data } = await supabase.auth.getUser()
       const user = data?.user
       if (user && user.email_confirmed_at) {
         setLoading(false)
-        onSignedIn(email, true)
+        await finishSignIn(user)
         showToast('ยืนยันอีเมลสำเร็จเรียบร้อย')
         return
       }
@@ -104,7 +142,7 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
         const { data: signInData } = await supabase.auth.signInWithPassword({ email, password: pass })
         if (signInData?.user?.email_confirmed_at) {
           setLoading(false)
-          onSignedIn(email, true)
+          await finishSignIn(signInData.user)
           showToast('ยืนยันอีเมลสำเร็จเรียบร้อย')
           return
         }
@@ -120,6 +158,7 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
 
   const google = async () => {
     if (!online) return setErr('offline')
+    if (!supabase) return showToast('ยังไม่ได้ตั้งค่า Supabase')
     setLoading(true)
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -128,15 +167,9 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
           redirectTo: window.location.origin + window.location.pathname,
         },
       })
-      if (error) {
-        console.warn('Supabase Google OAuth fallback to demo login:', error.message)
-        onSignedIn(email || 'user@gmail.com', false)
-        showToast('เข้าสู่ระบบสำเร็จ (Demo)')
-      }
-    } catch (e: any) {
-      console.warn('OAuth Exception:', e)
-      onSignedIn(email || 'user@gmail.com', false)
-      showToast('เข้าสู่ระบบสำเร็จ (Demo)')
+      if (error) showToast('ยังเข้าสู่ระบบด้วย Google ไม่สำเร็จ ลองอีกครั้งนะ')
+    } catch {
+      showToast('ยังเข้าสู่ระบบด้วย Google ไม่สำเร็จ ลองอีกครั้งนะ')
     } finally {
       setLoading(false)
     }
@@ -155,9 +188,7 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
         className="kd-screen"
         style={{ padding: '51px 26px 34px', justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 16 }}
       >
-        <div style={{ width: 76, height: 76, borderRadius: 24, background: 'var(--accent)', display: 'grid', placeItems: 'center' }}>
-          <Icon name="ph ph-bowl-food" size={36} color="var(--on-accent)" />
-        </div>
+        <BrandLogo size={112} />
         <div>
           <h1 style={{ fontSize: 30, fontWeight: 500, lineHeight: 1.3 }}>KinDee</h1>
           <p className="kd-muted" style={{ fontSize: 14.5, maxWidth: 264, margin: '4px auto 0' }}>
@@ -165,12 +196,13 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
           </p>
         </div>
         <div style={{ width: '100%', display: 'grid', gap: 10, marginTop: 8 }}>
-          <button className="kd-btn kd-btn-primary" onClick={() => go('signup')}>เริ่มใช้งาน</button>
-          <button className="kd-btn kd-btn-outline" onClick={() => go('login')}>เข้าสู่ระบบ</button>
+          <button className="kd-btn kd-btn-primary" onClick={onGuest}>เริ่มบันทึกเลย</button>
+          <button className="kd-btn kd-btn-outline" onClick={() => go('signup')}>สำรองข้อมูลฟรี</button>
+          <button className="kd-btn-text" onClick={() => go('login')}>มีบัญชีแล้ว · เข้าสู่ระบบ</button>
         </div>
         <p className="kd-caption kd-muted" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <Icon name="ph ph-arrows-clockwise" size={14} />
-          ข้อมูลซิงก์ให้อัตโนมัติ เปลี่ยนเครื่องก็ใช้ต่อได้
+          ใช้แบบไม่สมัครสมาชิกได้ ข้อมูลจะเก็บไว้ในเครื่องนี้
         </p>
       </div>
     )
@@ -197,7 +229,10 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
           <button
             className="kd-btn"
             disabled={resendLeft > 0}
-            onClick={() => {
+            onClick={async () => {
+              if (!supabase) return
+              const { error } = await supabase.auth.resend({ type: 'signup', email })
+              if (error) return showToast('ยังส่งลิงก์ไม่ได้ ลองอีกครั้งในอีกสักครู่นะ')
               setResendLeft(60)
               showToast('ส่งลิงก์ยืนยันอีกครั้งแล้ว')
             }}
@@ -252,7 +287,14 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
                 placeholder="you@example.com"
               />
             </div>
-            <button className="kd-btn kd-btn-primary" onClick={() => setForgotSent(true)}>ส่งลิงก์ตั้งรหัสใหม่</button>
+            <button className="kd-btn kd-btn-primary" onClick={async () => {
+              if (!supabase || !email.includes('@')) return setErr('email')
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+              })
+              if (error) return showToast('ยังส่งลิงก์ไม่ได้ ลองอีกครั้งในอีกสักครู่นะ')
+              setForgotSent(true)
+            }}>ส่งลิงก์ตั้งรหัสใหม่</button>
           </div>
         )}
       </div>
@@ -283,6 +325,12 @@ export function Auth({ onSignedIn }: { onSignedIn: (email: string, isNew: boolea
           <GoogleLogo />
           ดำเนินการต่อด้วย Google
         </button>
+
+        {!isSupabaseConfigured && (
+          <p className="kd-caption kd-muted" role="status" style={{ marginTop: 8 }}>
+            โหมดบัญชียังไม่เปิดใน environment นี้ แต่ยังใช้งานแบบไม่สมัครสมาชิกได้ตามปกติ
+          </p>
+        )}
 
         <div className="kd-row" style={{ gap: 10, margin: '18px 0' }}>
           <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, var(--border-strong))' }} />

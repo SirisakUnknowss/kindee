@@ -29,6 +29,8 @@ export type Profile = {
   targetSource: 'auto' | 'manual'
 }
 
-export type Session = { email: string; onboarded: boolean }
+export type Session =
+  | { kind: 'guest'; onboarded: boolean }
+  | { kind: 'account'; email: string; userId: string; onboarded: boolean }
 
 export type Toast = { text: string; undoUid?: string; entryUid?: string } | null

@@ -45,6 +45,8 @@ export interface OutboxItem {
   payload: Partial<LocalEntry>
   tries: number
   created_at: string
+  next_attempt_at?: string
+  last_error?: string
 }
 
 export interface MetaItem {
@@ -74,7 +76,22 @@ export class KinDeeDatabase extends Dexie {
       meta: 'key',
       scan_queue: '++seq, barcode'
     })
+    this.version(2).stores({
+      entries: 'client_id, eaten_on, [eaten_on+meal], updated_at, dirty',
+      foods_cache: 'id, barcode, *tokens, cached_at',
+      outbox: '++seq, client_id, op, tries, next_attempt_at',
+      meta: 'key',
+      scan_queue: '++seq, barcode'
+    })
   }
 }
 
 export const db = new KinDeeDatabase()
+
+export async function getInstallationId(): Promise<string> {
+  const existing = await db.meta.get('installation_id')
+  if (typeof existing?.value === 'string' && existing.value) return existing.value
+  const value = crypto.randomUUID()
+  await db.meta.put({ key: 'installation_id', value })
+  return value
+}

@@ -3,6 +3,8 @@ import { Icon } from './components/ui'
 import { foodById } from './data/foods'
 import { mealForHour, mealLabel, num } from './lib/calc'
 import { dayKey, useStore } from './lib/store'
+import { flushOutbox } from './lib/sync'
+import { supabase } from './lib/supabase'
 import type { Meal, Profile } from './lib/types'
 import { AddPanel } from './screens/AddPanel'
 import { Auth } from './screens/Auth'
@@ -48,6 +50,19 @@ export default function App() {
   const [qty, setQty] = useState<QtyTarget | null>(null)
   const [editTarget, setEditTarget] = useState(false)
 
+  const persistCloudProfile = (p: Profile) => {
+    if (session?.kind !== 'account' || !supabase) return
+    const birthDate = `${p.bYear}-${String(p.bMonth).padStart(2, '0')}-${String(p.bDay).padStart(2, '0')}`
+    void supabase.from('profiles').upsert({
+      id: session.userId, sex: p.sex, birth_date: birthDate, height_cm: p.height,
+      activity: p.activity, goal: p.goal, target_kcal: p.target,
+      target_source: p.targetSource, show_macros: store.showMacros,
+    })
+    void supabase.from('weight_logs').upsert({
+      user_id: session.userId, weight_kg: p.weight, logged_on: new Date().toISOString().slice(0, 10),
+    }, { onConflict: 'user_id,logged_on' })
+  }
+
   useEffect(() => {
     const t = window.setTimeout(() => setLoading(false), 600)
     return () => window.clearTimeout(t)
@@ -56,7 +71,12 @@ export default function App() {
   if (!session) {
     return (
       <Auth
-        onSignedIn={(email, isNew) => setSession({ email, onboarded: !isNew && !!profile })}
+        onGuest={() => setSession({ kind: 'guest', onboarded: Boolean(profile) })}
+        onSignedIn={({ email, userId, profile: cloudProfile }) => {
+          if (cloudProfile) setProfile(cloudProfile)
+          setSession({ kind: 'account', email, userId, onboarded: Boolean(cloudProfile || profile) })
+          void flushOutbox(true)
+        }}
       />
     )
   }
@@ -68,6 +88,7 @@ export default function App() {
         onDone={(p: Profile) => {
           setProfile(p)
           setSession({ ...session, onboarded: true })
+          persistCloudProfile(p)
           showToast(`เริ่มได้เลย เป้าวันละ ${num(p.target)} kcal`)
         }}
       />
@@ -82,6 +103,7 @@ export default function App() {
         onCancel={() => setEditTarget(false)}
         onDone={(p) => {
           setProfile(p)
+          persistCloudProfile(p)
           setEditTarget(false)
           showToast(`อัปเดตเป้าเป็น ${num(p.target)} kcal แล้ว`)
         }}

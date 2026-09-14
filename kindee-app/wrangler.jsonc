@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kindee",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-09-14",
+  "vars": {
+    "APP_ENV": "development",
+    "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
+    "GEMINI_MODEL": "gemini-2.5-flash"
+  },
+  "env": {
+    "preview": {
+      "vars": {
+        "APP_ENV": "staging",
+        "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
+        "GEMINI_MODEL": "gemini-2.5-flash"
+      }
+    },
+    "production": {
+      "vars": {
+        "APP_ENV": "production",
+        "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
+        "GEMINI_MODEL": "gemini-2.5-flash"
+      }
+    }
+  }
+}

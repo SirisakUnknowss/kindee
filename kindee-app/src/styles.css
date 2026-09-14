@@ -1,39 +1,43 @@
-/* KinDee — design tokens (light-mode adaptation of "Nocturne") */
+/* KinDee — "Calorie Ledger / บัญชีแคลอรี" brand theme */
 :root {
-  --bg: #f3f5fe;
-  --surface: #fbfbfe;
-  --border: #e4e7f5;
-  --border-strong: #cfd3e5;
-  --text: #292b31;
-  --text-muted: #595d6c;
-  --text-body-alt: #45485a;
-  --decor: #9397ab;
+  --bg: #f5f1e8;
+  --surface: #fffdf7;
+  --border: #e1dbcd;
+  --border-strong: #c9c1b2;
+  --text: #24322d;
+  --text-muted: #626b65;
+  --text-body-alt: #435149;
+  --decor: #89918a;
 
-  --accent: #796cbf;
-  --accent-pressed: #5d5294;
-  --accent-line: #968ae0;
-  --accent-tint: #e7e5fe;
-  --accent-tint-soft: #f5f4ff;
-  --on-accent: #f5f4ff;
-  --on-tint: #423a6a;
+  --accent: #3f7d68;
+  --accent-pressed: #285c50;
+  --accent-line: #72a493;
+  --accent-tint: #ddece6;
+  --accent-tint-soft: #f0f7f3;
+  --on-accent: #ffffff;
+  --on-tint: #1f5142;
 
-  --status-far: #b5abfc;
-  --status-mid: #968ae0;
-  --status-near: #6f9b78;
-  --status-over: #c08b3e;
+  --ledger-credit: #31705a;
+  --ledger-debit: #9a6234;
+  --ledger-rule: #d8d0c0;
+
+  --status-far: #abc8b9;
+  --status-mid: #78a792;
+  --status-near: #4c866e;
+  --status-over: #c58a2d;
   --danger: #b4534c;
   --warn-text: #8a5a2a;
 
-  --q-verified: #456349;
-  --q-open: #5d5294;
-  --q-user: #5f5c46;
+  --q-verified: #356b58;
+  --q-open: #4e7180;
+  --q-user: #6e6750;
 
   --cam: #1b1d26;
   --cam-sheet: #14161e;
   --cam-skel: #232532;
   --cam-line: #3f424d;
   --on-dark: #e9e9ed;
-  --on-dark-accent: #d2cefd;
+  --on-dark-accent: #b9ddcd;
   --on-dark-muted: #b2b6ca;
 
   --safe-top: 47px;
@@ -43,9 +47,9 @@
   --r-btn: 12px;
   --r-sheet: 22px;
 
-  --sh-sheet: 0 -12px 40px rgba(41, 43, 49, 0.18);
-  --sh-toast: 0 10px 30px rgba(41, 43, 49, 0.28);
-  --sh-fab: 0 8px 22px rgba(121, 108, 191, 0.38);
+  --sh-sheet: 0 -12px 40px rgba(37, 50, 46, 0.18);
+  --sh-toast: 0 10px 30px rgba(37, 50, 46, 0.28);
+  --sh-fab: 0 8px 22px rgba(63, 125, 104, 0.36);
 }
 
 * { box-sizing: border-box; }
@@ -54,7 +58,7 @@ html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  background: #e9ebf7;
+  background: #e9e5dc;
   color: var(--text);
   font-family: 'LINE Seed Sans TH', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
   font-size: 14.5px;
@@ -83,7 +87,9 @@ p { text-wrap: pretty; }
   max-width: 480px;
   min-height: 100dvh;
   margin: 0 auto;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: linear-gradient(rgba(63, 125, 104, .035) 1px, transparent 1px);
+  background-size: 100% 32px;
   overflow: hidden;
   isolation: isolate;
 }
@@ -224,7 +230,58 @@ p { text-wrap: pretty; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-card);
+  box-shadow: 0 2px 0 rgba(84, 72, 52, .035);
 }
+
+/* ---- calorie ledger ---- */
+.kd-budget-ledger {
+  margin-top: 12px;
+  padding: 5px 14px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: 0 2px 0 rgba(84, 72, 52, .04);
+}
+.kd-budget-row {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px dotted var(--ledger-rule);
+  color: var(--text-body-alt);
+}
+.kd-budget-row > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.kd-budget-row strong { font-size: 15px; font-weight: 600; }
+.kd-budget-balance {
+  min-height: 44px;
+  border-bottom: 0;
+  border-top: 2px solid var(--text);
+  color: var(--text);
+}
+.kd-budget-balance strong { font-size: 18px; }
+.kd-ledger-credit { color: var(--ledger-credit); }
+.kd-ledger-debit { color: var(--ledger-debit); }
+
+.kd-details { margin-top: 10px; border-top: 1px solid var(--border); }
+.kd-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--accent-pressed);
+  cursor: pointer;
+  font-weight: 500;
+}
+.kd-details summary::-webkit-details-marker { display: none; }
+.kd-details summary::after { content: '＋'; margin-left: auto; }
+.kd-details[open] summary::after { content: '−'; }
+.kd-details-body { display: grid; gap: 10px; padding: 0 2px 8px; color: var(--text-body-alt); }
+.kd-details-body ul { margin: 0; padding-left: 22px; }
+.kd-details-body li + li { margin-top: 5px; }
 .kd-card-select {
   display: flex;
   align-items: center;
@@ -363,13 +420,13 @@ p { text-wrap: pretty; }
   padding: 12px 12px 12px 14px;
   border-radius: var(--r-card);
   background: #292b31;
-  color: #f3f5fe;
+  color: #f8f7f2;
   font-size: 13.5px;
   box-shadow: var(--sh-toast);
 }
 .kd-toast-edit {
   background: rgba(255, 255, 255, .12);
-  color: #f3f5fe;
+  color: #f8f7f2;
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 12.5px;

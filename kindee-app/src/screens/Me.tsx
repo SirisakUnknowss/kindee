@@ -1,10 +1,12 @@
 import { Icon } from '../components/ui'
 import { num } from '../lib/calc'
 import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
+import { db } from '../lib/db'
 
 /** หน้า 23 ฉัน — ระดับ wireframe (P1) พร้อมทางเข้าแก้เป้าหมายและตั้งค่าที่จำเป็น */
 export function Me({ onEditTarget }: { onEditTarget: () => void }) {
-  const { profile, session, entries, contributions, showMacros, setShowMacros, reset } = useStore()
+  const { profile, session, entries, contributions, showMacros, setShowMacros, setSession, reset } = useStore()
   const daysUsed = new Set(entries.map((e) => e.day)).size
 
   return (
@@ -18,8 +20,12 @@ export function Me({ onEditTarget }: { onEditTarget: () => void }) {
             <Icon name="ph ph-user" size={22} color="var(--accent-pressed)" />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div className="kd-body" style={{ fontWeight: 500 }}>{session?.email ?? 'ยังไม่ได้เข้าสู่ระบบ'}</div>
-            <div className="kd-caption kd-muted">ข้อมูลซิงก์ให้ทุกเครื่องที่ล็อกอิน</div>
+            <div className="kd-body" style={{ fontWeight: 500 }}>
+              {session?.kind === 'account' ? session.email : 'ใช้งานแบบไม่สมัครสมาชิก'}
+            </div>
+            <div className="kd-caption kd-muted">
+              {session?.kind === 'account' ? 'ข้อมูลซิงก์ให้ทุกเครื่องที่ล็อกอิน' : 'ข้อมูลเก็บอยู่ในเครื่องนี้ ยังไม่ได้สำรอง'}
+            </div>
           </div>
         </div>
 
@@ -65,12 +71,21 @@ export function Me({ onEditTarget }: { onEditTarget: () => void }) {
           </p>
         </div>
 
-        <button className="kd-btn kd-btn-outline" style={{ marginTop: 14 }} onClick={reset}>
-          ออกจากระบบ
+        <button className="kd-btn kd-btn-outline" style={{ marginTop: 14 }} onClick={async () => {
+          if (session?.kind === 'account') {
+            await supabase?.auth.signOut()
+            await db.transaction('rw', db.entries, db.outbox, db.meta, async () => {
+              await db.entries.clear()
+              await db.outbox.clear()
+              await db.meta.clear()
+            })
+            reset()
+          } else {
+            setSession(null)
+          }
+        }}>
+          {session?.kind === 'account' ? 'ออกจากระบบ' : 'สำรองข้อมูลฟรี'}
         </button>
-        <p className="kd-caption kd-muted" style={{ marginTop: 12 }}>
-          หน้าอื่น ๆ (ข้อมูลส่วนตัว · บันทึกน้ำหนัก · ตั้งค่าเต็ม · ลบบัญชี · ส่งออก CSV) อยู่ในลำดับ P2 ยังไม่ได้ทำในรอบนี้
-        </p>
       </div>
     </div>
   )
