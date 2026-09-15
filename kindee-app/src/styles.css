@@ -373,7 +373,7 @@ p { text-wrap: pretty; }
   bottom: 0;
   z-index: 3;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: start;
   background: rgba(251, 251, 254, .92);
   backdrop-filter: blur(12px);
@@ -393,10 +393,9 @@ p { text-wrap: pretty; }
 }
 .kd-tab.on { color: var(--accent-pressed); font-weight: 500; }
 .kd-fab {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--safe-bottom) + 52px);
-  transform: translateX(-50%);
+  position: relative;
+  top: -22px;
+  justify-self: center;
   width: 60px;
   height: 60px;
   border-radius: 999px;
@@ -408,6 +407,54 @@ p { text-wrap: pretty; }
   align-items: center;
   justify-content: center;
   flex: none;
+}
+
+/* ---- overview dashboard ---- */
+.kd-overview-head, .kd-calendar-screen-head {
+  padding: calc(var(--safe-top) + 2px) 18px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kd-overview-head .kd-h1, .kd-calendar-screen-head .kd-h1 { font-size: 28px; line-height: 1.2; }
+.kd-overview-scroll, .kd-calendar-screen-scroll { padding: 10px 16px 142px; }
+.kd-overview-hero { min-height: 188px; padding: 20px 18px; display: flex; align-items: center; gap: 16px; overflow: hidden; }
+.kd-overview-donut { position: relative; flex: 0 0 140px; width: 140px; height: 140px; color: var(--status-mid); }
+.kd-overview-donut.is-near { color: var(--status-near); }
+.kd-overview-donut.is-over { color: var(--status-over); }
+.kd-overview-donut > div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.kd-overview-donut strong { display: block; font-size: 27px; line-height: 1.2; }
+.kd-overview-donut span { color: var(--text-muted); font-size: 10.5px; }
+.kd-overview-hero-copy { min-width: 0; }
+.kd-overview-hero-copy > span { color: var(--text-muted); font-size: 12px; }
+.kd-overview-hero-copy > strong { display: block; margin-top: 4px; font-size: 28px; line-height: 1.25; white-space: nowrap; }
+.kd-overview-hero-copy > strong small { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+.kd-overview-hero-copy p { color: var(--text-muted); font-size: 12px; }
+.kd-overview-hero-copy button, .kd-section-title button { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; color: var(--accent-pressed); font-size: 12px; font-weight: 600; }
+.kd-overview-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.kd-overview-metrics > div { min-width: 0; padding: 12px 9px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+.kd-overview-metrics i { color: var(--accent-pressed); font-size: 17px; }
+.kd-overview-metrics span { display: block; margin-top: 4px; color: var(--text-muted); font-size: 10px; }
+.kd-overview-metrics strong { display: block; font-size: 19px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
+.kd-overview-week, .kd-overview-meals { margin-top: 10px; padding: 15px; }
+.kd-section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kd-section-title button { margin-top: 0; min-height: 36px; }
+.kd-overview-bars { height: 105px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; margin-top: 12px; border-bottom: 1px solid var(--border); }
+.kd-overview-bars > div { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.kd-overview-bars i { width: min(24px, 70%); min-height: 4px; max-height: 78px; border-radius: 5px 5px 1px 1px; background: var(--status-mid); }
+.kd-overview-bars i.over { background: var(--status-over); }
+.kd-overview-bars span { font-size: 9.5px; color: var(--text-muted); }
+.kd-overview-meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 12px; }
+.kd-overview-meal-grid button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 7px; min-height: 44px; padding: 0 10px; border-radius: 11px; background: var(--accent-tint-soft); text-align: left; }
+.kd-overview-meal-grid button i { color: var(--accent-pressed); }
+.kd-overview-meal-grid button span { font-size: 11px; }
+.kd-overview-meal-grid button strong { font-size: 12px; }
+.kd-overview-macros { display: flex; justify-content: space-around; gap: 8px; padding: 12px 4px 0; color: var(--text-muted); font-size: 10.5px; }
+.kd-overview-macros strong { color: var(--text); }
+
+@media (max-width: 360px) {
+  .kd-overview-hero { padding-left: 10px; padding-right: 10px; gap: 7px; }
+  .kd-overview-donut { flex-basis: 124px; width: 124px; height: 124px; }
 }
 
 /* ---- toast ---- */

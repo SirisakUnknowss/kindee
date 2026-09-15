@@ -8,14 +8,15 @@ import { supabase } from './lib/supabase'
 import type { Meal, Profile } from './lib/types'
 import { AddPanel } from './screens/AddPanel'
 import { Auth } from './screens/Auth'
-import { History } from './screens/History'
+import { Calendar } from './screens/Calendar'
 import { Me } from './screens/Me'
+import { Overview } from './screens/Overview'
 import { Onboarding } from './screens/Onboarding'
 import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 
-type Tab = 'today' | 'history' | 'me'
+type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'scan' | 'photo'
 type QtyTarget = { foodId: string; meal: Meal; editingUid?: string; unitIx?: number; amount?: number }
 
@@ -28,13 +29,13 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
   )
   return (
     <nav className="kd-tabbar" aria-label="เมนูหลัก">
-      {item('today', 'วันนี้', tab === 'today' ? 'ph-fill ph-house' : 'ph ph-house')}
-      {item('history', 'วิเคราะห์', tab === 'history' ? 'ph-fill ph-chart-donut' : 'ph ph-chart-donut')}
-      {item('me', 'ฉัน', 'ph ph-user-circle')}
-      {/* ปุ่มเพิ่มลอยเหนือแถบเมนู ไม่กินพื้นที่ของสามแท็บหลัก */}
+      {item('overview', 'Overview', tab === 'overview' ? 'ph-fill ph-squares-four' : 'ph ph-squares-four')}
+      {item('calendar', 'Calendar', tab === 'calendar' ? 'ph-fill ph-calendar-dots' : 'ph ph-calendar-dots')}
       <button className="kd-fab" onClick={onAdd} aria-label="เพิ่มอาหาร">
         <Icon name="ph ph-plus" size={26} />
       </button>
+      {item('health', 'Health', tab === 'health' ? 'ph-fill ph-heartbeat' : 'ph ph-heartbeat')}
+      {item('me', 'Profile', tab === 'me' ? 'ph-fill ph-user-circle' : 'ph ph-user-circle')}
     </nav>
   )
 }
@@ -43,7 +44,7 @@ export default function App() {
   const store = useStore()
   const { session, profile, setSession, setProfile, addEntry, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
 
-  const [tab, setTab] = useState<Tab>('today')
+  const [tab, setTab] = useState<Tab>('overview')
   const [dayOffset, setDayOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState<{ tab: AddTab; meal: Meal } | null>(null)
@@ -131,7 +132,8 @@ export default function App() {
 
   return (
     <>
-      {tab === 'today' && (
+      {tab === 'overview' && <Overview onOpenHealth={() => { setDayOffset(0); setTab('health') }} onAdd={() => { setDayOffset(0); openAdd('recent') }} />}
+      {tab === 'health' && (
         <Today
           dayOffset={dayOffset}
           onDayChange={setDayOffset}
@@ -144,19 +146,19 @@ export default function App() {
           loading={loading}
         />
       )}
-      {tab === 'history' && (
-        <History
+      {tab === 'calendar' && (
+        <Calendar
           onOpenDay={(day) => {
             const selected = new Date(`${day}T12:00:00`)
             const current = new Date(`${dayKey()}T12:00:00`)
             setDayOffset(Math.round((selected.getTime() - current.getTime()) / 86_400_000))
-            setTab('today')
+            setTab('health')
           }}
         />
       )}
       {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} />}
 
-      <TabBar tab={tab} onTab={setTab} onAdd={() => openAdd('recent')} />
+      <TabBar tab={tab} onTab={setTab} onAdd={() => { setDayOffset(0); openAdd('recent') }} />
 
       {addOpen && (
         <AddPanel

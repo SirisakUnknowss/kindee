@@ -74,6 +74,7 @@ try {
   await app.page.getByRole('button', { name: 'ถัดไป' }).click()
   await shot(app.page, '09-onboarding-target')
   await app.page.getByRole('button', { name: 'เริ่มใช้งาน' }).click()
+  await app.page.getByRole('button', { name: 'Health' }).click()
   await shot(app.page, '10-today-empty')
 
   await app.page.getByRole('button', { name: 'เพิ่มอาหาร' }).click()
@@ -90,8 +91,9 @@ try {
   await app.page.getByRole('button', { name: 'ค้นหา', exact: true }).click()
   await app.page.getByPlaceholder('พิมพ์ชื่ออาหาร หรือแบรนด์...').fill('กระเพา')
   await app.page.getByRole('button', { name: 'บันทึก ข้าวกะเพราหมูสับไข่ดาว ทันที' }).click()
+  await app.page.getByRole('button', { name: 'Health' }).click()
   await shot(app.page, '14-today-with-entry')
-  await app.page.getByRole('button', { name: 'วิเคราะห์' }).click()
+  await app.page.getByRole('button', { name: 'Calendar' }).click()
   await shot(app.page, '15-history')
   await app.page.getByRole('button', { name: 'ฉัน' }).click()
   await shot(app.page, '16-profile')
