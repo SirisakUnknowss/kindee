@@ -1,13 +1,49 @@
+import { useState } from 'react'
 import { Icon } from '../components/ui'
 import { num } from '../lib/calc'
 import { useStore } from '../lib/store'
 import { supabase } from '../lib/supabase'
-import { db } from '../lib/db'
+import { clearDeviceData, deleteAccount, downloadMyData } from '../lib/privacy'
+import { legalConfig } from '../config/legal'
 
 /** หน้า 23 ฉัน — ระดับ wireframe (P1) พร้อมทางเข้าแก้เป้าหมายและตั้งค่าที่จำเป็น */
-export function Me({ onEditTarget }: { onEditTarget: () => void }) {
+export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void }) {
   const { profile, session, entries, contributions, showMacros, setShowMacros, setSession, reset } = useStore()
   const daysUsed = new Set(entries.map((e) => e.day)).size
+  const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const exportData = async () => {
+    if (!session) return
+    setPrivacyBusy('export')
+    try {
+      const warnings = await downloadMyData(session, profile)
+      if (warnings.length) alert('ดาวน์โหลดข้อมูลในเครื่องแล้ว แต่ข้อมูลบนคลาวด์บางส่วนส่งออกไม่สำเร็จ โปรดติดต่อฝ่ายความเป็นส่วนตัว')
+    } finally {
+      setPrivacyBusy(null)
+    }
+  }
+
+  const removeAllData = async () => {
+    if (!session) return
+    if (!confirmDelete) return setConfirmDelete(true)
+    setPrivacyBusy('delete')
+    try {
+      if (session.kind === 'account') {
+        const { data } = await supabase!.auth.getSession()
+        if (!data.session) throw new Error('auth_required')
+        await deleteAccount(data.session.access_token)
+        await supabase!.auth.signOut({ scope: 'local' })
+      }
+      await clearDeviceData()
+      reset()
+      setSession(null)
+    } catch {
+      alert(`ยังลบข้อมูลไม่สำเร็จ โปรดลองเข้าสู่ระบบใหม่หรือติดต่อ ${legalConfig.privacyEmail}`)
+      setPrivacyBusy(null)
+      setConfirmDelete(false)
+    }
+  }
 
   return (
     <div className="kd-screen">
@@ -71,14 +107,42 @@ export function Me({ onEditTarget }: { onEditTarget: () => void }) {
           </p>
         </div>
 
+        <div className="kd-card" style={{ marginTop: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 14px 8px' }}>
+            <div className="kd-body" style={{ fontWeight: 500 }}>ข้อมูลและความเป็นส่วนตัว</div>
+            <p className="kd-caption kd-muted" style={{ marginTop: 3 }}>
+              ใช้สิทธิได้ในแอปหรืออีเมล <a href={`mailto:${legalConfig.privacyEmail}`}>{legalConfig.privacyEmail}</a>
+            </p>
+          </div>
+          {[
+            ['เงื่อนไขการใช้งาน', 'ph ph-file-text', () => onOpenLegal('terms')],
+            ['ประกาศความเป็นส่วนตัว', 'ph ph-shield-check', () => onOpenLegal('privacy')],
+          ].map(([label, icon, action]) => (
+            <button key={label as string} className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 50, borderTop: '1px solid var(--border)' }} onClick={action as () => void}>
+              <Icon name={icon as string} size={20} color="var(--accent-pressed)" />
+              <span style={{ flex: 1, textAlign: 'left' }}>{label as string}</span>
+              <Icon name="ph ph-caret-right" size={16} color="var(--text-muted)" />
+            </button>
+          ))}
+          <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 50, borderTop: '1px solid var(--border)' }} onClick={exportData} disabled={privacyBusy !== null}>
+            <Icon name="ph ph-download-simple" size={20} color="var(--accent-pressed)" />
+            <span style={{ flex: 1, textAlign: 'left' }}>{privacyBusy === 'export' ? 'กำลังรวบรวมข้อมูล…' : 'ส่งออกข้อมูลของฉัน (.json)'}</span>
+          </button>
+          <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 50, borderTop: '1px solid var(--border)', color: '#a53636' }} onClick={removeAllData} disabled={privacyBusy !== null}>
+            <Icon name="ph ph-trash" size={20} color="#a53636" />
+            <span style={{ flex: 1, textAlign: 'left' }}>
+              {privacyBusy === 'delete' ? 'กำลังลบ…' : confirmDelete ? 'แตะอีกครั้งเพื่อยืนยันการลบถาวร' : session?.kind === 'account' ? 'ลบบัญชีและข้อมูลทั้งหมด' : 'ลบข้อมูลทั้งหมดในเครื่อง'}
+            </span>
+          </button>
+          {confirmDelete && (
+            <button className="kd-btn-text" style={{ width: '100%', padding: '8px 14px 14px' }} onClick={() => setConfirmDelete(false)} disabled={privacyBusy !== null}>ยกเลิก</button>
+          )}
+        </div>
+
         <button className="kd-btn kd-btn-outline" style={{ marginTop: 14 }} onClick={async () => {
           if (session?.kind === 'account') {
             await supabase?.auth.signOut()
-            await db.transaction('rw', db.entries, db.outbox, db.meta, async () => {
-              await db.entries.clear()
-              await db.outbox.clear()
-              await db.meta.clear()
-            })
+            await clearDeviceData()
             reset()
           } else {
             setSession(null)

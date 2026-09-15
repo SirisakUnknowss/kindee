@@ -3,6 +3,7 @@ import { Icon } from '../components/ui'
 import { ACTIVITY, GOALS, computeTarget, num } from '../lib/calc'
 import type { Profile } from '../lib/types'
 import { TDEE_EXPLAINER } from '../content/tdee'
+import { legalConfig } from '../config/legal'
 
 const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const YEARS = Array.from({ length: 2008 - 1970 + 1 }, (_, i) => 1970 + i)
@@ -97,6 +98,7 @@ export function Onboarding({
   const [step, setStep] = useState(editMode ? 5 : 1)
   const [manualOpen, setManualOpen] = useState(initial?.targetSource === 'manual')
   const [manual, setManual] = useState(initial?.targetSource === 'manual' ? String(initial.target) : '')
+  const [ageRestricted, setAgeRestricted] = useState(false)
 
   const calc = useMemo(() => computeTarget(p), [p])
   const target = manualOpen && Number(manual) > 0 ? Math.round(Number(manual)) : calc.target
@@ -104,6 +106,11 @@ export function Onboarding({
   const set = (patch: Partial<Profile>) => setP((v) => ({ ...v, ...patch }))
 
   const next = () => {
+    if (!editMode && step === 1 && calc.age < 18) {
+      setAgeRestricted(true)
+      return
+    }
+    setAgeRestricted(false)
     if (step < 5) return setStep(step + 1)
     onDone({ ...p, target, targetSource: source })
   }
@@ -221,6 +228,11 @@ export function Onboarding({
                 }}
               />
             </div>
+            {ageRestricted && (
+              <div role="alert" style={{ marginTop: 14, padding: 12, borderRadius: 12, background: '#fff1f1', color: '#8d2f2f', textAlign: 'left' }}>
+                KinDee เปิดให้ใช้สำหรับผู้มีอายุ 18 ปีขึ้นไปเท่านั้น หากผู้ปกครองต้องการให้ลบข้อมูลที่เด็กเคยส่ง โปรดติดต่อ {legalConfig.privacyEmail}
+              </div>
+            )}
           </>
         )}
 

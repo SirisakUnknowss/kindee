@@ -91,7 +91,7 @@ try {
   await app.page.getByPlaceholder('พิมพ์ชื่ออาหาร หรือแบรนด์...').fill('กระเพา')
   await app.page.getByRole('button', { name: 'บันทึก ข้าวกะเพราหมูสับไข่ดาว ทันที' }).click()
   await shot(app.page, '14-today-with-entry')
-  await app.page.getByRole('button', { name: 'ประวัติ' }).click()
+  await app.page.getByRole('button', { name: 'วิเคราะห์' }).click()
   await shot(app.page, '15-history')
   await app.page.getByRole('button', { name: 'ฉัน' }).click()
   await shot(app.page, '16-profile')

@@ -1,5 +1,7 @@
 import { authenticatedUser, error, json, supabaseHeaders, type PagesContext } from '../_shared/http'
 
+const PHOTO_AI_CONSENT_VERSION = 'photo-ai-2026-09-15'
+
 const decodeImage = (dataUrl: string) => {
   const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl)
   if (!match || match[2].length > 2_700_000) return null
@@ -21,11 +23,44 @@ export async function onRequestPost({ request, env }: PagesContext) {
   if (!user) return error(401, 'unauthorized', 'A free account is required')
   if (!env.GEMINI_API_KEY) return error(503, 'feature_unavailable', 'Photo analysis is not enabled')
 
-  const body = await request.json().catch(() => null) as { imageBase64?: unknown } | null
+  const body = await request.json().catch(() => null) as {
+    imageBase64?: unknown
+    consent?: { version?: unknown; provider?: unknown; consentedAt?: unknown }
+  } | null
+  const consentedAt = typeof body?.consent?.consentedAt === 'string' ? new Date(body.consent.consentedAt) : null
+  const consentIsFresh = consentedAt && Number.isFinite(consentedAt.getTime()) &&
+    Math.abs(Date.now() - consentedAt.getTime()) <= 10 * 60 * 1000
+  if (
+    body?.consent?.version !== PHOTO_AI_CONSENT_VERSION ||
+    body?.consent?.provider !== 'Google Gemini API' ||
+    !consentIsFresh
+  ) {
+    return error(400, 'consent_required', 'Explicit, current consent is required before sending a photo to the AI provider')
+  }
   const image = typeof body?.imageBase64 === 'string' ? decodeImage(body.imageBase64) : null
   if (!image) return error(413, 'invalid_image', 'Use a JPEG, PNG, or WebP image no larger than 2 MB')
   const imageHash = await sha256(image.bytes)
   const adminHeaders = supabaseHeaders(env, undefined, true)
+
+  // Record consent before any possible transfer to the AI provider. If this
+  // cannot be evidenced, fail closed and do not send the image.
+  const consentResponse = await fetch(`${env.SUPABASE_URL}/rest/v1/privacy_consents?on_conflict=user_id,purpose,version`, {
+    method: 'POST', headers: { ...adminHeaders, prefer: 'resolution=merge-duplicates' },
+    body: JSON.stringify({
+      user_id: user.id,
+      purpose: 'photo_ai_analysis',
+      version: PHOTO_AI_CONSENT_VERSION,
+      provider: 'Google Gemini API',
+      granted_at: consentedAt!.toISOString(),
+      withdrawn_at: null,
+    }),
+  })
+  if (!consentResponse.ok) return error(503, 'consent_audit_failed', 'Consent could not be recorded; the photo was not sent')
+
+  // Opportunistic retention enforcement; raw images are never stored by KinDee.
+  await fetch(`${env.SUPABASE_URL}/rest/v1/photo_jobs?expires_at=lt.${encodeURIComponent(new Date().toISOString())}`, {
+    method: 'DELETE', headers: adminHeaders,
+  })
 
   const cachedResponse = await fetch(
     `${env.SUPABASE_URL}/rest/v1/photo_jobs?user_id=eq.${user.id}&image_hash=eq.${imageHash}&status=eq.complete&select=candidates&limit=1`,
@@ -83,7 +118,15 @@ export async function onRequestPost({ request, env }: PagesContext) {
   await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/photo_jobs?on_conflict=user_id,image_hash`, {
       method: 'POST', headers: { ...adminHeaders, prefer: 'resolution=merge-duplicates' },
-      body: JSON.stringify({ user_id: user.id, image_hash: imageHash, candidates, status: 'complete' }),
+      body: JSON.stringify({
+        user_id: user.id,
+        image_hash: imageHash,
+        candidates,
+        status: 'complete',
+        consent_version: PHOTO_AI_CONSENT_VERSION,
+        consented_at: consentedAt!.toISOString(),
+        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      }),
     }),
     fetch(`${env.SUPABASE_URL}/rest/v1/usage_counters?on_conflict=user_id,feature,period_start`, {
       method: 'POST', headers: { ...adminHeaders, prefer: 'resolution=merge-duplicates' },

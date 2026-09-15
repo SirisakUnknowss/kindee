@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { BrandLogo, CalorieRing, Icon, MacroBar, OfflineBar } from '../components/ui'
 import { foodById } from '../data/foods'
 import { MEALS, amountLabel, mealLabel, num, ringTone, totalMacros } from '../lib/calc'
-import { useStore } from '../lib/store'
+import { dayKey, useStore } from '../lib/store'
 import type { Entry, Meal } from '../lib/types'
 
 const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
@@ -113,7 +113,7 @@ export function Today({
 
   const d = new Date()
   d.setDate(d.getDate() + dayOffset)
-  const dayStr = d.toISOString().slice(0, 10)
+  const dayStr = dayKey(dayOffset)
   const entries = entriesFor(dayStr)
   const consumed = entries.reduce((s, e) => s + e.kcal, 0)
   const tone = ringTone(consumed, target)

@@ -36,6 +36,7 @@ export function Auth({
   const [loading, setLoading] = useState(false)
   const [resendLeft, setResendLeft] = useState(60)
   const [forgotSent, setForgotSent] = useState(false)
+  const [acceptedLegal, setAcceptedLegal] = useState(false)
 
   const finishSignIn = async (user: { id: string; email?: string }) => {
     if (!supabase) return
@@ -82,6 +83,7 @@ export function Auth({
 
   const submit = async () => {
     if (!online) return setErr('offline')
+    if (mode === 'signup' && !acceptedLegal) return showToast('โปรดยืนยันว่าคุณอายุ 18 ปีขึ้นไปและยอมรับเอกสารก่อนสมัคร')
     if (!email.includes('@') || !email.includes('.')) return setErr('email')
     if (pass.length < 8) return setErr(mode === 'signup' ? 'weak' : 'pass')
     setErr(null)
@@ -158,6 +160,7 @@ export function Auth({
 
   const google = async () => {
     if (!online) return setErr('offline')
+    if (mode === 'signup' && !acceptedLegal) return showToast('โปรดยืนยันว่าคุณอายุ 18 ปีขึ้นไปและยอมรับเอกสารก่อนสมัคร')
     if (!supabase) return showToast('ยังไม่ได้ตั้งค่า Supabase')
     setLoading(true)
     try {
@@ -204,6 +207,9 @@ export function Auth({
           <Icon name="ph ph-arrows-clockwise" size={14} />
           ใช้แบบไม่สมัครสมาชิกได้ ข้อมูลจะเก็บไว้ในเครื่องนี้
         </p>
+        <button className="kd-btn-text" style={{ textDecoration: 'underline' }} onClick={openTerms}>
+          อ่านเงื่อนไขการใช้งานและประกาศความเป็นส่วนตัว
+        </button>
       </div>
     )
   }
@@ -321,7 +327,16 @@ export function Auth({
             : 'ยินดีต้อนรับกลับมา ข้อมูลรออยู่ครบแล้ว'}
         </p>
 
-        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading}>
+        {mode === 'signup' && (
+          <label className="kd-card" style={{ marginTop: 16, padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}>
+            <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} style={{ width: 22, height: 22, flex: 'none', accentColor: 'var(--accent)' }} />
+            <span className="kd-caption" style={{ textAlign: 'left' }}>
+              ฉันอายุ 18 ปีขึ้นไป และยอมรับเงื่อนไขการใช้งาน รวมถึงรับทราบประกาศความเป็นส่วนตัว
+            </span>
+          </label>
+        )}
+
+        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading || (mode === 'signup' && !acceptedLegal)}>
           <GoogleLogo />
           ดำเนินการต่อด้วย Google
         </button>
@@ -390,7 +405,7 @@ export function Auth({
             {passErr && <div className="kd-err"><Icon name="ph ph-warning-circle" size={14} />{passErr}</div>}
           </div>
 
-          <button className="kd-btn kd-btn-primary" onClick={submit} disabled={loading || !online}>
+          <button className="kd-btn kd-btn-primary" onClick={submit} disabled={loading || !online || (mode === 'signup' && !acceptedLegal)}>
             {loading ? (
               <>
                 <span className="kd-spin"><Icon name="ph ph-circle-notch" size={18} /></span>

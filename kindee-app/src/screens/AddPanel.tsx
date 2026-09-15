@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { normalizeThai } from '../lib/thai'
 import { db } from '../lib/db'
 import type { Meal } from '../lib/types'
+import { PHOTO_AI_CONSENT_VERSION } from '../config/legal'
 
 type Tab = 'recent' | 'search' | 'scan' | 'photo'
 
@@ -82,6 +83,7 @@ export function AddPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoCandidates, setPhotoCandidates] = useState<any[] | null>(null)
+  const [photoConsent, setPhotoConsent] = useState(false)
 
   useEffect(() => {
     if (tab === 'search') searchRef.current?.focus()
@@ -172,6 +174,11 @@ export function AddPanel({
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (!photoConsent) {
+      e.target.value = ''
+      showToast('โปรดยินยอมให้ส่งรูปไปยัง Google Gemini ก่อน')
+      return
+    }
     if (session?.kind !== 'account' || !supabase) {
       showToast('การวิเคราะห์รูปต้องใช้บัญชีฟรี เพื่อควบคุมโควตาและปกป้องข้อมูล')
       return
@@ -192,7 +199,14 @@ export function AddPanel({
         const res = await fetch('/api/photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authSession.access_token}` },
-          body: JSON.stringify({ imageBase64: base64 }),
+          body: JSON.stringify({
+            imageBase64: base64,
+            consent: {
+              version: PHOTO_AI_CONSENT_VERSION,
+              provider: 'Google Gemini API',
+              consentedAt: new Date().toISOString(),
+            },
+          }),
         })
         const data = await res.json()
         if (data.candidates) {
@@ -377,7 +391,22 @@ export function AddPanel({
               </p>
             </div>
 
-            <button className="kd-btn kd-btn-primary" onClick={() => fileInputRef.current?.click()} disabled={photoLoading}>
+            <label className="kd-card" style={{ padding: 14, textAlign: 'left', display: 'flex', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={photoConsent}
+                onChange={(event) => setPhotoConsent(event.target.checked)}
+                style={{ width: 22, height: 22, flex: 'none', accentColor: 'var(--accent)' }}
+              />
+              <span>
+                <span className="kd-body" style={{ display: 'block', fontWeight: 500 }}>ยินยอมให้ส่งรูปนี้ไปวิเคราะห์ด้วย AI</span>
+                <span className="kd-caption kd-muted" style={{ display: 'block', marginTop: 4 }}>
+                  รูปจะถูกส่งไปยัง Google Gemini API และอาจประมวลผลนอกประเทศไทย KinDee ไม่เก็บไฟล์ต้นฉบับ โปรดถ่ายเฉพาะอาหารและหลีกเลี่ยงใบหน้า เอกสาร หรือข้อมูลส่วนตัว
+                </span>
+              </span>
+            </label>
+
+            <button className="kd-btn kd-btn-primary" onClick={() => fileInputRef.current?.click()} disabled={photoLoading || !photoConsent}>
               <Icon name="ph ph-aperture" size={20} />
               {photoLoading ? 'กำลังวิเคราะห์รูปภาพ...' : 'ถ่ายรูป / เลือกรูปภาพ'}
             </button>

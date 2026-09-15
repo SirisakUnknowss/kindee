@@ -13,6 +13,7 @@ import { Me } from './screens/Me'
 import { Onboarding } from './screens/Onboarding'
 import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
+import { Terms } from './screens/Terms'
 
 type Tab = 'today' | 'history' | 'me'
 type AddTab = 'recent' | 'search' | 'scan' | 'photo'
@@ -28,7 +29,7 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
   return (
     <nav className="kd-tabbar" aria-label="เมนูหลัก">
       {item('today', 'วันนี้', tab === 'today' ? 'ph-fill ph-house' : 'ph ph-house')}
-      {item('history', 'ประวัติ', 'ph ph-chart-bar')}
+      {item('history', 'วิเคราะห์', tab === 'history' ? 'ph-fill ph-chart-donut' : 'ph ph-chart-donut')}
       {/* ปุ่มเพิ่มไม่ใช่แท็บ — เป็นตัวเปิด flow ซ้อนขึ้นมา */}
       <button className="kd-fab" onClick={onAdd} aria-label="เพิ่มอาหาร">
         <Icon name="ph ph-plus" size={26} />
@@ -49,6 +50,7 @@ export default function App() {
   const [addOpen, setAddOpen] = useState<{ tab: AddTab; meal: Meal } | null>(null)
   const [qty, setQty] = useState<QtyTarget | null>(null)
   const [editTarget, setEditTarget] = useState(false)
+  const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
 
   const persistCloudProfile = (p: Profile) => {
     if (session?.kind !== 'account' || !supabase) return
@@ -95,6 +97,10 @@ export default function App() {
     )
   }
 
+  if (legalOpen) {
+    return <Terms initialTab={legalOpen} onBack={() => setLegalOpen(null)} />
+  }
+
   if (editTarget) {
     return (
       <Onboarding
@@ -139,8 +145,17 @@ export default function App() {
           loading={loading}
         />
       )}
-      {tab === 'history' && <History />}
-      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} />}
+      {tab === 'history' && (
+        <History
+          onOpenDay={(day) => {
+            const selected = new Date(`${day}T12:00:00`)
+            const current = new Date(`${dayKey()}T12:00:00`)
+            setDayOffset(Math.round((selected.getTime() - current.getTime()) / 86_400_000))
+            setTab('today')
+          }}
+        />
+      )}
+      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} />}
 
       <TabBar tab={tab} onTab={setTab} onAdd={() => openAdd('recent')} />
 
