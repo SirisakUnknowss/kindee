@@ -30,12 +30,11 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
     <nav className="kd-tabbar" aria-label="เมนูหลัก">
       {item('today', 'วันนี้', tab === 'today' ? 'ph-fill ph-house' : 'ph ph-house')}
       {item('history', 'วิเคราะห์', tab === 'history' ? 'ph-fill ph-chart-donut' : 'ph ph-chart-donut')}
-      {/* ปุ่มเพิ่มไม่ใช่แท็บ — เป็นตัวเปิด flow ซ้อนขึ้นมา */}
+      {item('me', 'ฉัน', 'ph ph-user-circle')}
+      {/* ปุ่มเพิ่มลอยเหนือแถบเมนู ไม่กินพื้นที่ของสามแท็บหลัก */}
       <button className="kd-fab" onClick={onAdd} aria-label="เพิ่มอาหาร">
         <Icon name="ph ph-plus" size={26} />
       </button>
-      {item('me', 'ฉัน', 'ph ph-user-circle')}
-      <div style={{ flex: 1 }} aria-hidden="true" />
     </nav>
   )
 }
