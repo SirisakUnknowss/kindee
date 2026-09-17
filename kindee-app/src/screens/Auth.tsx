@@ -160,7 +160,8 @@ export function Auth({
 
   const google = async () => {
     if (!online) return setErr('offline')
-    if (mode === 'signup' && !acceptedLegal) return showToast('โปรดยืนยันว่าคุณอายุ 18 ปีขึ้นไปและยอมรับเอกสารก่อนสมัคร')
+    // Google can create a new account from either tab, so consent is always required.
+    if (!acceptedLegal) return showToast('โปรดยืนยันว่าคุณอายุ 18 ปีขึ้นไปและยอมรับเอกสารก่อนดำเนินการต่อด้วย Google')
     if (!supabase) return showToast('ยังไม่ได้ตั้งค่า Supabase')
     setLoading(true)
     try {
@@ -327,16 +328,14 @@ export function Auth({
             : 'ยินดีต้อนรับกลับมา ข้อมูลรออยู่ครบแล้ว'}
         </p>
 
-        {mode === 'signup' && (
-          <label className="kd-card" style={{ marginTop: 16, padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}>
-            <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} style={{ width: 22, height: 22, flex: 'none', accentColor: 'var(--accent)' }} />
-            <span className="kd-caption" style={{ textAlign: 'left' }}>
-              ฉันอายุ 18 ปีขึ้นไป และยอมรับเงื่อนไขการใช้งาน รวมถึงรับทราบประกาศความเป็นส่วนตัว
-            </span>
-          </label>
-        )}
+        <label className="kd-card" style={{ marginTop: 16, padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}>
+          <input type="checkbox" checked={acceptedLegal} onChange={(event) => setAcceptedLegal(event.target.checked)} style={{ width: 22, height: 22, flex: 'none', accentColor: 'var(--accent)' }} />
+          <span className="kd-caption" style={{ textAlign: 'left' }}>
+            ฉันอายุ 18 ปีขึ้นไป และยอมรับเงื่อนไขการใช้งาน รวมถึงรับทราบประกาศความเป็นส่วนตัว
+          </span>
+        </label>
 
-        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading || (mode === 'signup' && !acceptedLegal)}>
+        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading || !acceptedLegal}>
           <GoogleLogo />
           ดำเนินการต่อด้วย Google
         </button>
