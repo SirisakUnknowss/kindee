@@ -52,17 +52,23 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
 
-  const persistCloudProfile = (p: Profile) => {
-    if (session?.kind !== 'account' || !supabase) return
+  const persistCloudProfile = async (p: Profile, userId = session?.kind === 'account' ? session.userId : undefined) => {
+    if (!userId || !supabase) return
     const birthDate = `${p.bYear}-${String(p.bMonth).padStart(2, '0')}-${String(p.bDay).padStart(2, '0')}`
-    void supabase.from('profiles').upsert({
-      id: session.userId, sex: p.sex, birth_date: birthDate, height_cm: p.height,
-      activity: p.activity, goal: p.goal, target_kcal: p.target,
-      target_source: p.targetSource, show_macros: store.showMacros,
-    })
-    void supabase.from('weight_logs').upsert({
-      user_id: session.userId, weight_kg: p.weight, logged_on: new Date().toISOString().slice(0, 10),
-    }, { onConflict: 'user_id,logged_on' })
+    const [{ error: profileError }, { error: weightError }] = await Promise.all([
+      supabase.from('profiles').upsert({
+        id: userId, sex: p.sex, birth_date: birthDate, height_cm: p.height,
+        activity: p.activity, goal: p.goal, target_kcal: p.target,
+        target_source: p.targetSource, show_macros: store.showMacros,
+      }),
+      supabase.from('weight_logs').upsert({
+        user_id: userId, weight_kg: p.weight, logged_on: new Date().toISOString().slice(0, 10),
+      }, { onConflict: 'user_id,logged_on' }),
+    ])
+    if (profileError || weightError) {
+      console.error('Cloud profile save failed', profileError ?? weightError)
+      showToast('บันทึกข้อมูลส่วนตัวขึ้นคลาวด์ไม่สำเร็จ เครื่องอื่นอาจต้องกรอกใหม่')
+    }
   }
 
   useEffect(() => {
@@ -77,6 +83,8 @@ export default function App() {
           onGuest={() => setSession({ kind: 'guest', onboarded: Boolean(profile) })}
           onSignedIn={({ email, userId, profile: cloudProfile }) => {
             if (cloudProfile) setProfile(cloudProfile)
+            // Profile filled in as a guest was never uploaded; back it up so other devices skip onboarding.
+            else if (profile) void persistCloudProfile(profile, userId)
             setSession({ kind: 'account', email, userId, onboarded: Boolean(cloudProfile || profile) })
             void flushOutbox(true)
           }}
@@ -98,7 +106,7 @@ export default function App() {
         onDone={(p: Profile) => {
           setProfile(p)
           setSession({ ...session, onboarded: true })
-          persistCloudProfile(p)
+          void persistCloudProfile(p)
           showToast(`เริ่มได้เลย เป้าวันละ ${num(p.target)} kcal`)
         }}
       />
@@ -117,7 +125,7 @@ export default function App() {
         onCancel={() => setEditTarget(false)}
         onDone={(p) => {
           setProfile(p)
-          persistCloudProfile(p)
+          void persistCloudProfile(p)
           setEditTarget(false)
           showToast(`อัปเดตเป้าเป็น ${num(p.target)} kcal แล้ว`)
         }}
