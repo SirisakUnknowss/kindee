@@ -95,11 +95,19 @@ export function Auth({
         return
       }
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password: pass })
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: pass,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname },
+        })
         if (error) {
           if (error.message.includes('already registered')) {
             setErr('exists')
-          } else setErr('pass')
+          } else if (error.code === 'over_email_send_rate_limit' || error.status === 429) {
+            showToast('ส่งอีเมลยืนยันถี่เกินไป โปรดรอสักครู่แล้วลองใหม่')
+          } else {
+            showToast(`สมัครสมาชิกไม่สำเร็จ: ${error.message}`)
+          }
         } else {
           setResendLeft(60)
           setView('verify')
