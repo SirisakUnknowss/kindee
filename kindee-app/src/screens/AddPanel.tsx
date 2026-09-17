@@ -9,11 +9,12 @@ import { db } from '../lib/db'
 import type { Meal } from '../lib/types'
 import { PHOTO_AI_CONSENT_VERSION } from '../config/legal'
 
-type Tab = 'recent' | 'search' | 'scan' | 'photo'
+type Tab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'recent', label: 'ล่าสุด', icon: 'ph ph-clock-counter-clockwise' },
   { id: 'search', label: 'ค้นหา', icon: 'ph ph-magnifying-glass' },
+  { id: 'manual', label: 'จดเอง', icon: 'ph ph-pencil-simple' },
   { id: 'scan', label: 'สแกน', icon: 'ph ph-barcode' },
   { id: 'photo', label: 'ถ่ายรูป', icon: 'ph ph-camera' },
 ]
@@ -57,12 +58,17 @@ export function AddPanel({
   onClose,
   onPickFood,
   onQuickAdd,
+  onManualAdd,
 }: {
   initialTab: Tab
   initialMeal: Meal
   onClose: () => void
   onPickFood: (foodId: string, meal: Meal) => void
   onQuickAdd: (foodId: string, meal: Meal) => void
+  onManualAdd: (entry: {
+    meal: Meal; name: string; amount: number; unitLabel: string; kcal: number
+    protein?: number; carb?: number; fat?: number; note?: string
+  }) => void
   onQuickAddMany?: (foodIds: string[], meal: Meal) => void
 }) {
   const { entries, session, online, showToast } = useStore()
@@ -71,6 +77,14 @@ export function AddPanel({
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | FoodCat>('all')
   const searchRef = useRef<HTMLInputElement>(null)
+  const [manualName, setManualName] = useState('')
+  const [manualAmount, setManualAmount] = useState('1')
+  const [manualUnit, setManualUnit] = useState('จาน')
+  const [manualKcal, setManualKcal] = useState('')
+  const [manualProtein, setManualProtein] = useState('')
+  const [manualCarb, setManualCarb] = useState('')
+  const [manualFat, setManualFat] = useState('')
+  const [manualNote, setManualNote] = useState('')
 
   // Camera & Scan states
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -237,6 +251,11 @@ export function AddPanel({
     const ids = Array.from(new Set(entries.map((e) => e.foodId)))
     return ids.map((id) => FOODS.find((f) => f.id === id)).filter(Boolean) as Food[]
   }, [entries])
+  const manualQty = Number(manualAmount)
+  const manualPerUnit = Number(manualKcal)
+  const manualTotal = Number.isFinite(manualQty) && Number.isFinite(manualPerUnit) ? Math.round(manualQty * manualPerUnit) : 0
+  const manualValid = manualName.trim().length > 0 && manualQty > 0 && manualQty <= 100 && manualPerUnit >= 0 && manualPerUnit <= 10_000 && manualTotal <= 10_000
+  const optionalNumber = (value: string) => value.trim() === '' ? undefined : Math.max(0, Number(value) || 0)
 
   return (
     <div className="kd-screen" style={{ zIndex: 6 }}>
@@ -261,7 +280,7 @@ export function AddPanel({
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', borderTop: '1px solid var(--border)' }}>
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -341,6 +360,47 @@ export function AddPanel({
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === 'manual' && (
+          <div className="kd-manual-entry">
+            <div>
+              <h2 className="kd-h2">จดรายการอาหารเอง</h2>
+              <p className="kd-caption kd-muted">เหมือนจดบัญชี — ใส่เท่าที่รู้ ช่องสารอาหารและโน้ตเว้นไว้ได้</p>
+            </div>
+
+            <label><span className="kd-field-label">ชื่ออาหาร</span><input className="kd-input" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="เช่น ข้าวสวยร้านประจำ" autoFocus /></label>
+
+            <div className="kd-manual-two-col">
+              <label><span className="kd-field-label">จำนวนที่กิน</span><input className="kd-input tnum" type="number" inputMode="decimal" min="0.1" max="100" step="0.1" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} /></label>
+              <label><span className="kd-field-label">หน่วย</span><input className="kd-input" value={manualUnit} onChange={(e) => setManualUnit(e.target.value)} placeholder="จาน / ถ้วย / ชิ้น" /></label>
+            </div>
+
+            <label><span className="kd-field-label">แคลอรีต่อ 1 {manualUnit.trim() || 'หน่วย'}</span><div className="kd-input-with-unit"><input className="kd-input tnum" type="number" inputMode="numeric" min="0" max="10000" value={manualKcal} onChange={(e) => setManualKcal(e.target.value)} placeholder="เช่น 240" /><span>kcal</span></div></label>
+
+            <div className="kd-card kd-manual-calculator">
+              <div><Icon name="ph ph-calculator" size={23} /><span>ตัวช่วยคำนวณ</span></div>
+              <p className="tnum">{manualAmount || '0'} {manualUnit.trim() || 'หน่วย'} × {manualKcal || '0'} kcal</p>
+              <strong className="tnum">รวม {num(manualTotal)} kcal</strong>
+            </div>
+
+            <details className="kd-details kd-manual-details">
+              <summary>สารอาหารและบันทึกเพิ่มเติม</summary>
+              <div className="kd-manual-three-col">
+                {[['โปรตีน', manualProtein, setManualProtein], ['คาร์บ', manualCarb, setManualCarb], ['ไขมัน', manualFat, setManualFat]].map(([label, value, setter]) => (
+                  <label key={label as string}><span className="kd-field-label">{label as string} (ก.)</span><input className="kd-input tnum" type="number" inputMode="decimal" min="0" value={value as string} onChange={(e) => (setter as (value: string) => void)(e.target.value)} placeholder="–" /></label>
+                ))}
+              </div>
+              <label><span className="kd-field-label">โน้ต</span><textarea className="kd-input kd-manual-note" value={manualNote} onChange={(e) => setManualNote(e.target.value)} placeholder="เช่น กินครึ่งจาน, ไม่ใส่น้ำมัน, สูตรของที่บ้าน" maxLength={240} /></label>
+            </details>
+
+            <button className="kd-btn kd-btn-primary" disabled={!manualValid} onClick={() => onManualAdd({
+              meal, name: manualName.trim(), amount: manualQty, unitLabel: manualUnit.trim() || 'หน่วย', kcal: manualTotal,
+              protein: optionalNumber(manualProtein), carb: optionalNumber(manualCarb), fat: optionalNumber(manualFat), note: manualNote.trim() || undefined,
+            })}>
+              <Icon name="ph ph-notebook" size={20} /> บันทึกรายการ · {num(manualTotal)} kcal
+            </button>
           </div>
         )}
 

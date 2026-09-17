@@ -52,6 +52,10 @@ type Store = Persisted & {
   setShowMacros: (v: boolean) => void
   entriesFor: (day: string) => Entry[]
   addEntry: (e: { meal: Meal; foodId: string; unitIx: number; amount: number; day?: string }) => Entry
+  addManualEntry: (e: {
+    meal: Meal; name: string; amount: number; unitLabel: string; kcal: number
+    protein?: number; carb?: number; fat?: number; note?: string; day?: string
+  }) => Entry
   updateEntry: (uid: string, patch: Partial<Pick<Entry, 'unitIx' | 'amount' | 'meal'>>) => void
   removeEntry: (uid: string) => void
   addContribution: () => void
@@ -109,6 +113,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             amount: d.qty,
             day: d.eaten_on,
             kcal: d.kcal,
+            foodName: d.food_name,
+            unitLabel: d.unit_label,
+            note: d.note,
+            protein: d.protein,
+            carb: d.carb,
+            fat: d.fat,
+            entrySource: d.entry_source,
             pending: d.dirty === 1,
           }))
 
@@ -192,6 +203,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           entry_source: 'search',
         }).catch(console.error)
 
+        setState((s) => ({ ...s, entries: [...s.entries, entry] }))
+        return entry
+      },
+      addManualEntry: (e) => {
+        const uid = crypto.randomUUID()
+        const day = e.day ?? dayKey()
+        const entry: Entry = {
+          uid,
+          meal: e.meal,
+          foodId: 'custom',
+          unitIx: 0,
+          amount: e.amount,
+          day,
+          kcal: Math.round(e.kcal),
+          foodName: e.name.trim(),
+          unitLabel: e.unitLabel.trim() || 'หน่วย',
+          note: e.note?.trim() || undefined,
+          protein: e.protein,
+          carb: e.carb,
+          fat: e.fat,
+          entrySource: 'manual',
+          pending: state.session?.kind === 'account',
+        }
+        saveLocalEntry({
+          client_id: uid,
+          qty: e.amount,
+          meal: e.meal,
+          eaten_at: new Date().toISOString(),
+          eaten_on: day,
+          food_name: entry.foodName!,
+          unit_label: entry.unitLabel,
+          note: entry.note,
+          kcal: entry.kcal,
+          protein: e.protein,
+          carb: e.carb,
+          fat: e.fat,
+          entry_source: 'manual',
+        }).catch(console.error)
         setState((s) => ({ ...s, entries: [...s.entries, entry] }))
         return entry
       },

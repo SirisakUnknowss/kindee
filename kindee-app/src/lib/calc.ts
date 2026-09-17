@@ -62,11 +62,15 @@ export function computeTarget(p: Profile, now = new Date()): TargetBreakdown {
 }
 
 export const entryKcal = (e: Entry) => {
+  if (e.entrySource === 'manual') return e.kcal
   const f = foodById(e.foodId)
   return Math.round(f.kcal * f.units[e.unitIx].f * e.amount)
 }
 
 export function entryMacros(e: Entry) {
+  if (e.entrySource === 'manual') {
+    return { protein: e.protein ?? 0, carb: e.carb ?? 0, fat: e.fat ?? 0 }
+  }
   const f = foodById(e.foodId)
   const m = f.units[e.unitIx].f * e.amount
   return { protein: f.protein * m, carb: f.carb * m, fat: f.fat * m }

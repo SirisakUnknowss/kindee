@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/ui'
 import { ACTIVITY, GOALS, computeTarget, num } from '../lib/calc'
 import type { Profile } from '../lib/types'
@@ -42,6 +42,27 @@ function SliderField({
   onChange: (v: number) => void
 }) {
   const id = useRef(`sl-${label}`).current
+  const [draft, setDraft] = useState(String(value))
+  const editing = useRef(false)
+
+  useEffect(() => {
+    if (!editing.current) setDraft(String(value))
+  }, [value])
+
+  const commit = () => {
+    editing.current = false
+    const parsed = Number(draft)
+    if (draft.trim() === '' || !Number.isFinite(parsed)) {
+      setDraft(String(value))
+      return
+    }
+    const decimals = String(step).split('.')[1]?.length ?? 0
+    const clamped = Math.min(max, Math.max(min, parsed))
+    const next = Number((Math.round(clamped / step) * step).toFixed(decimals))
+    onChange(next)
+    setDraft(String(next))
+  }
+
   return (
     <div>
       <div className="kd-row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
@@ -55,12 +76,17 @@ function SliderField({
             min={min}
             max={max}
             step={step}
-            value={value}
+            value={draft}
             aria-label={`${label} (${unit})`}
+            onFocus={() => { editing.current = true }}
             onChange={(e) => {
-              const v = Number(e.target.value)
-              if (!Number.isNaN(v)) onChange(Math.min(max, Math.max(min, v)))
+              const next = e.target.value
+              setDraft(next)
+              const parsed = Number(next)
+              if (next !== '' && Number.isFinite(parsed) && parsed >= min && parsed <= max) onChange(parsed)
             }}
+            onBlur={commit}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
           />
           <span className="kd-label kd-muted">{unit}</span>
         </div>
@@ -73,7 +99,12 @@ function SliderField({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => {
+          const next = Number(e.target.value)
+          editing.current = false
+          setDraft(String(next))
+          onChange(next)
+        }}
       />
       <div className="kd-row" style={{ justifyContent: 'space-between' }}>
         <span className="kd-caption kd-muted tnum">{min}</span>

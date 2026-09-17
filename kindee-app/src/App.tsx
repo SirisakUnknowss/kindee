@@ -17,7 +17,7 @@ import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
-type AddTab = 'recent' | 'search' | 'scan' | 'photo'
+type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
 type QtyTarget = { foodId: string; meal: Meal; editingUid?: string; unitIx?: number; amount?: number }
 
 function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAdd: () => void }) {
@@ -42,7 +42,7 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
 
 export default function App() {
   const store = useStore()
-  const { session, profile, setSession, setProfile, addEntry, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
+  const { session, profile, setSession, setProfile, addEntry, addManualEntry, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
 
   const [tab, setTab] = useState<Tab>('overview')
   const [dayOffset, setDayOffset] = useState(0)
@@ -167,6 +167,11 @@ export default function App() {
           onClose={() => setAddOpen(null)}
           onPickFood={(foodId, meal) => setQty({ foodId, meal })}
           onQuickAdd={quickAdd}
+          onManualAdd={(manualEntry) => {
+            const entry = addManualEntry({ ...manualEntry, day: dayKey() })
+            setAddOpen(null)
+            showToast(`จด ${manualEntry.name} แล้ว ${num(entry.kcal)} kcal`, { undoUid: entry.uid })
+          }}
           onQuickAddMany={(ids, meal) => {
             ids.forEach((id) => addEntry({ meal, foodId: id, unitIx: 0, amount: 1, day: today }))
             setAddOpen(null)

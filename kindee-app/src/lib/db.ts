@@ -11,6 +11,8 @@ export interface LocalEntry {
   eaten_at: string
   eaten_on: string
   food_name: string
+  unit_label?: string
+  note?: string
   kcal: number
   protein?: number
   carb?: number

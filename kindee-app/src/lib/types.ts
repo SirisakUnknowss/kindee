@@ -10,6 +10,14 @@ export type Entry = {
   day: string
   /** kcal snapshot: ประวัติย้อนหลังต้องไม่ขยับเมื่อข้อมูลอาหารถูกแก้ */
   kcal: number
+  /** snapshot สำหรับรายการที่ผู้ใช้จดเอง */
+  foodName?: string
+  unitLabel?: string
+  note?: string
+  protein?: number
+  carb?: number
+  fat?: number
+  entrySource?: 'search' | 'recent' | 'barcode' | 'photo' | 'manual'
   /** ยังไม่ได้ซิงก์ขึ้น server */
   pending?: boolean
 }

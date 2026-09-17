@@ -21,6 +21,8 @@ function EntryRow({
 }) {
   const { session } = useStore()
   const food = foodById(entry.foodId)
+  const manual = entry.entrySource === 'manual'
+  const name = manual ? entry.foodName || 'รายการที่จดเอง' : food.name
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const start = useRef(0)
@@ -48,7 +50,7 @@ function EntryRow({
     <div className="kd-swipe">
       {!readOnly && (
         <div className="kd-swipe-bg" aria-hidden={dx === 0}>
-          <button className="kd-swipe-del" onClick={onDelete} aria-label={`ลบ ${food.name}`}>
+          <button className="kd-swipe-del" onClick={onDelete} aria-label={`ลบ ${name}`}>
             <Icon name="ph ph-trash" size={19} />
             ลบ
           </button>
@@ -67,15 +69,15 @@ function EntryRow({
         onPointerCancel={up}
       >
         <button
-          onClick={() => dx === 0 && !readOnly && onEdit()}
+          onClick={() => dx === 0 && !readOnly && !manual && onEdit()}
           style={{ display: 'flex', width: '100%', gap: 12, textAlign: 'left', alignItems: 'center' }}
-          disabled={readOnly}
+          disabled={readOnly || manual}
         >
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span className="kd-clamp2" style={{ fontSize: 15, lineHeight: 1.5 }}>{food.name}</span>
-            {food.brand && <span className="kd-caption kd-muted" style={{ display: 'block' }}>{food.brand}</span>}
+            <span className="kd-clamp2" style={{ fontSize: 15, lineHeight: 1.5 }}>{name}</span>
+            {!manual && food.brand && <span className="kd-caption kd-muted" style={{ display: 'block' }}>{food.brand}</span>}
             <span className="kd-label kd-muted" style={{ display: 'block' }}>
-              {amountLabel(entry.amount)} {food.units[entry.unitIx].label}
+              {manual ? `${entry.amount} ${entry.unitLabel || 'หน่วย'} · จดเอง` : `${amountLabel(entry.amount)} ${food.units[entry.unitIx].label}`}
               {session?.kind === 'account' && entry.pending && (
                 <>
                   {' · '}
@@ -85,6 +87,7 @@ function EntryRow({
                 </>
               )}
             </span>
+            {manual && entry.note && <span className="kd-caption kd-muted kd-clamp2" style={{ display: 'block' }}>{entry.note}</span>}
           </span>
           <span className="tnum kd-ledger-debit" style={{ fontSize: 15, fontWeight: 500 }}>−{num(entry.kcal)}</span>
         </button>
