@@ -1,6 +1,7 @@
 -- ── 0. Extensions ───────────────────────────────────────────
 create extension if not exists "uuid-ossp";
-create extension if not exists "pg_trgm";
+create schema if not exists extensions;
+create extension if not exists "pg_trgm" with schema extensions;
 
 -- ── 1. Profiles (โปรไฟล์ผู้ใช้) ──────────────────────────────────
 create table if not exists public.profiles (
@@ -71,7 +72,7 @@ create table if not exists public.food_portions (
 );
 
 -- Index สำหรับค้นหาภาษาไทย Fuzzy & Barcode
-create index if not exists foods_search_trgm on public.foods using gin (search_text gin_trgm_ops);
+create index if not exists foods_search_trgm on public.foods using gin (search_text extensions.gin_trgm_ops);
 create index if not exists foods_barcode on public.foods (barcode) where barcode is not null;
 create index if not exists foods_region_pkg on public.foods (region, is_packaged);
 

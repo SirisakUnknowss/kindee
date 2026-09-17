@@ -189,11 +189,37 @@ create or replace function public.normalize_thai(value text) returns text
 language sql immutable strict parallel safe
 set search_path = ''
 as $$
-  select replace(replace(
-    replace(replace(replace(replace(replace(replace(replace(replace(replace(
-      regexp_replace(lower(normalize(value, NFC)), '[็่้๊๋์[:space:][:punct:]]', '', 'g'),
-      'ำ', 'าม'), 'ใ', 'ไ'), 'ฤ', 'ริ'), 'ทร', 'ซ'), 'ณ', 'น'), 'ญ', 'ย'),
-      'ฏ', 'ต'), 'ฬ', 'ล'), 'กระเพรา', 'กะเพรา'), 'กระเพา', 'กะเพรา')
+  select replace(
+    replace(
+      replace(
+        replace(
+          replace(
+            replace(
+              replace(
+                replace(
+                  replace(
+                    replace(
+                      regexp_replace(lower(normalize(value, NFC)), '[็่้๊๋์[:space:][:punct:]]', '', 'g'),
+                      'ำ', 'าม'
+                    ),
+                    'ใ', 'ไ'
+                  ),
+                  'ฤ', 'ริ'
+                ),
+                'ทร', 'ซ'
+              ),
+              'ณ', 'น'
+            ),
+            'ญ', 'ย'
+          ),
+          'ฏ', 'ต'
+        ),
+        'ฬ', 'ล'
+      ),
+      'กระเพรา', 'กะเพรา'
+    ),
+    'กระเพา', 'กะเพรา'
+  )
 $$;
 
 create or replace function public.search_foods(q text, cat text default null, lim integer default 30)
@@ -204,13 +230,13 @@ as $$
   with nq as (select public.normalize_thai(q) as term)
   select f from public.foods f cross join nq
   where (cat is null or f.category = cat)
-    and (f.search_text % nq.term or f.search_text like '%' || nq.term || '%')
+    and (f.search_text operator(extensions.%) nq.term or f.search_text like '%' || nq.term || '%')
   order by
     (f.search_text = nq.term) desc,
     (f.search_text like nq.term || '%') desc,
     (f.quality = 'verified') desc,
     f.popularity desc,
-    similarity(f.search_text, nq.term) desc
+    extensions.similarity(f.search_text, nq.term) desc
   limit greatest(1, least(lim, 50))
 $$;
 
