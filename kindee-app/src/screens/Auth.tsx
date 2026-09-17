@@ -343,7 +343,7 @@ export function Auth({
           </span>
         </label>
 
-        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading || !acceptedLegal}>
+        <button className="kd-btn kd-btn-plain" style={{ marginTop: 20 }} onClick={google} disabled={loading}>
           <GoogleLogo />
           ดำเนินการต่อด้วย Google
         </button>
@@ -412,7 +412,7 @@ export function Auth({
             {passErr && <div className="kd-err"><Icon name="ph ph-warning-circle" size={14} />{passErr}</div>}
           </div>
 
-          <button className="kd-btn kd-btn-primary" onClick={submit} disabled={loading || !online || (mode === 'signup' && !acceptedLegal)}>
+          <button className="kd-btn kd-btn-primary" onClick={submit} disabled={loading}>
             {loading ? (
               <>
                 <span className="kd-spin"><Icon name="ph ph-circle-notch" size={18} /></span>

@@ -72,14 +72,22 @@ export default function App() {
 
   if (!session) {
     return (
-      <Auth
-        onGuest={() => setSession({ kind: 'guest', onboarded: Boolean(profile) })}
-        onSignedIn={({ email, userId, profile: cloudProfile }) => {
-          if (cloudProfile) setProfile(cloudProfile)
-          setSession({ kind: 'account', email, userId, onboarded: Boolean(cloudProfile || profile) })
-          void flushOutbox(true)
-        }}
-      />
+      <>
+        <Auth
+          onGuest={() => setSession({ kind: 'guest', onboarded: Boolean(profile) })}
+          onSignedIn={({ email, userId, profile: cloudProfile }) => {
+            if (cloudProfile) setProfile(cloudProfile)
+            setSession({ kind: 'account', email, userId, onboarded: Boolean(cloudProfile || profile) })
+            void flushOutbox(true)
+          }}
+        />
+        {/* Auth validation and sign-up errors are reported through toasts. */}
+        {toast && (
+          <div className="kd-toast kd-anim-up" role="status">
+            <span style={{ flex: 1 }}>{toast.text}</span>
+          </div>
+        )}
+      </>
     )
   }
 
