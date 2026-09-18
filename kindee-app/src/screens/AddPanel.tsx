@@ -52,6 +52,28 @@ function FoodResultRow({
   )
 }
 
+type PhotoCandidate = {
+  food_id: string
+  name_th: string
+  serving_g: number
+  portion: number
+  confidence: number
+  /** nutrition for ONE standard serving */
+  kcal: number
+  protein: number
+  carb: number
+  fat: number
+}
+
+const PHOTO_ERRORS: Record<string, string> = {
+  unauthorized: 'ต้องเข้าสู่ระบบก่อนใช้การวิเคราะห์รูป',
+  quota_exhausted: 'ใช้สิทธิ์วิเคราะห์รูปของเดือนนี้ครบแล้ว',
+  no_match: 'ไม่พบเมนูที่ตรงกับรูป ลองค้นหาด้วยชื่อแทน',
+  invalid_image: 'รูปใหญ่เกินไป ใช้ไฟล์ไม่เกิน 2 MB',
+  feature_unavailable: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
+  service_unconfigured: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
+}
+
 export function AddPanel({
   initialTab,
   initialMeal,
@@ -96,7 +118,8 @@ export function AddPanel({
   // Photo states
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoLoading, setPhotoLoading] = useState(false)
-  const [photoCandidates, setPhotoCandidates] = useState<any[] | null>(null)
+  const [photoCandidates, setPhotoCandidates] = useState<PhotoCandidate[] | null>(null)
+  const [photoPortions, setPhotoPortions] = useState<Record<string, number>>({})
   const [photoConsent, setPhotoConsent] = useState(false)
 
   useEffect(() => {
@@ -223,10 +246,12 @@ export function AddPanel({
           }),
         })
         const data = await res.json()
-        if (data.candidates) {
-          setPhotoCandidates(data.candidates)
+        if (Array.isArray(data.candidates) && data.candidates.length) {
+          const found = data.candidates as PhotoCandidate[]
+          setPhotoCandidates(found)
+          setPhotoPortions(Object.fromEntries(found.map((c) => [c.food_id, c.portion || 1])))
         } else {
-          showToast('ไม่สามารถวิเคราะห์รูปอาหารได้ ลองใหม่อีกครั้ง')
+          showToast(PHOTO_ERRORS[data.error?.code] ?? 'ไม่สามารถวิเคราะห์รูปอาหารได้ ลองใหม่อีกครั้ง')
         }
       } catch {
         showToast('เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร')
@@ -474,18 +499,36 @@ export function AddPanel({
             {photoCandidates && (
               <div style={{ textAlign: 'left', display: 'grid', gap: 10, marginTop: 16 }}>
                 <h3 className="kd-h2">ผลการวิเคราะห์จาก AI:</h3>
-                {photoCandidates.map((c, i) => {
-                  const matched = FOODS.find((food) => normalizeThai(food.name) === normalizeThai(c.name_th))
-                  return <div key={i} className="kd-card kd-row" style={{ padding: 12, justifyContent: 'space-between' }}>
-                    <div>
+                <p className="kd-caption kd-muted" style={{ marginTop: -6 }}>ค่าพลังงานเป็นค่าประมาณ ปรับปริมาณให้ตรงกับที่กินจริงก่อนบันทึก</p>
+                {photoCandidates.map((c) => {
+                  const portion = photoPortions[c.food_id] ?? 1
+                  const setPortion = (next: number) =>
+                    setPhotoPortions((all) => ({ ...all, [c.food_id]: Math.max(0.25, Math.min(4, next)) }))
+                  const total = Math.round(c.kcal * portion)
+                  return <div key={c.food_id} className="kd-card" style={{ padding: 12, display: 'grid', gap: 10 }}>
+                    <div className="kd-row" style={{ justifyContent: 'space-between', gap: 8 }}>
                       <div style={{ fontSize: 15, fontWeight: 500 }}>{c.name_th}</div>
-                      <div className="kd-caption kd-muted">โปรตีน {c.protein}g · คาร์บ {c.carb}g · ไขมัน {c.fat}g</div>
+                      <div className="kd-caption kd-muted" style={{ flex: 'none' }}>มั่นใจ {Math.round(c.confidence * 100)}%</div>
                     </div>
-                    <button className="kd-btn kd-btn-primary" disabled={!matched} style={{ width: 'auto', minHeight: 36, padding: '0 12px' }} onClick={() => {
-                      if (matched) onPickFood(matched.id, meal)
-                    }}>
-                      {matched ? `${c.kcal} kcal · เลือก` : 'ค้นหาแทน'}
-                    </button>
+                    <div className="kd-caption kd-muted">
+                      โปรตีน {num(c.protein * portion)}g · คาร์บ {num(c.carb * portion)}g · ไขมัน {num(c.fat * portion)}g
+                    </div>
+                    <div className="kd-row" style={{ justifyContent: 'space-between', gap: 8 }}>
+                      <div className="kd-row" style={{ gap: 6 }}>
+                        <button className="kd-btn" aria-label="ลดปริมาณ" style={{ width: 36, minHeight: 36, padding: 0 }} onClick={() => setPortion(portion - 0.25)}>−</button>
+                        <span style={{ minWidth: 56, textAlign: 'center' }}>{portion} ที่</span>
+                        <button className="kd-btn" aria-label="เพิ่มปริมาณ" style={{ width: 36, minHeight: 36, padding: 0 }} onClick={() => setPortion(portion + 0.25)}>+</button>
+                      </div>
+                      <button className="kd-btn kd-btn-primary" style={{ width: 'auto', minHeight: 36, padding: '0 12px' }} onClick={() => onManualAdd({
+                        meal, name: c.name_th, amount: portion, unitLabel: 'ที่', kcal: total,
+                        protein: Math.round(c.protein * portion * 10) / 10,
+                        carb: Math.round(c.carb * portion * 10) / 10,
+                        fat: Math.round(c.fat * portion * 10) / 10,
+                        note: 'บันทึกจากรูปภาพ',
+                      })}>
+                        {num(total)} kcal · บันทึก
+                      </button>
+                    </div>
                   </div>
                 })}
               </div>

@@ -2,6 +2,16 @@ import { authenticatedUser, error, json, supabaseHeaders, type PagesContext } fr
 
 const PHOTO_AI_CONSENT_VERSION = 'photo-ai-2026-09-15'
 
+type CatalogueFood = {
+  id: string
+  name_th: string
+  kcal_100g: number
+  protein_100g: number | null
+  carb_100g: number | null
+  fat_100g: number | null
+  serving_size_g: number | null
+}
+
 const decodeImage = (dataUrl: string) => {
   const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl)
   if (!match || match[2].length > 2_700_000) return null
@@ -81,13 +91,22 @@ export async function onRequestPost({ request, env }: PagesContext) {
   const limit = entitlement?.plan === 'premium' && ['active', 'trialing'].includes(entitlement.status) ? 30 : 3
   if (usage >= limit) return error(402, 'quota_exhausted', `Monthly photo quota of ${limit} has been used`)
 
-  const catalogueResponse = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/foods?is_public=eq.true&quality=in.(verified,community)&select=id,name_th,kcal_100g,protein_100g,carb_100g,fat_100g&order=popularity.desc&limit=120`,
-    { headers: adminHeaders },
-  )
-  const catalogue = catalogueResponse.ok ? await catalogueResponse.json() as Array<Record<string, unknown>> : []
+  // PostgREST caps each response at 1,000 rows, so page through the catalogue.
+  const catalogue: CatalogueFood[] = []
+  for (let offset = 0; offset < 3000; offset += 1000) {
+    const page = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/foods?is_public=eq.true&quality=in.(verified,community)&select=id,name_th,kcal_100g,protein_100g,carb_100g,fat_100g,serving_size_g&order=popularity.desc,id`,
+      { headers: { ...adminHeaders, range: `${offset}-${offset + 999}` } },
+    )
+    if (!page.ok) break
+    const rows = await page.json() as CatalogueFood[]
+    catalogue.push(...rows)
+    if (rows.length < 1000) break
+  }
   if (!catalogue.length) return error(503, 'catalogue_empty', 'No verified foods are available for matching')
 
+  // A numbered name list keeps the prompt small; nutrition never leaves the server.
+  const menu = catalogue.map((food, index) => `${index}|${food.name_th}`).join('\n')
   const model = env.GEMINI_MODEL ?? 'gemini-2.5-flash'
   const aiResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`,
@@ -96,7 +115,12 @@ export async function onRequestPost({ request, env }: PagesContext) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [
-          { text: `เลือกอาหารที่ตรงกับรูปมากที่สุดไม่เกิน 3 รายการจาก JSON นี้เท่านั้น: ${JSON.stringify(catalogue)} ตอบเป็น JSON array ที่มี food_id และ confidence 0..1 ห้ามสร้างรายการใหม่` },
+          { text: [
+            'ดูรูปอาหารแล้วเลือกเมนูที่ตรงที่สุดไม่เกิน 3 รายการจากรายการ "เลขลำดับ|ชื่อเมนู" ด้านล่างเท่านั้น ห้ามสร้างเมนูใหม่',
+            'ประเมิน portion เป็นจำนวนเท่าของ 1 ที่มาตรฐานร้านอาหารไทย (เช่น 0.5 = ครึ่งจาน, 1 = 1 จาน, 2 = 2 จาน)',
+            'ตอบเป็น JSON array เท่านั้น รูปแบบ [{"i": เลขลำดับ, "confidence": 0..1, "portion": 0.25..4}] เรียงจากมั่นใจมากไปน้อย',
+            menu,
+          ].join('\n') },
           { inlineData: { mimeType: image.mimeType, data: image.base64 } },
         ] }],
         generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
@@ -106,12 +130,29 @@ export async function onRequestPost({ request, env }: PagesContext) {
   if (!aiResponse.ok) return error(502, 'provider_failed', 'The image provider could not analyze this photo')
   const aiResult = await aiResponse.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
   const text = aiResult.candidates?.[0]?.content?.parts?.[0]?.text
-  let picks: Array<{ food_id: string; confidence: number }>
+  let picks: Array<{ i: number; confidence: number; portion?: number }>
   try { picks = JSON.parse(text ?? '[]') } catch { return error(502, 'invalid_provider_result', 'The provider returned an invalid result') }
-  const byId = new Map(catalogue.map((food) => [food.id, food]))
+  if (!Array.isArray(picks)) return error(502, 'invalid_provider_result', 'The provider returned an invalid result')
+  const seen = new Set<string>()
   const candidates = picks.slice(0, 3).flatMap((pick) => {
-    const food = byId.get(pick.food_id)
-    return food ? [{ ...food, food_id: pick.food_id, confidence: Math.max(0, Math.min(1, Number(pick.confidence) || 0)) }] : []
+    const food = catalogue[Number(pick.i)]
+    if (!food || seen.has(food.id)) return []
+    seen.add(food.id)
+    const portion = Math.round(Math.max(0.25, Math.min(4, Number(pick.portion) || 1)) * 4) / 4
+    const grams = Number(food.serving_size_g) || 100
+    const per = (value: number | null) => Math.round((Number(value) || 0) * grams / 100 * 10) / 10
+    return [{
+      food_id: food.id,
+      name_th: food.name_th,
+      serving_g: grams,
+      portion,
+      confidence: Math.max(0, Math.min(1, Number(pick.confidence) || 0)),
+      // Nutrition for ONE standard serving; the client multiplies by the chosen portion.
+      kcal: Math.round(Number(food.kcal_100g) * grams / 100),
+      protein: per(food.protein_100g),
+      carb: per(food.carb_100g),
+      fat: per(food.fat_100g),
+    }]
   })
   if (!candidates.length) return error(422, 'no_match', 'No confident catalogue match was found')
 
