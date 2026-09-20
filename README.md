@@ -17,10 +17,11 @@ KinDee เป็น Progressive Web App สำหรับบันทึกอ�
 - วิเคราะห์ภาพอาหารผ่าน Gemini เมื่อเปิดใช้ server key
 - Offline-first ด้วย Dexie และ outbox sync
 - Supabase Auth, Postgres, RLS และ RPC สำหรับ sync
-- Cloudflare Pages Functions สำหรับ `/api/barcode`, `/api/photo` และ `/api/sync`
+- Cloudflare Pages Functions สำหรับ `/api/barcode`, `/api/photo`, `/api/sync` และ Stripe Billing
 - PWA พร้อมไอคอน KinDee และชุดภาพ UAT 18 หน้า
 
 รายละเอียด product และ architecture อยู่ที่ [Product roadmap](KinDee/product-roadmap-architecture.md)
+ส่วนความแตกต่างของแพ็กเกจสมาชิกอยู่ที่ [Subscription packages](KinDee/subscription-packages.md)
 
 ## Technology
 
@@ -100,6 +101,16 @@ Pages Functions ใช้ค่าต่อไปนี้:
 | `GEMINI_API_KEY` | Yes | Photo API | วิเคราะห์ภาพอาหาร |
 | `GEMINI_MODEL` | No | No | ค่าเริ่มต้น `gemini-2.5-flash` |
 | `BARCODE_PROVIDER_URL` | No | No | ค่าเริ่มต้น Open Food Facts |
+| `APP_URL` | No | Billing | URL หลักของ environment สำหรับ Checkout redirect |
+| `STRIPE_SECRET_KEY` | Yes | Billing | Stripe secret key ฝั่ง server |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Billing | ตรวจลายเซ็น `/api/billing/webhook` |
+| `STRIPE_PRICE_PLUS_MONTH` / `STRIPE_PRICE_PLUS_YEAR` | No | Plus | Stripe recurring Price IDs |
+| `STRIPE_PRICE_PRO_MONTH` / `STRIPE_PRICE_PRO_YEAR` | No | Pro | Stripe recurring Price IDs |
+| `STRIPE_PRICE_UNLIMITED_MONTH` / `STRIPE_PRICE_UNLIMITED_YEAR` | No | Unlimited | Stripe recurring Price IDs |
+
+### ตั้งค่า Subscription
+
+สร้าง recurring Prices ใน Stripe สำหรับ Plus, Pro และ Unlimited อย่างละรายเดือน/รายปี แล้วใส่ Price ID ทั้ง 6 ค่าใน Cloudflare Pages จากนั้นตั้ง webhook ไปที่ `/api/billing/webhook` และรับ events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` ทุก paid plan ทดลองใช้ฟรี 30 วันเฉพาะครั้งแรก ส่วนการเปลี่ยนแพ็กเกจ ยกเลิก และแก้ข้อมูลชำระเงินทำผ่าน Stripe Customer Portal
 
 สำหรับ local Pages Functions:
 

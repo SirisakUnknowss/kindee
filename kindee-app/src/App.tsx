@@ -15,6 +15,7 @@ import { Onboarding } from './screens/Onboarding'
 import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
+import { Pricing } from './screens/Pricing'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -51,6 +52,7 @@ export default function App() {
   const [qty, setQty] = useState<QtyTarget | null>(null)
   const [editTarget, setEditTarget] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
+  const [pricingOpen, setPricingOpen] = useState(() => new URLSearchParams(window.location.search).has('billing'))
 
   const persistCloudProfile = async (p: Profile, userId = session?.kind === 'account' ? session.userId : undefined) => {
     if (!userId || !supabase) return
@@ -117,6 +119,10 @@ export default function App() {
     return <Terms initialTab={legalOpen} onBack={() => setLegalOpen(null)} />
   }
 
+  if (pricingOpen) {
+    return <Pricing session={session} onBack={() => setPricingOpen(false)} onRequireAccount={() => setSession(null)} />
+  }
+
   if (editTarget) {
     return (
       <Onboarding
@@ -172,7 +178,7 @@ export default function App() {
           }}
         />
       )}
-      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} />}
+      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} onOpenPricing={() => setPricingOpen(true)} />}
 
       <TabBar tab={tab} onTab={setTab} onAdd={() => { setDayOffset(0); openAdd('recent') }} />
 

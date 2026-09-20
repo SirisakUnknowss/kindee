@@ -6,6 +6,15 @@ export interface Env {
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
   BARCODE_PROVIDER_URL?: string
+  APP_URL?: string
+  STRIPE_SECRET_KEY?: string
+  STRIPE_WEBHOOK_SECRET?: string
+  STRIPE_PRICE_PLUS_MONTH?: string
+  STRIPE_PRICE_PLUS_YEAR?: string
+  STRIPE_PRICE_PRO_MONTH?: string
+  STRIPE_PRICE_PRO_YEAR?: string
+  STRIPE_PRICE_UNLIMITED_MONTH?: string
+  STRIPE_PRICE_UNLIMITED_YEAR?: string
 }
 
 export type PagesContext<P extends Record<string, string | string[]> = Record<string, string>> = {

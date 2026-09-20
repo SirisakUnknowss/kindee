@@ -4,6 +4,7 @@ import './styles.css'
 import App from './App'
 import { StoreProvider } from './lib/store'
 import { registerSW } from 'virtual:pwa-register'
+import { installErrorReporting } from './lib/report'
 
 // autoUpdate: when a new deploy is found the page reloads onto it. The service
 // worker only looks for one when asked, so check whenever the app is likely to
@@ -28,6 +29,9 @@ registerSW({
     window.addEventListener('online', check)
   },
 })
+
+// UAT: uncaught errors go to app_reports so testers do not have to describe them.
+installErrorReporting()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

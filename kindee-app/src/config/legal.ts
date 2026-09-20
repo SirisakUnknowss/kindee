@@ -1,4 +1,4 @@
-export const LEGAL_VERSION = '2026-09-15'
+export const LEGAL_VERSION = '2026-09-20'
 export const PHOTO_AI_CONSENT_VERSION = 'photo-ai-2026-09-15'
 
 export const legalConfig = {
@@ -7,4 +7,3 @@ export const legalConfig = {
   privacyEmail: import.meta.env.VITE_PRIVACY_EMAIL?.trim() || 'privacy@kindee.app',
   supportEmail: import.meta.env.VITE_SUPPORT_EMAIL?.trim() || 'support@kindee.app',
 } as const
-

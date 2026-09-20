@@ -19,19 +19,15 @@ KinDee helps people in Thailand log everyday food quickly, understand intake aga
 
 ## 2. Plans and entitlements
 
-| Capability | Guest | Free account | Premium |
-|---|---|---|---|
-| TDEE target, daily logging, Thai food search | Yes, on device | Yes | Yes |
-| Offline use and recent foods | Yes | Yes | Yes |
-| Backup and multi-device sync | No | Yes | Yes |
-| Cloud history | Device only | 90 days | Unlimited |
-| Barcode lookup | Limited local cache | Standard | Standard |
-| AI food-photo analysis | No | Small trial quota | Monthly quota |
-| Trend insights, export, advanced goals | No | Basic weekly view | Yes |
+| Capability | Guest | Free | Plus | Pro | Unlimited |
+|---|---|---|---|---|---|
+| TDEE target, daily logging, Thai food search | On device | Yes | Yes | Yes | Yes |
+| Backup and multi-device sync | No | Yes | Yes | Yes | Yes |
+| Cloud history and trends | Device only | Basic | Unlimited | Unlimited | Unlimited |
+| AI food-photo analysis / month | No | 3 | 30 | 100 | Fair-use unlimited |
+| Advanced goals and macros | No | No | No | Yes | Yes |
 
-The product must not block first logging behind sign-up. Prompt an anonymous user to create a free account only after meaningful value—for example after the first 2–3 logged meals, when opening history, changing devices, or using a cloud-cost feature.
-
-Premium is not required for v1 launch. Build the entitlement boundary now, but only introduce payment after retention and willingness-to-pay are validated. A trial begins only when a user intentionally opens a Premium feature; it never begins automatically on install.
+The product must not block first logging behind sign-up. Prompt an anonymous user to create a free account only after meaningful value—for example after the first 2–3 logged meals, when opening history, changing devices, or using a cloud-cost feature. Paid plans are available monthly or yearly through Stripe. A signed-in user receives one 30-day trial when intentionally starting their first paid checkout; installing the app never starts a trial.
 
 ## 3. User flows
 
@@ -72,10 +68,10 @@ Today → choose meal → recent / search / barcode / photo
   → queue sync if signed in → sync when online
 ```
 
-### 3.4 Premium gate
+### 3.4 Paid-plan gate
 
 ```text
-User selects a Premium feature
+User selects a paid feature
   → explain benefit, quota/price, and data handling
   → purchase or dismiss
   → verify entitlement server-side before consuming AI or exporting data
@@ -166,7 +162,7 @@ All endpoint inputs have schemas, batch/size limits, structured error codes, aud
 ### Phase 0 — Product foundations (1 week)
 
 - Confirm brand: **KinDee — กินดีตาม TDEE ของคุณ**.
-- Define Free/Premium entitlements and success metrics; no payment integration yet.
+- Define Free/Plus/Pro/Unlimited entitlements, success metrics, Stripe Checkout, Customer Portal, and signed webhooks.
 - Write privacy notice, consent copy, account deletion/export requirements, and food-data licensing decision log.
 - Choose production domains and create dev/staging/prod environments.
 
@@ -203,7 +199,7 @@ All endpoint inputs have schemas, batch/size limits, structured error codes, aud
 
 - Measure activation, D7/D30 retention, logging time, sync success, and demand for advanced insights.
 - Add server-side entitlement checks and a billing provider only if evidence supports it.
-- Premium: expanded history/insights/export first; keep essential logging free.
+- Paid plans: expanded history/insights/export first; keep essential logging free.
 
 **Exit:** paid conversion is tested without degrading the free core experience.
 

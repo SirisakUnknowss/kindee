@@ -114,7 +114,10 @@ export async function onRequestPost({ request, env }: PagesContext) {
   ])
   const entitlement = entitlementResponse.ok ? (await entitlementResponse.json() as Array<{ plan: string; status: string }>)[0] : null
   const usage = usageResponse.ok ? (await usageResponse.json() as Array<{ count: number }>)[0]?.count ?? 0 : 0
-  const limit = entitlement?.plan === 'premium' && ['active', 'trialing'].includes(entitlement.status) ? 30 : 3
+  const paid = entitlement && ['active', 'trialing'].includes(entitlement.status)
+  const limit = paid
+    ? ({ plus: 30, pro: 100, unlimited: Number.POSITIVE_INFINITY }[entitlement.plan] ?? 3)
+    : 3
   if (usage >= limit) return error(402, 'quota_exhausted', `Monthly photo quota of ${limit} has been used`)
 
   // PostgREST caps each response at 1,000 rows, so page through the catalogue.

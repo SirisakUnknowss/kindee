@@ -5,13 +5,27 @@ import { useStore } from '../lib/store'
 import { supabase } from '../lib/supabase'
 import { clearDeviceData, deleteAccount, downloadMyData } from '../lib/privacy'
 import { legalConfig } from '../config/legal'
+import { sendFeedback } from '../lib/report'
 
 /** หน้า 23 ฉัน — ระดับ wireframe (P1) พร้อมทางเข้าแก้เป้าหมายและตั้งค่าที่จำเป็น */
-export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void }) {
+export function Me({ onEditTarget, onOpenLegal, onOpenPricing }: { onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void; onOpenPricing: () => void }) {
   const { profile, session, entries, contributions, showMacros, setShowMacros, setSession, reset } = useStore()
   const daysUsed = new Set(entries.map((e) => e.day)).size
   const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
+  const [feedbackState, setFeedbackState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+
+  const submitFeedback = async () => {
+    setFeedbackState('sending')
+    const ok = await sendFeedback(feedback, rating ?? undefined)
+    setFeedbackState(ok ? 'sent' : 'failed')
+    if (ok) {
+      setFeedback('')
+      setRating(null)
+    }
+  }
 
   const exportData = async () => {
     if (!session) return
@@ -86,6 +100,15 @@ export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; on
         )}
 
         <div className="kd-card" style={{ marginTop: 14, overflow: 'hidden' }}>
+          <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 52 }} onClick={onOpenPricing}>
+            <Icon name="ph ph-crown" size={20} color="var(--accent-pressed)" />
+            <span style={{ flex: 1, textAlign: 'left' }}>
+              <span style={{ display: 'block' }}>แพ็กเกจและสมาชิก</span>
+              <span className="kd-caption kd-muted">Free · Plus · Pro · Unlimited</span>
+            </span>
+            <Icon name="ph ph-caret-right" size={16} color="var(--text-muted)" />
+          </button>
+          <div style={{ borderTop: '1px solid var(--border)' }} />
           <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 52 }} onClick={onEditTarget}>
             <Icon name="ph ph-fire" size={20} color="var(--accent-pressed)" />
             <span style={{ flex: 1, textAlign: 'left' }}>เป้าหมาย</span>
@@ -137,6 +160,56 @@ export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; on
           {confirmDelete && (
             <button className="kd-btn-text" style={{ width: '100%', padding: '8px 14px 14px' }} onClick={() => setConfirmDelete(false)} disabled={privacyBusy !== null}>ยกเลิก</button>
           )}
+        </div>
+
+        <div className="kd-card" style={{ marginTop: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 14px 8px' }}>
+            <div className="kd-body" style={{ fontWeight: 500 }}>บอกเราหน่อยว่าใช้แล้วเป็นยังไง</div>
+            <p className="kd-caption kd-muted" style={{ marginTop: 3 }}>
+              ติดตรงไหน อยากได้อะไรเพิ่ม บอกได้เลย ข้อความจะถูกส่งให้ทีมพัฒนาพร้อมรุ่นของแอป ไม่มีข้อมูลอาหารหรือน้ำหนักติดไปด้วย
+            </p>
+          </div>
+          <div style={{ padding: '0 14px 14px', display: 'grid', gap: 10 }}>
+            <div className="kd-row" style={{ gap: 6 }}>
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  className={`kd-chip${rating === value ? ' on' : ''}`}
+                  style={{ flex: 1, minWidth: 0 }}
+                  aria-pressed={rating === value}
+                  aria-label={`ให้คะแนน ${value} จาก 5`}
+                  onClick={() => setRating(rating === value ? null : value)}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+            <textarea
+              className="kd-input"
+              style={{ minHeight: 88, padding: 12, resize: 'vertical' }}
+              placeholder="เช่น หาเมนูไม่เจอ ปุ่มกดยาก หรืออยากได้อะไรเพิ่ม"
+              value={feedback}
+              maxLength={500}
+              onChange={(e) => {
+                setFeedback(e.target.value)
+                if (feedbackState !== 'idle') setFeedbackState('idle')
+              }}
+            />
+            <button
+              className="kd-btn kd-btn-primary"
+              disabled={!feedback.trim() || feedbackState === 'sending'}
+              onClick={submitFeedback}
+            >
+              <Icon name="ph ph-paper-plane-tilt" size={20} />
+              {feedbackState === 'sending' ? 'กำลังส่ง…' : 'ส่งให้ทีมพัฒนา'}
+            </button>
+            {feedbackState === 'sent' && (
+              <p className="kd-caption" role="status" style={{ color: 'var(--accent-pressed)' }}>ส่งแล้ว ขอบคุณมากนะ</p>
+            )}
+            {feedbackState === 'failed' && (
+              <p className="kd-caption" role="alert" style={{ color: '#a53636' }}>ส่งไม่สำเร็จ ลองใหม่อีกครั้งตอนออนไลน์</p>
+            )}
+          </div>
         </div>
 
         <button className="kd-btn kd-btn-outline" style={{ marginTop: 14 }} onClick={async () => {

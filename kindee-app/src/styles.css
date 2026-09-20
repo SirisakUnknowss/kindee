@@ -474,6 +474,36 @@ p { text-wrap: pretty; }
   .kd-overview-donut { flex-basis: 124px; width: 124px; height: 124px; }
 }
 
+/* ---- subscription plans ---- */
+.kd-pricing-screen { background: linear-gradient(180deg, var(--accent-tint-soft), var(--bg) 230px); }
+.kd-pricing-head { padding: calc(var(--safe-top) + 10px) 16px 10px; display: flex; align-items: center; gap: 10px; }
+.kd-pricing-head .kd-h1 { margin: 0; font-size: 25px; }
+.kd-pricing-head p { margin: 2px 0 0; }
+.kd-pricing-scroll { padding: 6px 16px 48px; }
+.kd-current-plan { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; padding: 14px; margin-bottom: 12px; }
+.kd-current-plan strong { display: block; margin-top: 1px; color: var(--accent-pressed); font-size: 18px; }
+.kd-current-plan small { grid-column: 1 / -1; color: var(--text-muted); }
+.kd-current-plan .kd-btn-text { grid-column: 1 / -1; justify-self: start; padding: 5px 0 0; }
+.kd-plan-status { padding: 5px 9px; border-radius: 999px; background: var(--accent-tint); color: var(--accent-pressed); font-size: 11px; font-weight: 600; }
+.kd-billing-message { margin-bottom: 12px; padding: 11px 13px; border-radius: 12px; background: var(--warn-bg); color: var(--warn-text); font-size: 12px; line-height: 1.45; }
+.kd-billing-switch { display: grid; grid-template-columns: 1fr 1fr; max-width: 360px; margin: 0 auto 14px; padding: 4px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.kd-billing-switch button { min-height: 40px; border-radius: 10px; color: var(--text-muted); font-size: 13px; }
+.kd-billing-switch button.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.kd-billing-switch span { font-size: 10px; opacity: .82; }
+.kd-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kd-plan-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-card); }
+.kd-plan-card.featured { border: 2px solid var(--accent); padding: 15px; }
+.kd-plan-badge { position: absolute; top: -9px; right: 14px; padding: 3px 9px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 600; }
+.kd-plan-card h2 { margin: 0; color: var(--accent-pressed); font-size: 21px; }
+.kd-plan-card p { min-height: 36px; margin: 3px 0 0; color: var(--text-muted); font-size: 11.5px; line-height: 1.4; }
+.kd-plan-price { min-height: 38px; margin-top: 12px; font-size: 22px; font-weight: 650; }
+.kd-plan-price small { color: var(--text-muted); font-size: 11px; font-weight: 400; }
+.kd-plan-card ul { flex: 1; margin: 10px 0 15px; padding: 0; list-style: none; }
+.kd-plan-card li { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+.kd-plan-card li .ph { flex: 0 0 auto; margin-top: 1px; color: var(--accent); }
+.kd-plan-card .kd-btn { min-height: 43px; padding-inline: 9px; font-size: 12px; }
+@media (max-width: 560px) { .kd-plan-grid { grid-template-columns: 1fr; } .kd-plan-card p { min-height: 0; } }
+
 /* ---- toast ---- */
 .kd-toast {
   position: absolute;
