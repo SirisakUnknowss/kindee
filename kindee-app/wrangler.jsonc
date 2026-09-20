@@ -6,21 +6,21 @@
   "vars": {
     "APP_ENV": "development",
     "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
-    "GEMINI_MODEL": "gemini-2.5-flash"
+    "GEMINI_MODEL": "gemini-3.6-flash"
   },
   "env": {
     "preview": {
       "vars": {
         "APP_ENV": "staging",
         "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
-        "GEMINI_MODEL": "gemini-2.5-flash"
+        "GEMINI_MODEL": "gemini-3.6-flash"
       }
     },
     "production": {
       "vars": {
         "APP_ENV": "production",
         "BARCODE_PROVIDER_URL": "https://world.openfoodfacts.org/api/v2/product",
-        "GEMINI_MODEL": "gemini-2.5-flash"
+        "GEMINI_MODEL": "gemini-3.6-flash"
       }
     }
   }

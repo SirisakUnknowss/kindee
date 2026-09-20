@@ -133,7 +133,7 @@ export async function onRequestPost({ request, env }: PagesContext) {
 
   // A numbered name list keeps the prompt small; nutrition never leaves the server.
   const menu = catalogue.map((food, index) => `${index}|${food.name_th}`).join('\n')
-  const model = env.GEMINI_MODEL ?? 'gemini-2.5-flash'
+  const model = env.GEMINI_MODEL ?? 'gemini-3.6-flash'
   const aiResponse = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`,
     {
