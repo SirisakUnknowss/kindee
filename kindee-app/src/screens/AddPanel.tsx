@@ -75,8 +75,8 @@ const PHOTO_ERRORS: Record<string, string> = {
   invalid_provider_result: 'ผลลัพธ์จาก AI ไม่ถูกต้อง ลองถ่ายใหม่อีกครั้ง',
   consent_required: 'ต้องยืนยันความยินยอมก่อนส่งรูป',
   invalid_image: 'รูปใหญ่เกินไป ใช้ไฟล์ไม่เกิน 2 MB',
-  feature_unavailable: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
-  service_unconfigured: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
+  feature_unavailable: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป (ยังไม่ได้ตั้งค่า AI)',
+  service_unconfigured: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป (ยังไม่ได้ตั้งค่าเซิร์ฟเวอร์)',
 }
 
 export function AddPanel({
