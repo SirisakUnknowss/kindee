@@ -27,6 +27,14 @@ const sha256 = async (bytes: Uint8Array) => {
 
 export async function onRequestPost({ request, env }: PagesContext) {
   if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    // Shapes only — never the values themselves.
+    console.error('service_unconfigured', JSON.stringify({
+      urlLength: (env.SUPABASE_URL ?? '').length,
+      publishableLength: (env.SUPABASE_PUBLISHABLE_KEY ?? '').length,
+      serviceLength: (env.SUPABASE_SERVICE_ROLE_KEY ?? '').length,
+      servicePrefix: (env.SUPABASE_SERVICE_ROLE_KEY ?? '').slice(0, 10),
+      geminiLength: (env.GEMINI_API_KEY ?? '').length,
+    }))
     return error(503, 'service_unconfigured', 'Photo analysis is not configured')
   }
   const user = await authenticatedUser(request, env)
