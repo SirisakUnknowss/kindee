@@ -146,7 +146,9 @@ npx supabase db push
 
 ไฟล์ [wrangler.jsonc](kindee-app/wrangler.jsonc) กำหนดค่า non-secret สำหรับ local, preview และ production ไว้แล้ว ส่วนค่าจริงของ Supabase/Gemini ให้กรอกใน Cloudflare Dashboard เท่านั้น
 
-สำหรับ deploy จากเครื่องหลัง login:
+**production deploy ให้ push ขึ้น `main` แล้วปล่อยให้ Cloudflare build เอง** เพราะค่า `VITE_*` ของฝั่งเบราว์เซอร์อยู่ใน Cloudflare ไม่ได้อยู่ในเครื่อง การ build ในเครื่องแล้ว `wrangler pages deploy` จะได้ bundle ที่ไม่มีค่า Supabase ทำให้บัญชี การซิงก์ และการค้นหาจากฐานข้อมูลใช้งานไม่ได้ทั้งหมด
+
+ถ้าจำเป็นต้อง deploy จากเครื่องจริง ๆ ต้องสร้าง `.env.production.local` ให้มีค่าเดียวกับใน Cloudflare ก่อน แล้วจึง:
 
 ```bash
 cd kindee-app
