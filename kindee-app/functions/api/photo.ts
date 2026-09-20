@@ -153,7 +153,11 @@ export async function onRequestPost({ request, env }: PagesContext) {
       }),
     },
   )
-  if (!aiResponse.ok) return error(502, 'provider_failed', 'The image provider could not analyze this photo')
+  if (!aiResponse.ok) {
+    // Provider error detail is logged, never returned to the client.
+    console.error('gemini_failed', aiResponse.status, model, (await aiResponse.text().catch(() => '')).slice(0, 500))
+    return error(502, 'provider_failed', 'The image provider could not analyze this photo')
+  }
   const aiResult = await aiResponse.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
   const text = aiResult.candidates?.[0]?.content?.parts?.[0]?.text
   let picks: Array<{ i: number; confidence: number; portion?: number }>
