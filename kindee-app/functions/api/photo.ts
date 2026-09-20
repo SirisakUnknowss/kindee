@@ -67,7 +67,21 @@ export async function onRequestPost({ request, env }: PagesContext) {
   })
   if (!consentResponse.ok) {
     // Surfaced in `wrangler pages deployment tail`; never returned to the client.
-    console.error('consent_insert_failed', consentResponse.status, await consentResponse.text().catch(() => ''))
+    const key = env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+    console.error(
+      'consent_insert_failed',
+      consentResponse.status,
+      await consentResponse.text().catch(() => ''),
+      // Shape only — never the key itself.
+      JSON.stringify({
+        url: env.SUPABASE_URL,
+        keyPrefix: key.slice(0, 10),
+        keyLength: key.length,
+        keyTrimmedLength: key.trim().length,
+        sbError: consentResponse.headers.get('x-sb-error-code') ?? consentResponse.headers.get('sb-error-code'),
+        contentType: consentResponse.headers.get('content-type'),
+      }),
+    )
     return error(503, 'consent_audit_failed', 'Consent could not be recorded; the photo was not sent')
   }
 
