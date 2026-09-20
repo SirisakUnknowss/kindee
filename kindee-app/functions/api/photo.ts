@@ -65,7 +65,11 @@ export async function onRequestPost({ request, env }: PagesContext) {
       withdrawn_at: null,
     }),
   })
-  if (!consentResponse.ok) return error(503, 'consent_audit_failed', 'Consent could not be recorded; the photo was not sent')
+  if (!consentResponse.ok) {
+    // Surfaced in `wrangler pages deployment tail`; never returned to the client.
+    console.error('consent_insert_failed', consentResponse.status, await consentResponse.text().catch(() => ''))
+    return error(503, 'consent_audit_failed', 'Consent could not be recorded; the photo was not sent')
+  }
 
   // Opportunistic retention enforcement; raw images are never stored by KinDee.
   await fetch(`${env.SUPABASE_URL}/rest/v1/photo_jobs?expires_at=lt.${encodeURIComponent(new Date().toISOString())}`, {

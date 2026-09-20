@@ -69,6 +69,11 @@ const PHOTO_ERRORS: Record<string, string> = {
   unauthorized: 'ต้องเข้าสู่ระบบก่อนใช้การวิเคราะห์รูป',
   quota_exhausted: 'ใช้สิทธิ์วิเคราะห์รูปของเดือนนี้ครบแล้ว',
   no_match: 'ไม่พบเมนูที่ตรงกับรูป ลองค้นหาด้วยชื่อแทน',
+  consent_audit_failed: 'บันทึกความยินยอมไม่สำเร็จ ระบบจึงไม่ได้ส่งรูปออกไป ลองใหม่อีกครั้ง',
+  catalogue_empty: 'คลังอาหารยังไม่พร้อมใช้งาน',
+  provider_failed: 'ผู้ให้บริการ AI ไม่ตอบกลับ ลองใหม่อีกครั้ง',
+  invalid_provider_result: 'ผลลัพธ์จาก AI ไม่ถูกต้อง ลองถ่ายใหม่อีกครั้ง',
+  consent_required: 'ต้องยืนยันความยินยอมก่อนส่งรูป',
   invalid_image: 'รูปใหญ่เกินไป ใช้ไฟล์ไม่เกิน 2 MB',
   feature_unavailable: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
   service_unconfigured: 'ยังไม่ได้เปิดใช้การวิเคราะห์รูป',
@@ -121,6 +126,7 @@ export function AddPanel({
   const [photoCandidates, setPhotoCandidates] = useState<PhotoCandidate[] | null>(null)
   const [photoPortions, setPhotoPortions] = useState<Record<string, number>>({})
   const [photoConsent, setPhotoConsent] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
   // Catalogue search states
   const [remoteIds, setRemoteIds] = useState<string[]>([])
@@ -231,7 +237,16 @@ export function AddPanel({
     }
 
     setPhotoLoading(true)
+    setPhotoError(null)
+    const fail = (message: string) => {
+      setPhotoError(message)
+      showToast(message)
+    }
     const reader = new FileReader()
+    reader.onerror = () => {
+      setPhotoLoading(false)
+      fail('อ่านไฟล์รูปไม่สำเร็จ ลองเลือกรูปใหม่')
+    }
     reader.onload = async () => {
       const base64 = reader.result as string
       try {
@@ -255,12 +270,14 @@ export function AddPanel({
           setPhotoCandidates(found)
           setPhotoPortions(Object.fromEntries(found.map((c) => [c.food_id, c.portion || 1])))
         } else {
-          showToast(PHOTO_ERRORS[data.error?.code] ?? 'ไม่สามารถวิเคราะห์รูปอาหารได้ ลองใหม่อีกครั้ง')
+          fail(PHOTO_ERRORS[data.error?.code] ?? 'ไม่สามารถวิเคราะห์รูปอาหารได้ ลองใหม่อีกครั้ง')
         }
       } catch {
-        showToast('เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร')
+        fail('เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร')
       } finally {
         setPhotoLoading(false)
+        // Allow re-selecting the same file after a failure.
+        e.target.value = ''
       }
     }
     reader.readAsDataURL(file)
@@ -572,6 +589,12 @@ export function AddPanel({
               <Icon name="ph ph-aperture" size={20} />
               {photoLoading ? 'กำลังวิเคราะห์รูปภาพ...' : 'ถ่ายรูป / เลือกรูปภาพ'}
             </button>
+
+            {photoError && !photoLoading && (
+              <p className="kd-caption" role="alert" style={{ color: 'var(--status-over, #b3261e)', textAlign: 'left' }}>
+                {photoError}
+              </p>
+            )}
 
             {photoCandidates && (
               <div style={{ textAlign: 'left', display: 'grid', gap: 10, marginTop: 16 }}>
