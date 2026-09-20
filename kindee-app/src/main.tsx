@@ -5,12 +5,27 @@ import App from './App'
 import { StoreProvider } from './lib/store'
 import { registerSW } from 'virtual:pwa-register'
 
-// autoUpdate: when a new deploy is found the page reloads onto it.
-// Also re-check hourly so long-open tabs and installed PWAs pick it up.
+// autoUpdate: when a new deploy is found the page reloads onto it. The service
+// worker only looks for one when asked, so check whenever the app is likely to
+// be showing stale code: on load, when the tab becomes visible again, when the
+// connection returns, and every few minutes for tabs left open.
+const UPDATE_INTERVAL_MS = 5 * 60 * 1000
+
 registerSW({
   immediate: true,
   onRegisteredSW(_url, registration) {
-    if (registration) setInterval(() => void registration.update(), 60 * 60 * 1000)
+    if (!registration) return
+    let lastCheck = Date.now()
+    const check = () => {
+      lastCheck = Date.now()
+      void registration.update()
+    }
+    setInterval(check, UPDATE_INTERVAL_MS)
+    // A backgrounded tab throttles timers, so re-check when it comes back.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30_000) check()
+    })
+    window.addEventListener('online', check)
   },
 })
 
