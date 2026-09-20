@@ -86,6 +86,7 @@ const geminiWasCalled = (calls: { url: string }[]) =>
 
 beforeEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('POST /api/photo consent gate', () => {
