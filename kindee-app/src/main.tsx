@@ -35,7 +35,7 @@ installErrorReporting()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <div className="kd-app">
+    <div className={window.location.pathname.startsWith('/admin') ? 'kd-app kd-app-admin' : 'kd-app'}>
       <StoreProvider>
         <App />
       </StoreProvider>

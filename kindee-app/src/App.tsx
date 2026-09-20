@@ -16,6 +16,7 @@ import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 import { Pricing } from './screens/Pricing'
+import { AdminDashboard } from './screens/AdminDashboard'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -53,6 +54,7 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
   const [pricingOpen, setPricingOpen] = useState(() => new URLSearchParams(window.location.search).has('billing'))
+  const adminMode = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')
 
   const persistCloudProfile = async (p: Profile, userId = session?.kind === 'account' ? session.userId : undefined) => {
     if (!userId || !supabase) return
@@ -99,6 +101,10 @@ export default function App() {
         )}
       </>
     )
+  }
+
+  if (adminMode) {
+    return <AdminDashboard session={session} onSignIn={() => setSession(null)} onExit={() => window.location.assign('/')} />
   }
 
   if (!profile || !session.onboarded) {

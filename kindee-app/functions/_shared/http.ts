@@ -46,8 +46,15 @@ export async function authenticatedUser(request: Request, env: Env) {
     headers: { authorization, apikey: env.SUPABASE_PUBLISHABLE_KEY },
   })
   if (!response.ok) return null
-  return await response.json() as { id: string; email?: string }
+  return await response.json() as {
+    id: string
+    email?: string
+    app_metadata?: Record<string, unknown>
+  }
 }
+
+export const isAdmin = (user: Awaited<ReturnType<typeof authenticatedUser>>) =>
+  user?.app_metadata?.role === 'admin' || user?.app_metadata?.user_role === 'admin'
 
 export function supabaseHeaders(env: Env, authorization?: string, privileged = false): HeadersInit {
   const key = privileged ? env.SUPABASE_SERVICE_ROLE_KEY : env.SUPABASE_PUBLISHABLE_KEY
