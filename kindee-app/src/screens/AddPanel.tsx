@@ -127,6 +127,8 @@ export function AddPanel({
   const [photoPortions, setPhotoPortions] = useState<Record<string, number>>({})
   const [photoConsent, setPhotoConsent] = useState(false)
   const [photoError, setPhotoError] = useState<string | null>(null)
+  // Only the newest upload may write results; a slower earlier one is ignored.
+  const photoRequestId = useRef(0)
 
   // Catalogue search states
   const [remoteIds, setRemoteIds] = useState<string[]>([])
@@ -236,14 +238,18 @@ export function AddPanel({
       return
     }
 
+    const requestId = ++photoRequestId.current
+    const isCurrent = () => photoRequestId.current === requestId
     setPhotoLoading(true)
     setPhotoError(null)
     const fail = (message: string) => {
+      if (!isCurrent()) return
       setPhotoError(message)
       showToast(message)
     }
     const reader = new FileReader()
     reader.onerror = () => {
+      if (!isCurrent()) return
       setPhotoLoading(false)
       fail('อ่านไฟล์รูปไม่สำเร็จ ลองเลือกรูปใหม่')
     }
@@ -265,8 +271,10 @@ export function AddPanel({
           }),
         })
         const data = await res.json()
+        if (!isCurrent()) return
         if (Array.isArray(data.candidates) && data.candidates.length) {
           const found = data.candidates as PhotoCandidate[]
+          setPhotoError(null)
           setPhotoCandidates(found)
           setPhotoPortions(Object.fromEntries(found.map((c) => [c.food_id, c.portion || 1])))
         } else {
@@ -275,7 +283,7 @@ export function AddPanel({
       } catch {
         fail('เกิดข้อผิดพลาดในการวิเคราะห์รูปอาหาร')
       } finally {
-        setPhotoLoading(false)
+        if (isCurrent()) setPhotoLoading(false)
         // Allow re-selecting the same file after a failure.
         e.target.value = ''
       }
