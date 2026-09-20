@@ -122,6 +122,10 @@ export function AddPanel({
   const [photoPortions, setPhotoPortions] = useState<Record<string, number>>({})
   const [photoConsent, setPhotoConsent] = useState(false)
 
+  // Catalogue search states
+  const [remoteIds, setRemoteIds] = useState<string[]>([])
+  const [searching, setSearching] = useState(false)
+
   useEffect(() => {
     if (tab === 'search') searchRef.current?.focus()
   }, [tab])
@@ -262,15 +266,80 @@ export function AddPanel({
     reader.readAsDataURL(file)
   }
 
+  // The bundled catalogue answers instantly and offline; the database adds the
+  // rest of the ~1,000 curated foods once the query settles.
+  useEffect(() => {
+    const term = query.trim()
+    if (!supabase || !online || term.length < 2) {
+      setRemoteIds([])
+      setSearching(false)
+      return
+    }
+    let cancelled = false
+    setSearching(true)
+    const timer = window.setTimeout(async () => {
+      const { data, error } = await supabase!.rpc('search_foods', {
+        q: term,
+        cat: filter === 'all' ? null : filter,
+        lim: 30,
+      })
+      if (cancelled) return
+      setSearching(false)
+      if (error || !Array.isArray(data)) return setRemoteIds([])
+      // Default portion labels ("แก้ว", "ชาม", ...) live in a separate table.
+      const { data: portions } = await supabase!
+        .from('food_portions')
+        .select('food_id,label_th')
+        .in('food_id', data.map((row: any) => row.id))
+        .eq('is_default', true)
+      if (cancelled) return
+      const labels = new Map<string, string>((portions ?? []).map((p: any) => [p.food_id, p.label_th]))
+      setRemoteIds(data.map((row: any) => {
+        const grams = Number(row.serving_size_g) || 100
+        const per = (value: unknown) => Math.round((Number(value) || 0) * grams / 100 * 10) / 10
+        return registerRuntimeFood({
+          id: row.id,
+          name: row.name_th,
+          kind: 'dish',
+          cat: (FILTERS.some((f) => f.id === row.category) ? row.category : 'dish') as FoodCat,
+          kcal: Math.round(Number(row.kcal_100g) * grams / 100),
+          protein: per(row.protein_100g),
+          carb: per(row.carb_100g),
+          fat: per(row.fat_100g),
+          q: row.quality === 'verified' ? 'verified' : 'open',
+          icon: 'ph ph-bowl-food',
+          units: [
+            { label: labels.get(row.id) ?? 'ที่', f: 1 },
+            { label: `ครึ่ง${labels.get(row.id) ?? 'ที่'}`, f: 0.5 },
+            { label: 'ต่อ 100 ก.', f: Math.round(100 / grams * 100) / 100 },
+          ],
+        }).id
+      }))
+    }, 300)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [query, filter, online])
+
   const results = useMemo(() => {
     const q = normalizeThai(query)
-    return FOODS.filter((f) => {
+    // Database results are registered into FOODS, so exclude them here and append
+    // them below; otherwise a food matched by both sources would show up twice.
+    const remoteIdSet = new Set(remoteIds)
+    const local = FOODS.filter((f) => {
+      if (remoteIdSet.has(f.id)) return false
       const catOk = filter === 'all' || f.cat === filter
       const haystack = normalizeThai(`${f.name} ${f.brand ?? ''}`)
       const qOk = !q || haystack.includes(q)
       return catOk && qOk
     })
-  }, [query, filter])
+    const localNames = new Set(local.map((f) => normalizeThai(f.name)))
+    const remote = remoteIds
+      .map((id) => FOODS.find((f) => f.id === id))
+      .filter((f): f is Food => Boolean(f) && !localNames.has(normalizeThai(f!.name)))
+    return [...local, ...remote]
+  }, [query, filter, remoteIds])
 
   const recents = useMemo(() => {
     const ids = Array.from(new Set(entries.map((e) => e.foodId)))
@@ -384,6 +453,14 @@ export function AddPanel({
                   onQuickAdd={() => onQuickAdd(f.id, meal)}
                 />
               ))}
+              {searching && (
+                <p className="kd-caption kd-muted" style={{ textAlign: 'center' }}>กำลังค้นหาในคลังอาหาร...</p>
+              )}
+              {!searching && !results.length && query.trim().length > 0 && (
+                <p className="kd-caption kd-muted" style={{ textAlign: 'center' }}>
+                  {online ? 'ไม่พบอาหารนี้ จดรายการเองได้ที่แท็บ "จดเอง"' : 'ออฟไลน์อยู่ ค้นได้เฉพาะรายการที่มีในเครื่อง'}
+                </p>
+              )}
             </div>
           </div>
         )}
