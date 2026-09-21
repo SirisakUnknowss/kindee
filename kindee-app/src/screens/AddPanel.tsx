@@ -482,9 +482,22 @@ export function AddPanel({
                 <p className="kd-caption kd-muted" style={{ textAlign: 'center' }}>กำลังค้นหาในคลังอาหาร...</p>
               )}
               {!searching && !results.length && query.trim().length > 0 && (
-                <p className="kd-caption kd-muted" style={{ textAlign: 'center' }}>
-                  {online ? 'ไม่พบอาหารนี้ จดรายการเองได้ที่แท็บ "จดเอง"' : 'ออฟไลน์อยู่ ค้นได้เฉพาะรายการที่มีในเครื่อง'}
-                </p>
+                <div style={{ display: 'grid', gap: 8, justifyItems: 'center', padding: '8px 0' }}>
+                  <p className="kd-caption kd-muted" style={{ textAlign: 'center' }}>
+                    {online ? `ยังไม่มี "${query.trim()}" ในคลังอาหาร` : 'ออฟไลน์อยู่ ค้นได้เฉพาะรายการที่มีในเครื่อง'}
+                  </p>
+                  <button
+                    className="kd-btn kd-btn-outline"
+                    style={{ width: 'auto', minHeight: 44, padding: '0 16px' }}
+                    onClick={() => {
+                      setManualName(query.trim())
+                      setTab('manual')
+                    }}
+                  >
+                    <Icon name="ph ph-pencil-simple" size={18} />
+                    จดเองเป็น "{query.trim()}"
+                  </button>
+                </div>
               )}
             </div>
           </div>

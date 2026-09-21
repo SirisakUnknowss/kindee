@@ -5,6 +5,10 @@ component portions (rice, protein, oil, sauce, ...). They are marked
 quality='community' — useful for logging and photo matching, not lab-verified.
 
 Usage: python supabase/seed/generate_thai_foods.py > supabase/migrations/<ts>_seed_thai_foods.sql
+
+An optional numeric argument caps the output to the most popular N foods. The
+first seed used a cap of 1000, which silently dropped entire categories such as
+mushroom dishes, so the default now emits every generated food.
 """
 from __future__ import annotations
 
@@ -241,8 +245,55 @@ CURRY = [('แกงเขียวหวาน', [C['coconut'], C['sugar']], 80
 for dish, extra, pop, proteins in CURRY:
     for prot in proteins:
         body = [PROTEIN[prot], C['veg'], *extra]
-        add_combo(f'{dish}{prot}', 'dish', body, portion='ถ้วย', pop=pop - 10, aliases=[dish])
-        add_combo(f'ข้าวราด{dish}{prot}', 'dish', [C['rice'], *body], pop=pop - 15)
+        # "แกงไตปลา" + "ปลา" must not become "แกงไตปลาปลา".
+        name = dish if prot in dish else f'{dish}{prot}'
+        add_combo(name, 'dish', body, portion='ถ้วย', pop=pop - 10, aliases=[dish])
+        add_combo(f'ข้าวราด{name}', 'dish', [C['rice'], *body], pop=pop - 15)
+
+# ── เห็ด / แกงพื้นบ้าน / อาหารเจ ─────────────────────────────────
+MUSHROOM = (100, 30, 3, 5, 0.3)
+for name, parts, portion, pop in [
+    ('แกงเห็ดรวม', [MUSHROOM, MUSHROOM, C['veg'], (15, 20, 1, 3, 0.5)], 'ถ้วย', 55),
+    ('แกงเห็ด', [MUSHROOM, MUSHROOM, C['veg']], 'ถ้วย', 50),
+    ('แกงเห็ดใส่หมู', [MUSHROOM, PROTEIN['หมู'], C['veg']], 'ถ้วย', 45),
+    ('แกงเห็ดเผาะ', [MUSHROOM, C['veg'], PROTEIN['หมู']], 'ถ้วย', 25),
+    ('แกงเลียง', [C['veg'], C['veg'], (60, 20, 0.5, 5, 0), PROTEIN['กุ้ง']], 'ถ้วย', 55),
+    ('แกงเลียงกุ้งสด', [C['veg'], C['veg'], (60, 20, 0.5, 5, 0), PROTEIN['กุ้ง']], 'ถ้วย', 40),
+    ('แกงอ่อมหมู', [PROTEIN['หมู'], C['veg'], C['veg']], 'ถ้วย', 45),
+    ('แกงอ่อมไก่', [PROTEIN['ไก่'], C['veg'], C['veg']], 'ถ้วย', 40),
+    ('แกงหน่อไม้', [(120, 30, 3, 5, 0.3), C['veg'], PROTEIN['หมู']], 'ถ้วย', 45),
+    ('แกงแค', [C['veg'], C['veg'], PROTEIN['ไก่']], 'ถ้วย', 25),
+    ('แกงผักหวานไข่มดแดง', [C['veg'], (40, 50, 7, 1, 2)], 'ถ้วย', 20),
+    ('แกงขนุนหมู', [(120, 110, 2, 26, 0.5), PROTEIN['หมู']], 'ถ้วย', 20),
+    ('แกงบอน', [C['veg'], C['veg'], (20, 30, 1, 3, 1.5)], 'ถ้วย', 15),
+    ('แกงจืดเห็ดหมูสับ', [MUSHROOM, PROTEIN['หมูสับ'], C['noodle_soup']], 'ถ้วย', 40),
+    ('ต้มยำเห็ด', [MUSHROOM, MUSHROOM, C['veg']], 'ถ้วย', 45),
+    ('ต้มยำเห็ดรวมกุ้ง', [MUSHROOM, PROTEIN['กุ้ง'], C['veg']], 'ถ้วย', 40),
+    ('ต้มข่าเห็ด', [MUSHROOM, MUSHROOM, C['coconut']], 'ถ้วย', 40),
+    ('ผัดเห็ดรวม', [MUSHROOM, MUSHROOM, C['oil'], C['sauce']], 'จาน', 50),
+    ('ผัดเห็ดนางฟ้าหมู', [MUSHROOM, PROTEIN['หมู'], C['oil'], C['sauce']], 'จาน', 40),
+    ('ผัดเห็ดหอมน้ำมันหอย', [MUSHROOM, MUSHROOM, C['oil'], C['sauce']], 'จาน', 35),
+    ('ผัดกะเพราเห็ด', [MUSHROOM, MUSHROOM, C['oil'], C['veg']], 'จาน', 40),
+    ('ข้าวกะเพราเห็ด', [C['rice'], MUSHROOM, MUSHROOM, C['oil'], C['veg']], 'จาน', 45),
+    ('ข้าวกะเพราเห็ดไข่ดาว', [C['rice'], MUSHROOM, MUSHROOM, C['oil'], C['veg'], C['fried_egg']], 'จาน', 40),
+    ('เห็ดชุบแป้งทอด', [MUSHROOM, (40, 150, 3, 20, 7), C['oil']], 'จาน', 40),
+    ('เห็ดเข็มทองย่าง', [MUSHROOM, (10, 45, 0, 1, 5)], 'ไม้', 35),
+    ('เห็ดออรินจิย่าง', [MUSHROOM, (10, 45, 0, 1, 5)], 'ไม้', 30),
+    ('ยำเห็ดรวม', [MUSHROOM, MUSHROOM, C['sauce'], C['sugar']], 'จาน', 35),
+    ('ลาบเห็ด', [MUSHROOM, MUSHROOM, (15, 55, 1, 11, 0.5)], 'จาน', 35),
+    ('ห่อหมกเห็ด', [MUSHROOM, C['coconut'], C['boiled_egg']], 'ห่อ', 20),
+    ('สุกี้เห็ดรวม', [MUSHROOM, (110, 200, 0.2, 49, 0.2), C['noodle_soup'], C['boiled_egg']], 'ชาม', 25),
+    ('ผัดผักรวมเจ', [C['veg'], C['veg'], C['oil'], C['sauce'], PROTEIN['เต้าหู้']], 'จาน', 40),
+    ('ข้าวผัดเจ', [C['rice'], C['rice'], C['oil'], C['veg'], PROTEIN['เต้าหู้']], 'จาน', 35),
+    ('ก๋วยเตี๋ยวเจ', [(130, 170, 2.5, 38, 0.5), C['noodle_soup'], C['veg'], PROTEIN['เต้าหู้']], 'ชาม', 35),
+    ('แกงเขียวหวานเจ', [C['coconut'], C['sugar'], C['veg'], PROTEIN['เต้าหู้']], 'ถ้วย', 25),
+    ('เต้าหู้ผัดเห็ด', [PROTEIN['เต้าหู้'], MUSHROOM, C['oil'], C['sauce']], 'จาน', 30),
+    ('ห่อหมกปลา', [PROTEIN['ปลา'], C['coconut'], C['boiled_egg']], 'ห่อ', 40),
+    ('ห่อหมกทะเล', [PROTEIN['ทะเล'], C['coconut'], C['boiled_egg']], 'ห่อ', 30),
+    ('ไข่พะโล้หมูสามชั้น', [PROTEIN['หมูกรอบ'], C['boiled_egg'], C['sugar']], 'ถ้วย', 35),
+    ('ผัดผักบุ้งหมูกรอบ', [C['veg'], PROTEIN['หมูกรอบ'], C['oil']], 'จาน', 40),
+]:
+    add_combo(name, 'dish', parts, portion=portion, pop=pop)
 
 # ── ยำ / ส้มตำ / ลาบ ────────────────────────────────────────────
 for name, g, k, p, c, f, pop in [
@@ -531,10 +582,20 @@ def per100(v, g):
     return round(v * 100 / g, 2) if g else 0
 
 
-def main(limit: int | None = None):
+def names_in_migration(path: str) -> set[str]:
+    """Names already inserted by an earlier generated seed migration."""
+    import re
+    text = open(path, encoding='utf-8').read()
+    return set(re.findall(r"\('seed:th:\d+', '((?:[^']|'')*)'", text))
+
+
+def main(limit: int | None = None, since: str | None = None):
     items = sorted(rows, key=lambda r: -r['pop'])
     if limit:
         items = items[:limit]
+    if since:
+        existing = {name.replace("''", "'") for name in names_in_migration(since)}
+        items = [r for r in items if r['name'] not in existing]
     out = sys.stdout
     out.write('-- Generated by supabase/seed/generate_thai_foods.py — do not edit by hand.\n')
     out.write(f'-- {len(items)} curated Thai foods (estimates per typical serving, quality=community).\n\n')
@@ -552,6 +613,15 @@ def main(limit: int | None = None):
                 str(per100(r['c'], g)), str(per100(r['f'], g)), str(g), q(r['portion']), str(r['pop']),
             ]) + (')\n' if j == len(chunk) - 1 else '),\n'))
         out.write(';\n\n')
+    # Removing foods the generator no longer produces is only safe when this
+    # file holds the complete set; a --since delta would delete everything else.
+    cleanup = '' if since else '''-- Seeded names that the generator no longer produces (e.g. the old doubled
+-- "แกงไตปลาปลา"). Entries keep their own name and kcal; food_id becomes null.
+delete from public.foods f
+where f.source = 'curated' and f.source_id like 'seed:th:%'
+  and not exists (select 1 from _seed_foods s where md5(s.name_th)::uuid = f.id);
+
+'''
     out.write('''insert into public.foods (id, name_th, name_en, aliases, category, is_dish, is_packaged,
   kcal_100g, protein_100g, carb_100g, fat_100g, serving_size_g, source, source_id,
   quality, region, is_public, search_text, popularity)
@@ -571,9 +641,15 @@ select md5('portion:' || s.name_th)::uuid, md5(s.name_th)::uuid, s.portion_label
 from _seed_foods s
 on conflict (id) do update set label_th = excluded.label_th, grams = excluded.grams;
 
-drop table _seed_foods;
+
+''' + cleanup + '''drop table _seed_foods;
 ''')
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else None)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('limit', nargs='?', type=int, help='keep only the N most popular foods')
+    parser.add_argument('--since', help='emit only foods missing from this earlier seed migration')
+    args = parser.parse_args()
+    main(args.limit, args.since)
