@@ -136,12 +136,10 @@ main > section + section { margin-top: clamp(72px, 10vw, 120px); }
 .slip {
   margin: 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 18px;
   padding: 22px 24px 18px; box-shadow: var(--shadow); transform: rotate(1.2deg);
-  background-image: repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule-faint) 43px 44px);
-  background-position: 0 102px;
 }
 .slip-head { display: flex; justify-content: space-between; font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid var(--rule); color: var(--ink-soft); font-size: 14px; }
 .slip-rows { list-style: none; margin: 0; padding: 0; }
-.slip-rows li { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; min-height: 44px; padding-top: 10px; }
+.slip-rows li { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rule-faint); }
 .slip-rows li span:first-child { font-weight: 700; }
 .slip-rows small { font-weight: 400; color: var(--ink-soft); margin-left: 6px; font-size: 14px; }
 .slip-rows .mono { color: var(--brick); font-size: 17px; }
