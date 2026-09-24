@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Icon } from '../components/ui'
+import { BrandLogo, Icon } from '../components/ui'
 import { loadMonitoring, type MonitoringData } from '../lib/admin'
 
 type View = 'overview' | 'users' | 'logs'
@@ -52,7 +52,7 @@ export function AdminDashboard({ onExit, onSignOut }: {
   return (
     <div className="kd-admin">
       <aside className="kd-admin-sidebar">
-        <div className="kd-admin-brand"><span><Icon name="ph ph-bowl-food" size={22} /></span><div><strong>KinDee</strong><small>Monitoring</small></div></div>
+        <div className="kd-admin-brand"><span><BrandLogo size={28} /></span><div><strong>KinDee</strong><small>Monitoring</small></div></div>
         <nav>
           {([
             ['overview', 'ภาพรวม', 'ph ph-squares-four'],
