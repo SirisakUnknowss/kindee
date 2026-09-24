@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/ui'
 import { loadMonitoring, type MonitoringData } from '../lib/admin'
-import type { Session } from '../lib/types'
 
 type View = 'overview' | 'users' | 'logs'
 const planColor: Record<string, string> = { free: '#89918a', plus: '#72a493', pro: '#3f7d68', unlimited: '#285c50' }
@@ -15,10 +14,9 @@ const safeLogUrl = (value: string | null) => {
   } catch { return null }
 }
 
-export function AdminDashboard({ session, onSignIn, onExit }: {
-  session: Session
-  onSignIn: () => void
+export function AdminDashboard({ onExit, onSignOut }: {
   onExit: () => void
+  onSignOut: () => void
 }) {
   const [view, setView] = useState<View>('overview')
   const [data, setData] = useState<MonitoringData | null>(null)
@@ -29,13 +27,12 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
   const [logKind, setLogKind] = useState('all')
 
   const refresh = useCallback(async () => {
-    if (session.kind !== 'account') return
     setLoading(true)
     setError(null)
     try { setData(await loadMonitoring()) }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'monitoring_failed') }
     finally { setLoading(false) }
-  }, [session])
+  }, [])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -48,11 +45,8 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
     (!query || `${log.message} ${log.detail ?? ''} ${log.user_id ?? ''}`.toLowerCase().includes(query.toLowerCase())),
   ), [data, logKind, query])
 
-  if (session.kind !== 'account') {
-    return <div className="kd-admin-gate"><Icon name="ph ph-shield-check" size={40} /><h1>KinDee Monitoring</h1><p>เข้าสู่ระบบด้วยบัญชีผู้ดูแลเพื่อดูข้อมูลระบบ</p><button className="kd-btn kd-btn-primary" onClick={onSignIn}>เข้าสู่ระบบ</button></div>
-  }
-  if (error === 'forbidden') {
-    return <div className="kd-admin-gate"><Icon name="ph ph-lock-key" size={40} /><h1>ไม่มีสิทธิ์เข้าถึง</h1><p>บัญชีนี้ไม่ได้รับสิทธิ์ผู้ดูแลระบบ</p><button className="kd-btn kd-btn-outline" onClick={onExit}>กลับไปที่แอป</button></div>
+  if (error === 'forbidden' || error === 'mfa_required' || error === 'unauthorized') {
+    return <div className="kd-admin-gate"><Icon name="ph ph-lock-key" size={40} /><h1>ไม่มีสิทธิ์เข้าถึง</h1><p>บัญชีผู้ดูแลนี้ยังไม่ได้รับสิทธิ์ หรือจำเป็นต้องยืนยัน MFA ใหม่</p><button className="kd-btn kd-btn-outline" onClick={onSignOut}>ออกจากระบบผู้ดูแล</button></div>
   }
 
   return (
@@ -67,6 +61,7 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
           ] as const).map(([id, label, icon]) => <button key={id} className={view === id ? 'on' : ''} onClick={() => { setView(id); setQuery('') }}><Icon name={icon} size={20} />{label}</button>)}
         </nav>
         <button className="kd-admin-exit" onClick={onExit}><Icon name="ph ph-arrow-square-out" size={18} />กลับไปที่แอป</button>
+        <button className="kd-admin-exit" onClick={onSignOut}><Icon name="ph ph-sign-out" size={18} />ออกจากระบบผู้ดูแล</button>
       </aside>
 
       <main className="kd-admin-main">

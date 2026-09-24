@@ -1,4 +1,4 @@
-import { authenticatedUser, error, isAdmin, json, supabaseHeaders, type Env, type PagesContext } from '../../_shared/http'
+import { error, json, supabaseHeaders, type Env, type PagesContext } from '../../_shared/http'
 
 type AuthUser = {
   id: string
@@ -53,12 +53,39 @@ async function exactCount(env: Env, table: string, filters = '') {
 }
 
 export async function onRequestGet({ request, env }: PagesContext) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    return error(503, 'service_unconfigured', 'Monitoring is not configured')
+  const adminUrl = env.ADMIN_SUPABASE_URL?.replace(/\/$/, '')
+  const dataUrl = env.SUPABASE_URL?.replace(/\/$/, '')
+  const allowedIds = new Set(env.ADMIN_USER_IDS?.split(',').map((id) => id.trim()).filter(Boolean))
+  if (!dataUrl || !env.SUPABASE_PUBLISHABLE_KEY || !env.SUPABASE_SERVICE_ROLE_KEY ||
+    !adminUrl || !adminUrl.startsWith('https://') || adminUrl === dataUrl ||
+    !env.ADMIN_SUPABASE_PUBLISHABLE_KEY || !allowedIds.size) {
+    return error(503, 'admin_unavailable', 'ERR_ADMIN_001')
   }
-  const viewer = await authenticatedUser(request, env)
-  if (!viewer) return error(401, 'unauthorized', 'Sign in to view monitoring')
-  if (!isAdmin(viewer)) return error(403, 'forbidden', 'Administrator access is required')
+  const authorization = request.headers.get('authorization')
+  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
+  if (!token) return error(401, 'unauthorized', 'Sign in with an administrator account')
+
+  // GoTrue verifies the bearer against the *separate* admin project before we
+  // read any claim. A regular KinDee user token is never accepted here.
+  let viewer: { id?: string }
+  try {
+    const authResponse = await fetch(`${adminUrl}/auth/v1/user`, {
+      headers: { authorization: `Bearer ${token}`, apikey: env.ADMIN_SUPABASE_PUBLISHABLE_KEY },
+    })
+    if (!authResponse.ok) return error(401, 'unauthorized', 'Invalid administrator session')
+    viewer = await authResponse.json() as { id?: string }
+  } catch {
+    return error(503, 'admin_unavailable', 'ERR_ADMIN_001')
+  }
+  if (!viewer.id || !allowedIds.has(viewer.id)) return error(403, 'forbidden', 'Administrator access is required')
+  try {
+    const payload = token.split('.')[1]
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as { sub?: string; aal?: string }
+    if (claims.sub !== viewer.id || claims.aal !== 'aal2') return error(403, 'mfa_required', 'Administrator MFA is required')
+  } catch {
+    return error(401, 'unauthorized', 'Invalid administrator token')
+  }
 
   try {
     const adminHeaders = supabaseHeaders(env, undefined, true)

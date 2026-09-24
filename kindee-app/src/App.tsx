@@ -16,7 +16,7 @@ import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 import { Pricing } from './screens/Pricing'
-import { AdminDashboard } from './screens/AdminDashboard'
+import { AdminAccess } from './screens/AdminAccess'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -80,6 +80,10 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [])
 
+  if (adminMode) {
+    return <AdminAccess onExit={() => window.location.assign('/')} />
+  }
+
   if (!session) {
     return (
       <>
@@ -101,10 +105,6 @@ export default function App() {
         )}
       </>
     )
-  }
-
-  if (adminMode) {
-    return <AdminDashboard session={session} onSignIn={() => setSession(null)} onExit={() => window.location.assign('/')} />
   }
 
   if (!profile || !session.onboarded) {

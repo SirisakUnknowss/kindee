@@ -1,20 +1,29 @@
 # KinDee Admin Monitoring
 
-หน้า dashboard อยู่ที่ `/admin` และใช้สำหรับดูภาพรวมผู้ใช้ แพ็กเกจ การบันทึกอาหาร งานวิเคราะห์รูป error logs และ feedback จาก UAT
+หน้า `/admin` ใช้บัญชีผู้ดูแล **คนละระบบ** กับบัญชีผู้ใช้ KinDee ไม่สามารถนำ account หรือ token ของผู้ใช้ทั่วไปมาเปิด dashboard ได้
 
-## การให้สิทธิ์ผู้ดูแล
+## ตั้งค่าระบบผู้ดูแล
 
-ระบบตรวจสิทธิ์จาก Supabase Auth `app_metadata` เท่านั้น ไม่ใช้ `user_metadata` เพราะผู้ใช้แก้ไขข้อมูลส่วนนั้นเองได้
+1. สร้าง Supabase project ใหม่สำหรับ **Admin Auth เท่านั้น** ห้ามใช้ project เดียวกับฐานข้อมูล KinDee
+2. เปิด Google provider ใน Admin project ด้วย OAuth client ของ Google และเพิ่ม callback URL ของ Admin project ใน Google Auth Platform จากนั้นเพิ่ม `/admin` ของทุก environment ใน Supabase Redirect URLs
+3. สร้าง/เชิญบัญชีผู้ดูแลด้วย email ที่ยืนยันแล้วใน Admin project แล้วปิด public sign-up เพื่อให้เฉพาะบัญชีเดิมเข้าได้ Google identity ที่ใช้ email เดียวกันจะถูกเชื่อมกับบัญชีเดิม; ตรวจ UUID หลัง Google login ครั้งแรกก่อนเพิ่มลง allowlist
+4. เปิด TOTP MFA ใน Admin project ผู้ดูแลจะลงทะเบียนแอปยืนยันตัวตนจากหน้า `/admin` ครั้งแรก และต้องกรอกรหัส MFA เมื่อ session อยู่ระดับ `aal1`
+5. ตั้ง URL และ publishable key ของ Admin project เป็น `VITE_ADMIN_SUPABASE_URL`, `VITE_ADMIN_SUPABASE_PUBLISHABLE_KEY` ใน build environment และ `ADMIN_SUPABASE_URL`, `ADMIN_SUPABASE_PUBLISHABLE_KEY` ใน Pages Functions environment
+6. ใส่ UUID ของบัญชี admin ที่อนุญาตใน `ADMIN_USER_IDS` (คั่นด้วย comma) เฉพาะฝั่ง Pages Functions; อย่าใช้ email หรือ UUID ของ user project
+7. ค่า `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` เดิมยังชี้ไปยัง **data project** เพื่ออ่านข้อมูล monitoring เท่านั้น
 
-ตั้งค่าให้บัญชีผู้ดูแลมี metadata ต่อไปนี้ผ่าน Supabase Dashboard หรือ Admin API:
+ค่า environment เหล่านี้ต้องตั้งแยกสำหรับ development, preview และ production ก่อน deploy. ถ้ายังไม่ตั้งครบ, ใช้ project เดียวกัน, หรือ allowlist ว่าง API จะไม่ให้เข้าถึง (`503`)
 
-```json
-{
-  "role": "admin"
-}
-```
+## Security
 
-หลังแก้ metadata ให้ผู้ดูแลออกจากระบบและเข้าสู่ระบบใหม่เพื่อรับ session ล่าสุด
+- Admin Auth client แยกจาก user Auth client และใช้ storage key `kindee-admin-auth` คนละ session กัน
+- `/api/admin/monitoring` ตรวจ bearer กับ Auth endpoint ของ Admin project **ทุกคำขอ** แล้วตรวจ UUID ใน `ADMIN_USER_IDS` และ JWT `aal2` ก่อนใช้ service role ของ data project
+- `app_metadata` ใน user project หรือการเปลี่ยน URL ไป `/admin` ไม่ได้ให้สิทธิ์ admin
+- ไม่มีหน้า sign-up สำหรับ admin; publishable key ไม่ใช่ secret ส่วน service-role key อยู่ฝั่ง Pages Functions เท่านั้น
+- Dashboard เป็น read-only, ตอบ `Cache-Control: private, no-store` และไม่ส่ง admin token ไป data project
+- จำกัดผู้ใช้ล่าสุดสูงสุด 200 รายและ logs 100 รายในผล API
+
+ถ้าสงสัยว่าบัญชีรั่ว ให้ลบ UUID จาก `ADMIN_USER_IDS` และ revoke session ทันที
 
 ## ข้อมูลที่แสดง
 
@@ -25,14 +34,6 @@
 - กิจกรรมการบันทึกอาหารย้อนหลัง 14 วัน
 - ตารางผู้ใช้ พร้อมแพ็กเกจ สถานะ จำนวน entry และโควตารูป
 - error logs และ feedback ล่าสุดจาก `app_reports`
-
-## Security
-
-- Browser เรียกเฉพาะ `/api/admin/monitoring` ด้วย access token ของผู้ดูแล
-- Pages Function ตรวจ user จาก Supabase Auth ทุกครั้ง แล้วตรวจ `app_metadata.role`
-- `SUPABASE_SERVICE_ROLE_KEY` อยู่เฉพาะ Cloudflare Pages Functions
-- Dashboard เป็น read-only และตั้ง `Cache-Control: private, no-store`
-- API ส่งผู้ใช้ล่าสุดสูงสุด 200 รายและ logs ล่าสุด 100 ราย เพื่อลดการเปิดเผยข้อมูลเกินจำเป็น
 
 ## ข้อจำกัด
 

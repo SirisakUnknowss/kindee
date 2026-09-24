@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { adminSupabase } from './admin-auth'
 
 export type MonitoringData = {
   generatedAt: string
@@ -42,7 +42,7 @@ export type MonitoringData = {
 }
 
 export async function loadMonitoring(): Promise<MonitoringData> {
-  const session = supabase ? (await supabase.auth.getSession()).data.session : null
+  const session = adminSupabase ? (await adminSupabase.auth.getSession()).data.session : null
   if (!session) throw new Error('unauthorized')
   const response = await fetch('/api/admin/monitoring', {
     headers: { authorization: `Bearer ${session.access_token}` },
