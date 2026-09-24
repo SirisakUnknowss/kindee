@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "kindee-app", "run", "dev", "--", "--port", "5183"],
       "port": 5183
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "node",
+      "cwd": "landing",
+      "runtimeArgs": ["../kindee-app/node_modules/wrangler/bin/wrangler.js", "pages", "dev", "public", "--port", "5190", "--compatibility-date", "2026-09-14"],
+      "port": 5190
     }
   ]
 }
