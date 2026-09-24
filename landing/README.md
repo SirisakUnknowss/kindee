@@ -8,10 +8,18 @@ landing/
 │  ├─ index.html             เนื้อหาทั้งหมด (ภาษาไทย)
 │  ├─ styles.css             ธีม "บัญชีแคลอรี" ตาม KinDee/brand-theme.md
 │  ├─ main.js                ตรวจฟอร์มฝั่ง browser แล้วส่งไป /api/contact
+│  ├─ i18n.js                คำแปลภาษาอังกฤษ + ปุ่มสลับภาษา TH/EN และธีม ระบบ/สว่าง/มืด
 │  └─ assets/icon.svg        ไอคอนเดียวกับแอป
 ├─ functions/api/contact.ts  บันทึกข้อความลง Supabase (service key)
 └─ README.md                 ไฟล์นี้ — ไม่ถูก publish
 ```
+
+## ภาษาและธีม
+
+- ข้อความภาษาไทยเขียนใน `index.html` โดยตรง (ใช้ได้แม้ปิด JavaScript) ส่วนภาษาอังกฤษอยู่ใน `i18n.js` ผูกกันด้วย `data-i18n`, `data-i18n-html` และ `data-i18n-attr="attr:key;attr:key"`
+- เพิ่มข้อความใหม่: ใส่ key ใน HTML แล้วเพิ่มคำแปลใน `EN` ของ `i18n.js`
+- ภาษาเริ่มต้นตามภาษาเบราว์เซอร์ (`th` → ไทย, อื่น ๆ → English) ธีมเริ่มต้นตาม OS; ค่าที่ผู้ใช้เลือกเก็บใน `localStorage` (`kd-lang`, `kd-theme`)
+- สคริปต์เล็ก ๆ ใน `<head>` ตั้งค่าก่อนวาดหน้าจอ จึงไม่กระพริบ
 
 ## ดูในเครื่อง
 
