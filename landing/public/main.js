@@ -1,4 +1,5 @@
 // Contact form: client-side checks, then POST /api/contact (landing/functions/api/contact.ts).
+// ES2017 only (no ?. / ??) so older in-app browsers can run it.
 (() => {
   const form = document.getElementById('contact-form')
   const status = document.getElementById('c-status')
@@ -30,7 +31,7 @@
       offline: 'Can’t connect. Check your internet and try again.',
     },
   }
-  const t = () => MESSAGES[window.kdLang?.() === 'en' ? 'en' : 'th']
+  const t = () => MESSAGES[typeof window.kdLang === 'function' && window.kdLang() === 'en' ? 'en' : 'th']
 
   // "Join the beta" links preselect the matching topic.
   document.querySelectorAll('a[data-topic]').forEach((link) => {
@@ -42,7 +43,7 @@
 
   function say(text, kind) {
     status.textContent = text
-    status.className = `form-status ${kind ?? ''}`
+    status.className = 'form-status ' + (kind || '')
   }
 
   const fields = {
@@ -75,7 +76,8 @@
 
     submit.disabled = true
     say(t().sending)
-    const data = Object.fromEntries(new FormData(form))
+    const data = {}
+    new FormData(form).forEach((value, key) => { data[key] = value })
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -97,7 +99,7 @@
       } else {
         say(t().failed(document.getElementById('support-email').textContent), 'err')
       }
-    } catch {
+    } catch (e) {
       say(t().offline, 'err')
     } finally {
       submit.disabled = false

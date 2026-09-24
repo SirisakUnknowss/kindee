@@ -2,13 +2,16 @@
 // Thai is written in the HTML itself; this file holds English and swaps text by
 // data-i18n keys. The original Thai is captured from the DOM on first run so
 // switching back needs no second dictionary.
-(() => {
-  const EN = {
+// Written in ES2017 on purpose: older in-app browsers (LINE, Facebook, old
+// Android WebViews) reject the whole file on newer syntax such as ?. or ??.
+(function () {
+  var EN = {
     'meta.title': 'KinDee — Eat well within your TDEE',
     'meta.description': 'KinDee is a calorie counter built for Thai food. Set a daily calorie budget from your TDEE and log meals by plate, ladle or skewer in seconds. Free to start, no sign-up needed.',
-    skip: 'Skip to content',
+    'skip': 'Skip to content',
     'nav.label': 'Main menu',
     'nav.home': 'KinDee home',
+    'nav.install': 'Install',
     'nav.contact': 'Contact',
     'nav.cta': 'Try it free',
     'prefs.langLabel': 'Switch to Thai',
@@ -18,59 +21,39 @@
     'prefs.dark': 'Dark',
 
     'hero.badge': 'Now open for early testers',
-    'hero.title': '<span class="soft">Eat well,</span><br><span class="nowrap">count easy</span>',
-    'hero.lede': 'KinDee sets a daily calorie budget from your TDEE, then lets you log Thai food by the <b>plate, ladle or skewer</b> in seconds. See right away how much of today’s budget is left.',
+    'hero.title': '<span class="soft">Eat well,</span> <span class="nowrap">count easy</span>',
+    'hero.lede': 'Count calories for Thai food like keeping a budget. Set a daily limit, log by the plate, ladle or skewer, and see what’s left instantly.',
     'hero.cta': 'Start free — no sign-up',
-    'hero.beta': 'Join the beta',
-    'hero.trustLabel': 'Highlights',
-    'hero.trust1': '<b>1,300+</b> Thai dishes',
-    'hero.trust2': 'Works offline',
-    'hero.trust3': 'PDPA-compliant data',
-    'hero.shotAlt': 'KinDee Today screen showing 1,190 kcal left of a 1,810 kcal budget',
-    'hero.floatDish': 'Basil pork with fried egg',
-    'hero.floatMeta': '1 plate · logged',
-    'hero.floatLeft': 'Left for today',
+    'hero.install': 'How to install on your phone',
+    'hero.budget': 'Today’s budget from TDEE',
+    'hero.remain': 'Left for dinner',
+    'hero.formula': 'Budget <span>−</span> what you ate <span>=</span> <b>what’s left</b>',
+    'hero.cue': 'Scroll to see how it works',
+    'mock.label': 'Example Today screen: budget 1,810 kcal, 960 eaten, 850 left',
+    'mock.today': 'Today',
+    'mock.left': 'Left today',
+    'mock.of': 'of',
+    'food.1': 'Iced coffee',
+    'food.1u': '1 glass',
+    'food.2': 'Chicken rice',
+    'food.2u': '1 bowl',
+    'food.3': 'Som tam',
+    'food.3u': '1 plate',
 
-    'story.label': 'The KinDee story',
-    'story.nav': 'Scenes',
-    'story.hint': 'Scroll to explore',
-    'dot.1': 'Start',
-    'dot.2': 'Why KinDee',
-    'dot.3': 'Search',
-    'dot.4': 'Portions',
-    'dot.5': 'More ways to log',
-    'dot.6': 'Start in 3 steps',
-    'why.eyebrow': 'Why KinDee',
-    'chip.s1': 'kra pao',
-    'chip.s2': 'khao man gai',
-    'chip.s3': 'som tam',
-    'chip.s4': 'Thai iced tea',
-    'unit.1': 'plate',
-    'unit.2': 'bowl',
-    'unit.3': 'ladle',
-    'unit.4': 'skewer',
-    'unit.5': 'glass',
-    'more.eyebrow': 'More ways to log',
-    'more.title': 'Even more ways to log fast',
-    'why.title': 'Made for people who eat Thai food',
-    'why.lede': 'Foreign calorie apps can’t find Thai dishes, make you weigh everything in grams and leave you feeling guilty. KinDee fixes all three.',
-    'why.1t': 'Find every Thai dish',
-    'why.1p': 'Pad kra pao, khao kha moo, som tam — they’re all in the catalogue, and a misspelled tone mark still finds them.',
-    'why.2t': 'Use the portions you know',
-    'why.2p': 'Pick a plate, bowl, ladle, skewer or glass and KinDee turns it into calories for you.',
-    'why.3t': 'No judgement, no guilt',
-    'why.3p': 'Used up your budget? You just see the honest total — no red, no scolding — so you keep logging every day.',
-
-    'show.label': 'Features',
+    'search.typed': 'kra pao',
+    'search.eyebrow': 'Search',
+    'search.title': 'Misspell it — still found',
+    'search.text': 'More than 1,300 Thai dishes. Type it any way you like and the right dish turns up, with meals you’ve eaten before listed first.',
     'show.searchAlt': 'Searching “kra pao” finds basil pork with fried egg at 620 kcal per plate',
-    'show.searchEyebrow': 'Search',
-    'show.searchTitle': 'Type a few letters, find your meal',
-    'show.searchText': 'More than 1,300 Thai foods, sorted into one-plate dishes, packaged snacks and drinks. Meals you’ve eaten before come first, so repeating one takes a single tap.',
+    'portion.eyebrow': 'Portions',
+    'portion.title': 'No scales. No guessing grams.',
+    'portion.text': 'Pick amounts the way you order food — half a plate, one ladle, two skewers — and KinDee does the calories.',
     'show.portionAlt': 'Choosing plate, ladle or bowl and a quantity from half to two plates, totalling 620 kcal',
-    'show.portionEyebrow': 'Portions',
-    'show.portionTitle': 'Half a plate, one ladle, two skewers',
-    'show.portionText': 'Choose amounts the way you order food. No guessing grams — though you can enter grams when you want precision.',
+    'marquee.1': 'plate · ladle · skewer · bowl · glass · pack · cup · plate · ladle · skewer · bowl',
+    'marquee.2': 'half a plate · 2 skewers · 1 ladle · 1 glass · half a bowl · 3 balls · 1 pack · half a plate',
 
+    'more.eyebrow': 'More ways to log',
+    'more.title': 'Pick the fastest way',
     'mini.1t': 'Barcode scan',
     'mini.1p': 'Scan convenience-store products and confirm before logging.',
     'mini.2t': 'Photo with AI',
@@ -80,31 +63,53 @@
     'mini.4t': 'Backup across devices',
     'mini.4p': 'Create a free account when you’re ready — nothing you logged is lost.',
 
+    'calm.title': 'No red.<br>No guilt.',
+    'calm.text': 'Used your whole budget before dinner? KinDee just shows the honest total in calm colours — consistency matters more than any single day.',
+    'calm.chipT': 'Budget used up',
+    'calm.chipS': 'Keep logging as usual',
+
     'how.eyebrow': 'Start in 3 steps',
     'how.title': 'No sign-up first. Open it and go.',
     'how.1t': 'Set your daily budget',
-    'how.1p': 'Enter sex, age, height, weight, activity and goal. KinDee calculates your TDEE with the Mifflin–St Jeor formula and never sets a target below a safe minimum.',
+    'how.1s': 'Answer 5 quick questions. KinDee works out your TDEE and never sets a target below a safe minimum.',
     'how.2t': 'Log every meal',
-    'how.2p': 'Pick from recent meals, search, scan a barcode or snap a photo, then choose a familiar portion.',
+    'how.2s': 'Pick a recent meal, search, scan or snap a photo — it takes seconds.',
     'how.3t': 'See what’s left',
-    'how.3p': 'Know instantly how much budget is left for your next meal. Want a backup? Create a free account any time.',
+    'how.3s': 'Know right away what’s left for your next meal. Want a backup? Create a free account any time.',
+
+    'install.eyebrow': 'Free to install',
+    'install.title': 'No app store needed — install it from the web',
+    'install.lede': 'KinDee is a web app. Open the link, add it to your home screen, and you get an icon like any other app — it even works offline.',
+    'install.ios1': 'Open the link in Safari',
+    'install.ios2': 'Tap the <b>Share</b> button at the bottom',
+    'install.ios3': 'Choose <b>Add to Home Screen</b>',
+    'install.and1': 'Open the link in Chrome',
+    'install.and2': 'Tap the <b>⋮</b> menu at the top right',
+    'install.and3': 'Choose <b>Install app</b> or <b>Add to Home screen</b>',
+    'install.cta': 'Open KinDee now',
+    'install.link': 'or type',
 
     'plans.eyebrow': 'Plans',
     'plans.title': 'Basic logging is free forever',
-    'plans.lede': 'Paid plans add long-term history and more AI photo analysis, with a 30-day free trial the first time. The real price is always shown in the app before you confirm.',
-    'plans.caption': 'KinDee plan comparison',
-    'plans.feature': 'Feature',
+    'plans.lede': 'Paid plans add long-term history and more AI photo analysis, with a 30-day free trial the first time. The price is always shown in the app before you confirm.',
     'plans.pick': 'Recommended',
-    'plans.r1': 'TDEE calculation and food logging',
-    'plans.r2': 'Thai food search, barcode scan, offline use',
-    'plans.r3': 'Backup and sync across devices',
-    'plans.r4': 'History and trends',
-    'plans.r5': 'AI photo analyses per month',
-    'plans.r6': 'Advanced goals and macros',
-    'plans.r7': 'Early access to new features',
-    'plans.basic': 'Basic',
-    'plans.unlimited': 'Unlimited',
-    'plans.fair': 'Fair use',
+    'plans.freeNote': 'Start and log every day',
+    'plans.plusNote': 'For steady daily logging',
+    'plans.proNote': 'For clear goals',
+    'plans.unlNote': 'For heavy AI use',
+    'plans.f1': 'Food logging + TDEE',
+    'plans.f2': 'Search, scan, offline',
+    'plans.f3': 'Backup across devices',
+    'plans.ai3': 'AI photo analysis 3×/month',
+    'plans.allFree': 'Everything in Free',
+    'plans.history': 'Unlimited history and trends',
+    'plans.ai30': 'AI photo analysis 30×/month',
+    'plans.allPlus': 'Everything in Plus',
+    'plans.macro': 'Advanced goals and macros',
+    'plans.ai100': 'AI photo analysis 100×/month',
+    'plans.allPro': 'Everything in Pro',
+    'plans.aiFair': 'AI under fair use',
+    'plans.early': 'Early access to new features',
 
     'privacy.eyebrow': 'Privacy',
     'privacy.title': 'Your health data stays in your hands',
@@ -143,66 +148,68 @@
     'form.submit': 'Send message',
 
     'footer.brand': 'KinDee · Eat well within your TDEE',
-    'footer.disclaimer': 'KinDee is not a medical device or medical service. Energy values are estimates to help you manage eating habits only.',
+    'footer.disclaimer': 'KinDee is not a medical device or medical service. Energy values are estimates to help you manage eating habits only.'
   }
 
-  const root = document.documentElement
-  const original = new Map() // element -> { text?, html?, attrs? } in Thai
-
-  const remember = (el, kind, value) => {
-    const entry = original.get(el) ?? {}
-    if (kind === 'attr') (entry.attrs ??= {})[value.name] = value.value
-    else if (!(kind in entry)) entry[kind] = value
-    original.set(el, entry)
-  }
+  var root = document.documentElement
+  // Original Thai, kept on the element itself so switching back is exact.
+  var TEXT = '__kdText', HTML = '__kdHtml', ATTRS = '__kdAttrs'
+  var pick = function (key, fallback, en) { return en && EN.hasOwnProperty(key) ? EN[key] : fallback }
+  var each = function (selector, fn) { Array.prototype.forEach.call(document.querySelectorAll(selector), fn) }
 
   function apply(lang) {
-    const en = lang === 'en'
-    document.querySelectorAll('[data-i18n]').forEach((el) => {
-      remember(el, 'text', el.textContent)
-      el.textContent = en ? EN[el.dataset.i18n] ?? original.get(el).text : original.get(el).text
+    var en = lang === 'en'
+    each('[data-i18n]', function (el) {
+      if (!(TEXT in el)) el[TEXT] = el.textContent
+      el.textContent = pick(el.getAttribute('data-i18n'), el[TEXT], en)
     })
-    document.querySelectorAll('[data-i18n-html]').forEach((el) => {
-      remember(el, 'html', el.innerHTML)
-      el.innerHTML = en ? EN[el.dataset.i18nHtml] ?? original.get(el).html : original.get(el).html
+    each('[data-i18n-html]', function (el) {
+      if (!(HTML in el)) el[HTML] = el.innerHTML
+      el.innerHTML = pick(el.getAttribute('data-i18n-html'), el[HTML], en)
     })
-    document.querySelectorAll('[data-i18n-attr]').forEach((el) => {
-      el.dataset.i18nAttr.split(';').forEach((pair) => {
-        const [name, key] = pair.split(':')
-        const saved = original.get(el)?.attrs?.[name]
-        if (saved === undefined) remember(el, 'attr', { name, value: el.getAttribute(name) ?? '' })
-        el.setAttribute(name, en ? EN[key] ?? original.get(el).attrs[name] : original.get(el).attrs[name])
+    each('[data-i18n-attr]', function (el) {
+      if (!el[ATTRS]) el[ATTRS] = {}
+      el.getAttribute('data-i18n-attr').split(';').forEach(function (pair) {
+        var parts = pair.split(':'), name = parts[0], key = parts[1]
+        if (!(name in el[ATTRS])) el[ATTRS][name] = el.getAttribute(name) || ''
+        el.setAttribute(name, pick(key, el[ATTRS][name], en))
       })
     })
     root.setAttribute('lang', lang)
-    root.dataset.lang = lang
-    document.dispatchEvent(new CustomEvent('kd:lang', { detail: lang }))
+    root.setAttribute('data-lang', lang)
+    var ev
+    try { ev = new CustomEvent('kd:lang', { detail: lang }) } catch (e) { ev = document.createEvent('CustomEvent'); ev.initCustomEvent('kd:lang', false, false, lang) }
+    document.dispatchEvent(ev)
   }
 
-  const store = (key, value) => { try { localStorage.setItem(key, value) } catch {} }
+  var store = function (key, value) { try { localStorage.setItem(key, value) } catch (e) {} }
 
   // Language toggle: one button that flips TH <-> EN.
-  const langButton = document.getElementById('lang-toggle')
-  langButton?.addEventListener('click', () => {
-    const next = root.dataset.lang === 'en' ? 'th' : 'en'
+  var langButton = document.getElementById('lang-toggle')
+  if (langButton) langButton.addEventListener('click', function () {
+    var next = root.getAttribute('data-lang') === 'en' ? 'th' : 'en'
     store('kd-lang', next)
     apply(next)
   })
 
   // Theme: "system" removes the attribute so prefers-color-scheme decides.
-  const themeButtons = document.querySelectorAll('[data-theme-opt]')
-  const markTheme = (choice) => themeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeOpt === choice)))
-  let current = 'system'
-  try { current = localStorage.getItem('kd-theme') || 'system' } catch {}
+  var themeButtons = document.querySelectorAll('[data-theme-opt]')
+  var markTheme = function (choice) {
+    Array.prototype.forEach.call(themeButtons, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-opt') === choice)) })
+  }
+  var current = 'system'
+  try { current = localStorage.getItem('kd-theme') || 'system' } catch (e) {}
   markTheme(current)
-  themeButtons.forEach((b) => b.addEventListener('click', () => {
-    const choice = b.dataset.themeOpt
-    if (choice === 'system') root.removeAttribute('data-theme')
-    else root.setAttribute('data-theme', choice)
-    store('kd-theme', choice)
-    markTheme(choice)
-  }))
+  Array.prototype.forEach.call(themeButtons, function (b) {
+    b.addEventListener('click', function () {
+      var choice = b.getAttribute('data-theme-opt')
+      if (choice === 'system') root.removeAttribute('data-theme')
+      else root.setAttribute('data-theme', choice)
+      store('kd-theme', choice)
+      markTheme(choice)
+    })
+  })
 
-  window.kdLang = () => root.dataset.lang || 'th'
-  if (root.dataset.lang === 'en') apply('en')
+  window.kdLang = function () { return root.getAttribute('data-lang') || 'th' }
+  if (root.getAttribute('data-lang') === 'en') apply('en')
 })()
