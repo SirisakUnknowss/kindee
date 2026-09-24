@@ -8,6 +8,12 @@
       "port": 5183
     },
     {
+      "name": "kindee-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "kindee-app", "run", "pages:dev"],
+      "port": 8788
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "node",
       "cwd": "landing",

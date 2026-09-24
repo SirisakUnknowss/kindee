@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { adminSupabase } from './admin-auth'
 
 export type MonitoringData = {
   generatedAt: string
@@ -14,6 +14,9 @@ export type MonitoringData = {
   }
   plans: Array<{ plan: string; count: number }>
   series: Array<{ day: string; entries: number; photos: number; errors: number }>
+  entrySources: Array<{ source: string; count: number }>
+  retention: Array<{ cohort: string; size: number; weeks: Array<number | null> }>
+  funnel: { signedUp: number; activated: number; paid: number }
   users: Array<{
     id: string
     email: string
@@ -42,7 +45,7 @@ export type MonitoringData = {
 }
 
 export async function loadMonitoring(): Promise<MonitoringData> {
-  const session = supabase ? (await supabase.auth.getSession()).data.session : null
+  const session = adminSupabase ? (await adminSupabase.auth.getSession()).data.session : null
   if (!session) throw new Error('unauthorized')
   const response = await fetch('/api/admin/monitoring', {
     headers: { authorization: `Bearer ${session.access_token}` },

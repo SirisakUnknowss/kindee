@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Icon } from '../components/ui'
+import { BrandLogo, Icon } from '../components/ui'
 import { loadMonitoring, type MonitoringData } from '../lib/admin'
-import type { Session } from '../lib/types'
 
-type View = 'overview' | 'users' | 'logs'
+type View = 'overview' | 'analytics' | 'users' | 'logs'
 const planColor: Record<string, string> = { free: '#89918a', plus: '#72a493', pro: '#3f7d68', unlimited: '#285c50' }
+const sourceLabel: Record<string, string> = { search: 'ค้นหา', recent: 'ล่าสุด', barcode: 'บาร์โค้ด', photo: 'ถ่ายรูป', manual: 'กรอกเอง' }
+const sourceIcon: Record<string, string> = { search: 'ph ph-magnifying-glass', recent: 'ph ph-clock-counter-clockwise', barcode: 'ph ph-barcode', photo: 'ph ph-camera', manual: 'ph ph-pencil-simple' }
 const compact = (value: number) => new Intl.NumberFormat('th-TH', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
 const dateTime = (value: string | null) => value ? new Date(value).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : 'ยังไม่เคย'
 const safeLogUrl = (value: string | null) => {
@@ -15,10 +16,9 @@ const safeLogUrl = (value: string | null) => {
   } catch { return null }
 }
 
-export function AdminDashboard({ session, onSignIn, onExit }: {
-  session: Session
-  onSignIn: () => void
+export function AdminDashboard({ onExit, onSignOut }: {
   onExit: () => void
+  onSignOut: () => void
 }) {
   const [view, setView] = useState<View>('overview')
   const [data, setData] = useState<MonitoringData | null>(null)
@@ -29,13 +29,12 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
   const [logKind, setLogKind] = useState('all')
 
   const refresh = useCallback(async () => {
-    if (session.kind !== 'account') return
     setLoading(true)
     setError(null)
     try { setData(await loadMonitoring()) }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'monitoring_failed') }
     finally { setLoading(false) }
-  }, [session])
+  }, [])
 
   useEffect(() => { void refresh() }, [refresh])
 
@@ -48,30 +47,29 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
     (!query || `${log.message} ${log.detail ?? ''} ${log.user_id ?? ''}`.toLowerCase().includes(query.toLowerCase())),
   ), [data, logKind, query])
 
-  if (session.kind !== 'account') {
-    return <div className="kd-admin-gate"><Icon name="ph ph-shield-check" size={40} /><h1>KinDee Monitoring</h1><p>เข้าสู่ระบบด้วยบัญชีผู้ดูแลเพื่อดูข้อมูลระบบ</p><button className="kd-btn kd-btn-primary" onClick={onSignIn}>เข้าสู่ระบบ</button></div>
-  }
-  if (error === 'forbidden') {
-    return <div className="kd-admin-gate"><Icon name="ph ph-lock-key" size={40} /><h1>ไม่มีสิทธิ์เข้าถึง</h1><p>บัญชีนี้ไม่ได้รับสิทธิ์ผู้ดูแลระบบ</p><button className="kd-btn kd-btn-outline" onClick={onExit}>กลับไปที่แอป</button></div>
+  if (error === 'forbidden' || error === 'mfa_required' || error === 'unauthorized') {
+    return <div className="kd-admin-gate"><Icon name="ph ph-lock-key" size={40} /><h1>ไม่มีสิทธิ์เข้าถึง</h1><p>บัญชีผู้ดูแลนี้ยังไม่ได้รับสิทธิ์ หรือจำเป็นต้องยืนยัน MFA ใหม่</p><button className="kd-btn kd-btn-outline" onClick={onSignOut}>ออกจากระบบผู้ดูแล</button></div>
   }
 
   return (
     <div className="kd-admin">
       <aside className="kd-admin-sidebar">
-        <div className="kd-admin-brand"><span><Icon name="ph ph-bowl-food" size={22} /></span><div><strong>KinDee</strong><small>Monitoring</small></div></div>
+        <div className="kd-admin-brand"><span><BrandLogo size={28} /></span><div><strong>KinDee</strong><small>Monitoring</small></div></div>
         <nav>
           {([
             ['overview', 'ภาพรวม', 'ph ph-squares-four'],
+            ['analytics', 'วิเคราะห์', 'ph ph-chart-line-up'],
             ['users', 'ผู้ใช้งาน', 'ph ph-users-three'],
             ['logs', 'Logs และ Feedback', 'ph ph-list-magnifying-glass'],
           ] as const).map(([id, label, icon]) => <button key={id} className={view === id ? 'on' : ''} onClick={() => { setView(id); setQuery('') }}><Icon name={icon} size={20} />{label}</button>)}
         </nav>
         <button className="kd-admin-exit" onClick={onExit}><Icon name="ph ph-arrow-square-out" size={18} />กลับไปที่แอป</button>
+        <button className="kd-admin-exit" onClick={onSignOut}><Icon name="ph ph-sign-out" size={18} />ออกจากระบบผู้ดูแล</button>
       </aside>
 
       <main className="kd-admin-main">
         <header className="kd-admin-topbar">
-          <div><p>ระบบหลังบ้าน</p><h1>{view === 'overview' ? 'ภาพรวมการใช้งาน' : view === 'users' ? 'ผู้ใช้งาน' : 'Logs และ Feedback'}</h1></div>
+          <div><p>ระบบหลังบ้าน</p><h1>{view === 'overview' ? 'ภาพรวมการใช้งาน' : view === 'analytics' ? 'วิเคราะห์การตลาดและฟีเจอร์' : view === 'users' ? 'ผู้ใช้งาน' : 'Logs และ Feedback'}</h1></div>
           <div className="kd-admin-actions"><span>{data ? `อัปเดต ${dateTime(data.generatedAt)}` : 'กำลังเตรียมข้อมูล'}</span><button onClick={refresh} disabled={loading}><Icon name={`ph ph-arrows-clockwise${loading ? ' kd-spin' : ''}`} size={19} />รีเฟรช</button></div>
         </header>
 
@@ -79,6 +77,7 @@ export function AdminDashboard({ session, onSignIn, onExit }: {
         {!data && !error && <div className="kd-admin-loading"><span /><p>กำลังรวบรวมข้อมูลระบบ…</p></div>}
 
         {data && view === 'overview' && <Overview data={data} />}
+        {data && view === 'analytics' && <Analytics data={data} />}
         {data && view === 'users' && <Users data={data} users={users} query={query} setQuery={setQuery} plan={plan} setPlan={setPlan} />}
         {data && view === 'logs' && <Logs logs={logs} query={query} setQuery={setQuery} kind={logKind} setKind={setLogKind} />}
       </main>
@@ -102,6 +101,56 @@ function Overview({ data }: { data: MonitoringData }) {
       <article className="kd-admin-panel"><div className="kd-admin-panel-head"><div><h2>แพ็กเกจสมาชิก</h2><p>ผู้ใช้ตาม entitlement ปัจจุบัน</p></div></div><div className="kd-plan-donut" style={{ background: `conic-gradient(${data.plans.map((row, index) => { const before = data.plans.slice(0, index).reduce((sum, item) => sum + item.count, 0) / totalPlans * 100; const after = before + row.count / totalPlans * 100; return `${planColor[row.plan]} ${before}% ${after}%` }).join(',')})` }}><span><strong>{totalPlans}</strong><small>บัญชี</small></span></div><div className="kd-admin-legend">{data.plans.map((row) => <div key={row.plan}><i style={{ background: planColor[row.plan] }} /><span>{row.plan}</span><strong>{row.count}</strong></div>)}</div></article>
     </section>
     <section className="kd-admin-health"><article><Icon name="ph ph-warning-circle" size={22} /><div><span>Errors ที่ยังไม่ปิด</span><strong>{data.summary.unresolvedErrors}</strong></div></article><article><Icon name="ph ph-star" size={22} /><div><span>คะแนน Feedback เฉลี่ย</span><strong>{data.summary.averageRating?.toFixed(1) ?? '—'} <small>/ 5</small></strong></div></article><article><Icon name="ph ph-check-circle" size={22} /><div><span>Photo success rate</span><strong>{data.summary.totalPhotoJobs ? `${Math.round((1 - data.summary.failedPhotoJobs / data.summary.totalPhotoJobs) * 100)}%` : '—'}</strong></div></article></section>
+  </div>
+}
+
+function Analytics({ data }: { data: MonitoringData }) {
+  const maxSource = Math.max(1, ...data.entrySources.map((row) => row.count))
+  const { funnel } = data
+  const activatedRate = funnel.signedUp ? Math.round((funnel.activated / funnel.signedUp) * 100) : 0
+  const paidRate = funnel.activated ? Math.round((funnel.paid / funnel.activated) * 100) : 0
+  const heatColor = (value: number | null) => value === null ? 'transparent' : `rgba(63, 125, 104, ${Math.max(0.06, value / 100)})`
+
+  return <div className="kd-admin-content">
+    <section className="kd-admin-grid">
+      <article className="kd-admin-panel">
+        <div className="kd-admin-panel-head"><div><h2>ช่องทางบันทึกอาหาร</h2><p>สัดส่วนฟีเจอร์ที่ใช้บันทึก entry ใน 30 วันล่าสุด</p></div></div>
+        {data.entrySources.length
+          ? <div className="kd-admin-feature-bars">{data.entrySources.map((row) => <div key={row.source} className="kd-admin-feature-row">
+              <span><Icon name={sourceIcon[row.source] ?? 'ph ph-dot'} size={16} />{sourceLabel[row.source] ?? row.source}</span>
+              <div className="kd-admin-feature-track"><i style={{ width: `${Math.max(4, row.count / maxSource * 100)}%` }} /></div>
+              <strong>{row.count}</strong>
+            </div>)}</div>
+          : <div className="kd-admin-empty">ยังไม่มีข้อมูลใน 30 วันล่าสุด</div>}
+      </article>
+
+      <article className="kd-admin-panel">
+        <div className="kd-admin-panel-head"><div><h2>Funnel: สมัคร → ใช้จริง → จ่ายเงิน</h2><p>ใช้จริง = มีอย่างน้อย 1 entry ใน 60 วันล่าสุด</p></div></div>
+        <div className="kd-admin-funnel">
+          <div className="kd-admin-funnel-step"><span>สมัครสมาชิก</span><strong>{funnel.signedUp}</strong></div>
+          <div className="kd-admin-funnel-arrow"><Icon name="ph ph-arrow-down" size={16} /><small>{activatedRate}%</small></div>
+          <div className="kd-admin-funnel-step"><span>ใช้งานจริง</span><strong>{funnel.activated}</strong></div>
+          <div className="kd-admin-funnel-arrow"><Icon name="ph ph-arrow-down" size={16} /><small>{paidRate}%</small></div>
+          <div className="kd-admin-funnel-step paid"><span>จ่ายเงิน (Plus/Pro/Unlimited)</span><strong>{funnel.paid}</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <section className="kd-admin-grid">
+      <article className="kd-admin-panel kd-admin-retention">
+        <div className="kd-admin-panel-head"><div><h2>Retention รายสัปดาห์ตาม cohort</h2><p>% ของผู้ใช้ที่สมัครสัปดาห์นั้น ยังกลับมาบันทึกอาหารในสัปดาห์ถัดไป</p></div></div>
+        {data.retention.length
+          ? <div className="kd-admin-retention-grid">
+              <div className="kd-admin-retention-row kd-admin-retention-head"><span>สัปดาห์ที่สมัคร</span><span>คน</span>{['W0', 'W1', 'W2', 'W3', 'W4'].map((label) => <span key={label}>{label}</span>)}</div>
+              {data.retention.map((row) => <div key={row.cohort} className="kd-admin-retention-row">
+                <span>{new Date(`${row.cohort}T00:00:00Z`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}</span>
+                <span>{row.size}</span>
+                {row.weeks.map((value, index) => <span key={index} className="kd-admin-retention-cell" style={{ background: heatColor(value) }}>{value === null ? '—' : `${value}%`}</span>)}
+              </div>)}
+            </div>
+          : <div className="kd-admin-empty">ยังไม่มี cohort ให้วิเคราะห์</div>}
+      </article>
+    </section>
   </div>
 }
 

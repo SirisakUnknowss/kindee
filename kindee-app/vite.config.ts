@@ -21,7 +21,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       // Registered from src/main.tsx so a new deploy reloads open pages.
       injectRegister: false,
-      workbox: { skipWaiting: true, clientsClaim: true, cleanupOutdatedCaches: true },
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+        navigateFallbackDenylist: [/^\/api\//],
+      },
       includeAssets: ['logo.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'KinDee — นับแคลอรีที่เข้าใจอาหารไทย',

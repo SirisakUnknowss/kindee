@@ -3,6 +3,9 @@ export interface Env {
   SUPABASE_URL: string
   SUPABASE_PUBLISHABLE_KEY: string
   SUPABASE_SERVICE_ROLE_KEY?: string
+  ADMIN_SUPABASE_URL?: string
+  ADMIN_SUPABASE_PUBLISHABLE_KEY?: string
+  ADMIN_USER_IDS?: string
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
   BARCODE_PROVIDER_URL?: string
@@ -52,9 +55,6 @@ export async function authenticatedUser(request: Request, env: Env) {
     app_metadata?: Record<string, unknown>
   }
 }
-
-export const isAdmin = (user: Awaited<ReturnType<typeof authenticatedUser>>) =>
-  user?.app_metadata?.role === 'admin' || user?.app_metadata?.user_role === 'admin'
 
 export function supabaseHeaders(env: Env, authorization?: string, privileged = false): HeadersInit {
   const key = privileged ? env.SUPABASE_SERVICE_ROLE_KEY : env.SUPABASE_PUBLISHABLE_KEY

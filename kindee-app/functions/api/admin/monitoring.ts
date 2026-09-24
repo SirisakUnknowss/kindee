@@ -1,4 +1,4 @@
-import { authenticatedUser, error, isAdmin, json, supabaseHeaders, type Env, type PagesContext } from '../../_shared/http'
+import { error, json, supabaseHeaders, type Env, type PagesContext } from '../../_shared/http'
 
 type AuthUser = {
   id: string
@@ -33,6 +33,13 @@ type ReportRow = {
 
 const ago = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString()
 const dayKey = (date: Date) => date.toISOString().slice(0, 10)
+const WEEK_MS = 7 * 86_400_000
+const weekKey = (date: Date) => {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  const isoDay = d.getUTCDay() || 7
+  if (isoDay !== 1) d.setUTCDate(d.getUTCDate() - isoDay + 1)
+  return d.toISOString().slice(0, 10)
+}
 
 async function rows<T>(env: Env, table: string, query: string, limit = 1000): Promise<T[]> {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?${query}`, {
@@ -53,12 +60,39 @@ async function exactCount(env: Env, table: string, filters = '') {
 }
 
 export async function onRequestGet({ request, env }: PagesContext) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    return error(503, 'service_unconfigured', 'Monitoring is not configured')
+  const adminUrl = env.ADMIN_SUPABASE_URL?.replace(/\/$/, '')
+  const dataUrl = env.SUPABASE_URL?.replace(/\/$/, '')
+  const allowedIds = new Set(env.ADMIN_USER_IDS?.split(',').map((id) => id.trim()).filter(Boolean))
+  if (!dataUrl || !env.SUPABASE_PUBLISHABLE_KEY || !env.SUPABASE_SERVICE_ROLE_KEY ||
+    !adminUrl || !adminUrl.startsWith('https://') || adminUrl === dataUrl ||
+    !env.ADMIN_SUPABASE_PUBLISHABLE_KEY || !allowedIds.size) {
+    return error(503, 'admin_unavailable', 'ERR_ADMIN_001')
   }
-  const viewer = await authenticatedUser(request, env)
-  if (!viewer) return error(401, 'unauthorized', 'Sign in to view monitoring')
-  if (!isAdmin(viewer)) return error(403, 'forbidden', 'Administrator access is required')
+  const authorization = request.headers.get('authorization')
+  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : ''
+  if (!token) return error(401, 'unauthorized', 'Sign in with an administrator account')
+
+  // GoTrue verifies the bearer against the *separate* admin project before we
+  // read any claim. A regular KinDee user token is never accepted here.
+  let viewer: { id?: string }
+  try {
+    const authResponse = await fetch(`${adminUrl}/auth/v1/user`, {
+      headers: { authorization: `Bearer ${token}`, apikey: env.ADMIN_SUPABASE_PUBLISHABLE_KEY },
+    })
+    if (!authResponse.ok) return error(401, 'unauthorized', 'Invalid administrator session')
+    viewer = await authResponse.json() as { id?: string }
+  } catch {
+    return error(503, 'admin_unavailable', 'ERR_ADMIN_001')
+  }
+  if (!viewer.id || !allowedIds.has(viewer.id)) return error(403, 'forbidden', 'Administrator access is required')
+  try {
+    const payload = token.split('.')[1]
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as { sub?: string; aal?: string }
+    if (claims.sub !== viewer.id || claims.aal !== 'aal2') return error(403, 'mfa_required', 'Administrator MFA is required')
+  } catch {
+    return error(401, 'unauthorized', 'Invalid administrator token')
+  }
 
   try {
     const adminHeaders = supabaseHeaders(env, undefined, true)
@@ -75,7 +109,7 @@ export async function onRequestGet({ request, env }: PagesContext) {
       rows<EntitlementRow>(env, 'entitlements', 'select=user_id,plan,status,billing_interval,period_end', 2000),
       rows<UsageRow>(env, 'usage_counters', `select=user_id,feature,count,period_start&period_start=gte.${monthStart}`, 5000),
       rows<ReportRow>(env, 'app_reports', 'select=id,kind,user_id,installation_id,message,detail,rating,url,app_version,resolved_at,created_at&order=created_at.desc', 100),
-      rows<{ user_id: string; eaten_on: string; updated_at: string }>(env, 'entries', `select=user_id,eaten_on,updated_at&updated_at=gte.${encodeURIComponent(ago(14))}&deleted_at=is.null`, 5000),
+      rows<{ user_id: string; eaten_on: string; updated_at: string; entry_source: string }>(env, 'entries', `select=user_id,eaten_on,updated_at,entry_source&updated_at=gte.${encodeURIComponent(ago(60))}&deleted_at=is.null`, 8000),
       rows<{ user_id: string; status: string; created_at: string }>(env, 'photo_jobs', `select=user_id,status,created_at&created_at=gte.${encodeURIComponent(ago(14))}`, 5000),
       exactCount(env, 'entries', 'deleted_at=is.null'),
       exactCount(env, 'photo_jobs'),
@@ -131,6 +165,56 @@ export async function onRequestGet({ request, env }: PagesContext) {
       }
     })
 
+    // Feature usage: how entries actually get logged, last 30 days.
+    const sourceCounts = new Map<string, number>()
+    for (const entry of recentEntries) {
+      if (entry.eaten_on < dayKey(new Date(ago(30)))) continue
+      sourceCounts.set(entry.entry_source, (sourceCounts.get(entry.entry_source) ?? 0) + 1)
+    }
+    const entrySources = Array.from(sourceCounts, ([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+
+    // Weekly retention cohorts: % of each signup-week cohort still logging
+    // entries in the following weeks. Bounded by the 60-day entries window
+    // above, so only the last few cohorts have a full curve.
+    const activeWeeksByUser = new Map<string, Set<string>>()
+    for (const entry of recentEntries) {
+      const wk = weekKey(new Date(entry.eaten_on))
+      if (!activeWeeksByUser.has(entry.user_id)) activeWeeksByUser.set(entry.user_id, new Set())
+      activeWeeksByUser.get(entry.user_id)!.add(wk)
+    }
+    const cohortUsers = new Map<string, string[]>()
+    for (const user of authUsers) {
+      const wk = weekKey(new Date(user.created_at))
+      if (!cohortUsers.has(wk)) cohortUsers.set(wk, [])
+      cohortUsers.get(wk)!.push(user.id)
+    }
+    const cohortWeeks = Array.from(cohortUsers.keys()).sort().slice(-6)
+    const retention = cohortWeeks.map((cohort) => {
+      const userIds = cohortUsers.get(cohort)!
+      const cohortStart = new Date(`${cohort}T00:00:00Z`)
+      const weeksElapsed = Math.floor((Date.now() - cohortStart.getTime()) / WEEK_MS)
+      const weeks = Array.from({ length: 5 }, (_, offset) => {
+        if (offset > weeksElapsed) return null
+        const targetWeek = weekKey(new Date(cohortStart.getTime() + offset * WEEK_MS))
+        const active = userIds.filter((id) => activeWeeksByUser.get(id)?.has(targetWeek)).length
+        return Math.round((active / userIds.length) * 100)
+      })
+      return { cohort, size: userIds.length, weeks }
+    })
+
+    // Signup → activation → paid funnel.
+    const activatedUserIds = new Set(recentEntries.map((entry) => entry.user_id))
+    const paidUserIds = new Set(
+      users.filter((user) => user.plan !== 'free' && ['active', 'trialing', 'past_due'].includes(user.status))
+        .map((user) => user.id),
+    )
+    const funnel = {
+      signedUp: authUsers.length,
+      activated: activatedUserIds.size,
+      paid: paidUserIds.size,
+    }
+
     return json({
       generatedAt: new Date().toISOString(),
       summary: {
@@ -145,6 +229,9 @@ export async function onRequestGet({ request, env }: PagesContext) {
       },
       plans,
       series,
+      entrySources,
+      retention,
+      funnel,
       users: users.slice(0, 200),
       logs: reports,
     }, 200, { 'cache-control': 'private, no-store' })
