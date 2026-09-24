@@ -77,5 +77,42 @@ describe('GET /api/admin/monitoring', () => {
     expect(response.status).toBe(200)
     expect(body.summary.totalUsers).toBe(1)
     expect(body.users[0]).toMatchObject({ email: 'ploy@example.com', plan: 'pro', photosThisMonth: 4 })
+    expect(body.funnel).toMatchObject({ signedUp: 1, activated: 0, paid: 1 })
+    expect(Array.isArray(body.entrySources)).toBe(true)
+    expect(Array.isArray(body.retention)).toBe(true)
+  })
+
+  it('computes feature usage, retention and funnel from entry_source data', async () => {
+    const now = new Date()
+    const recentDay = now.toISOString().slice(0, 10)
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/auth/v1/user')) return Response.json({ id: 'admin-1' })
+      if (url.includes('/auth/v1/admin/users')) {
+        return Response.json({ users: [
+          { id: 'user-1', email: 'ploy@example.com', created_at: now.toISOString(), last_sign_in_at: now.toISOString() },
+          { id: 'user-2', email: 'new@example.com', created_at: now.toISOString(), last_sign_in_at: null },
+        ] })
+      }
+      if (init?.method === 'HEAD') return new Response(null, { status: 200, headers: { 'content-range': '0-0/2' } })
+      if (url.includes('/rest/v1/entitlements')) return Response.json([])
+      if (url.includes('/rest/v1/entries') && url.includes('eaten_on')) {
+        return Response.json([
+          { user_id: 'user-1', eaten_on: recentDay, updated_at: now.toISOString(), entry_source: 'barcode' },
+          { user_id: 'user-1', eaten_on: recentDay, updated_at: now.toISOString(), entry_source: 'photo' },
+        ])
+      }
+      return Response.json([])
+    }))
+
+    const body = await (await call()).json() as any
+
+    expect(body.entrySources).toEqual(expect.arrayContaining([
+      { source: 'barcode', count: 1 },
+      { source: 'photo', count: 1 },
+    ]))
+    expect(body.funnel).toMatchObject({ signedUp: 2, activated: 1, paid: 0 })
+    expect(body.retention[body.retention.length - 1]).toMatchObject({ size: 2 })
+    expect(body.retention[body.retention.length - 1].weeks[0]).toBe(50)
   })
 })

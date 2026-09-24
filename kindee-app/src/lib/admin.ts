@@ -14,6 +14,9 @@ export type MonitoringData = {
   }
   plans: Array<{ plan: string; count: number }>
   series: Array<{ day: string; entries: number; photos: number; errors: number }>
+  entrySources: Array<{ source: string; count: number }>
+  retention: Array<{ cohort: string; size: number; weeks: Array<number | null> }>
+  funnel: { signedUp: number; activated: number; paid: number }
   users: Array<{
     id: string
     email: string

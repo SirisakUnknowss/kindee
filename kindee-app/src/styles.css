@@ -606,6 +606,26 @@ p { text-wrap: pretty; }
 .kd-admin-login-form .kd-btn { width: 100%; }
 .kd-admin-qr { width: 190px; height: 190px; margin: auto; }
 .kd-admin-login-form small { overflow-wrap: anywhere; color: var(--text-muted); }
+.kd-admin-feature-bars { display: grid; gap: 10px; padding: 4px 18px 18px; }
+.kd-admin-feature-row { display: grid; grid-template-columns: 96px 1fr 32px; align-items: center; gap: 11px; font-size: 11.5px; }
+.kd-admin-feature-row span { display: flex; align-items: center; gap: 7px; color: var(--text-muted); }
+.kd-admin-feature-track { height: 9px; border-radius: 999px; background: var(--accent-tint); overflow: hidden; }
+.kd-admin-feature-track i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-line), var(--accent)); }
+.kd-admin-feature-row strong { text-align: right; font-variant-numeric: tabular-nums; }
+.kd-admin-funnel { display: grid; gap: 4px; padding: 4px 18px 20px; }
+.kd-admin-funnel-step { display: flex; justify-content: space-between; align-items: center; padding: 13px 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--accent-tint); }
+.kd-admin-funnel-step span { color: var(--text-muted); font-size: 11.5px; }
+.kd-admin-funnel-step strong { font-size: 18px; }
+.kd-admin-funnel-step.paid { background: var(--accent); color: white; }
+.kd-admin-funnel-step.paid span { color: rgba(255, 255, 255, .8); }
+.kd-admin-funnel-arrow { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 3px 0; color: var(--text-muted); }
+.kd-admin-funnel-arrow small { font-size: 10.5px; font-weight: 600; }
+.kd-admin-retention { grid-column: 1 / -1; }
+.kd-admin-retention-grid { padding: 4px 18px 20px; overflow-x: auto; }
+.kd-admin-retention-row { display: grid; grid-template-columns: 90px 50px repeat(5, 56px); align-items: center; gap: 6px; }
+.kd-admin-retention-row + .kd-admin-retention-row { margin-top: 5px; }
+.kd-admin-retention-head span { color: var(--text-muted); font-size: 9.5px; font-weight: 600; text-transform: uppercase; }
+.kd-admin-retention-cell { display: grid; place-items: center; min-height: 32px; border-radius: 8px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 @media (max-width: 1020px) { .kd-admin-kpis { grid-template-columns: repeat(2, 1fr); } .kd-admin-grid { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .kd-admin { grid-template-columns: 1fr; } .kd-admin-sidebar { position: static; width: 100%; height: auto; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--border); } .kd-admin-brand { padding: 0 3px 12px; } .kd-admin-sidebar nav { grid-template-columns: repeat(3, 1fr); } .kd-admin-sidebar nav button { justify-content: center; padding: 0 7px; font-size: 10.5px; } .kd-admin-exit { margin-top: 8px; } .kd-admin-topbar { min-height: 78px; padding: 14px 16px; } .kd-admin-topbar h1 { font-size: 20px; } .kd-admin-actions > span { display: none; } .kd-admin-content { padding: 16px 14px 36px; } .kd-admin-health { grid-template-columns: 1fr; } .kd-admin-filters { flex-direction: column; } .kd-admin-filters select { min-height: 43px; } }
 @media (max-width: 430px) { .kd-admin-kpis { grid-template-columns: 1fr; } .kd-admin-sidebar nav button .ph { display: none; } .kd-admin-bars { gap: 3px; padding-inline: 10px; } }

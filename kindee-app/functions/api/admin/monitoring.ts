@@ -33,6 +33,13 @@ type ReportRow = {
 
 const ago = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString()
 const dayKey = (date: Date) => date.toISOString().slice(0, 10)
+const WEEK_MS = 7 * 86_400_000
+const weekKey = (date: Date) => {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  const isoDay = d.getUTCDay() || 7
+  if (isoDay !== 1) d.setUTCDate(d.getUTCDate() - isoDay + 1)
+  return d.toISOString().slice(0, 10)
+}
 
 async function rows<T>(env: Env, table: string, query: string, limit = 1000): Promise<T[]> {
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?${query}`, {
@@ -102,7 +109,7 @@ export async function onRequestGet({ request, env }: PagesContext) {
       rows<EntitlementRow>(env, 'entitlements', 'select=user_id,plan,status,billing_interval,period_end', 2000),
       rows<UsageRow>(env, 'usage_counters', `select=user_id,feature,count,period_start&period_start=gte.${monthStart}`, 5000),
       rows<ReportRow>(env, 'app_reports', 'select=id,kind,user_id,installation_id,message,detail,rating,url,app_version,resolved_at,created_at&order=created_at.desc', 100),
-      rows<{ user_id: string; eaten_on: string; updated_at: string }>(env, 'entries', `select=user_id,eaten_on,updated_at&updated_at=gte.${encodeURIComponent(ago(14))}&deleted_at=is.null`, 5000),
+      rows<{ user_id: string; eaten_on: string; updated_at: string; entry_source: string }>(env, 'entries', `select=user_id,eaten_on,updated_at,entry_source&updated_at=gte.${encodeURIComponent(ago(60))}&deleted_at=is.null`, 8000),
       rows<{ user_id: string; status: string; created_at: string }>(env, 'photo_jobs', `select=user_id,status,created_at&created_at=gte.${encodeURIComponent(ago(14))}`, 5000),
       exactCount(env, 'entries', 'deleted_at=is.null'),
       exactCount(env, 'photo_jobs'),
@@ -158,6 +165,56 @@ export async function onRequestGet({ request, env }: PagesContext) {
       }
     })
 
+    // Feature usage: how entries actually get logged, last 30 days.
+    const sourceCounts = new Map<string, number>()
+    for (const entry of recentEntries) {
+      if (entry.eaten_on < dayKey(new Date(ago(30)))) continue
+      sourceCounts.set(entry.entry_source, (sourceCounts.get(entry.entry_source) ?? 0) + 1)
+    }
+    const entrySources = Array.from(sourceCounts, ([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+
+    // Weekly retention cohorts: % of each signup-week cohort still logging
+    // entries in the following weeks. Bounded by the 60-day entries window
+    // above, so only the last few cohorts have a full curve.
+    const activeWeeksByUser = new Map<string, Set<string>>()
+    for (const entry of recentEntries) {
+      const wk = weekKey(new Date(entry.eaten_on))
+      if (!activeWeeksByUser.has(entry.user_id)) activeWeeksByUser.set(entry.user_id, new Set())
+      activeWeeksByUser.get(entry.user_id)!.add(wk)
+    }
+    const cohortUsers = new Map<string, string[]>()
+    for (const user of authUsers) {
+      const wk = weekKey(new Date(user.created_at))
+      if (!cohortUsers.has(wk)) cohortUsers.set(wk, [])
+      cohortUsers.get(wk)!.push(user.id)
+    }
+    const cohortWeeks = Array.from(cohortUsers.keys()).sort().slice(-6)
+    const retention = cohortWeeks.map((cohort) => {
+      const userIds = cohortUsers.get(cohort)!
+      const cohortStart = new Date(`${cohort}T00:00:00Z`)
+      const weeksElapsed = Math.floor((Date.now() - cohortStart.getTime()) / WEEK_MS)
+      const weeks = Array.from({ length: 5 }, (_, offset) => {
+        if (offset > weeksElapsed) return null
+        const targetWeek = weekKey(new Date(cohortStart.getTime() + offset * WEEK_MS))
+        const active = userIds.filter((id) => activeWeeksByUser.get(id)?.has(targetWeek)).length
+        return Math.round((active / userIds.length) * 100)
+      })
+      return { cohort, size: userIds.length, weeks }
+    })
+
+    // Signup → activation → paid funnel.
+    const activatedUserIds = new Set(recentEntries.map((entry) => entry.user_id))
+    const paidUserIds = new Set(
+      users.filter((user) => user.plan !== 'free' && ['active', 'trialing', 'past_due'].includes(user.status))
+        .map((user) => user.id),
+    )
+    const funnel = {
+      signedUp: authUsers.length,
+      activated: activatedUserIds.size,
+      paid: paidUserIds.size,
+    }
+
     return json({
       generatedAt: new Date().toISOString(),
       summary: {
@@ -172,6 +229,9 @@ export async function onRequestGet({ request, env }: PagesContext) {
       },
       plans,
       series,
+      entrySources,
+      retention,
+      funnel,
       users: users.slice(0, 200),
       logs: reports,
     }, 200, { 'cache-control': 'private, no-store' })
