@@ -7,6 +7,7 @@
     // Apply saved theme and language before first paint so nothing flashes.
     (function () {
       var d = document.documentElement, theme = 'system', lang = null
+      d.classList.add('js')
       try { theme = localStorage.getItem('kd-theme') || 'system'; lang = localStorage.getItem('kd-lang') } catch (e) {}
       if (theme === 'light' || theme === 'dark') d.setAttribute('data-theme', theme)
       if (!lang) lang = /^th\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || 'th') ? 'th' : 'en'
@@ -23,10 +24,14 @@
   <meta property="og:description" content="นับแคลอรีอาหารไทยแบบง่าย ๆ งบวันนี้ ใช้ไป คงเหลือ บันทึกเป็นจาน ทัพพี หรือไม้ ไม่ต้องชั่งกรัม">
   <meta property="og:type" content="website">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="preload" as="image" href="assets/screens/today.webp" type="image/webp">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/LINESeedSansTH/LINESeedSansTH.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- The whole page's background: it changes colour as each scene becomes active. -->
+  <div class="scene-bg" aria-hidden="true"></div>
+
   <a class="skip" href="#main" data-i18n="skip">ข้ามไปเนื้อหา</a>
 
   <header class="site-header">
@@ -59,159 +64,191 @@
   </header>
 
   <main id="main">
-    <section class="hero" id="top">
-      <div class="hero-copy">
-        <p class="badge"><span class="dot" aria-hidden="true"></span><span data-i18n="hero.badge">เปิดให้ร่วมทดสอบรอบแรก</span></p>
-        <h1 data-i18n-html="hero.title"><span class="soft">กินดี</span><br><span class="nowrap">ไม่ต้องนับยาก</span></h1>
-        <p class="lede" data-i18n-html="hero.lede">KinDee ตั้งงบแคลอรีรายวันจาก TDEE ของคุณ แล้วให้จดอาหารไทยเป็น <b>จาน ทัพพี หรือไม้</b> ได้ในไม่กี่วินาที เห็นทันทีว่าวันนี้เหลืองบอีกเท่าไร</p>
-        <div class="cta-row">
-          <a class="btn" id="cta-app" href="https://kindee.pages.dev/" rel="noopener" data-i18n="hero.cta">เริ่มใช้ฟรี ไม่ต้องสมัคร</a>
-          <a class="link-arrow" href="#contact" data-topic="beta"><span data-i18n="hero.beta">สมัครร่วมทดสอบ</span> <span aria-hidden="true">→</span></a>
-        </div>
-        <ul class="trust" data-i18n-attr="aria-label:hero.trustLabel" aria-label="จุดเด่น">
-          <li data-i18n-html="hero.trust1"><b>1,300+</b> เมนูไทย</li>
-          <li data-i18n="hero.trust2">ใช้ได้แม้ไม่มีเน็ต</li>
-          <li data-i18n="hero.trust3">ข้อมูลตาม PDPA</li>
-        </ul>
-      </div>
+    <!--
+      Story: six chapters. On large screens the stage sticks while the page
+      scrolls through six viewport-high steps, so chapters cross-fade in place
+      and one phone swaps its screen. On small screens the chapters simply stack.
+    -->
+    <section class="story" id="story" data-i18n-attr="aria-label:story.label" aria-label="เรื่องของ KinDee">
+      <!-- Snap targets, one per chapter; ids keep anchor links working. -->
+      <span class="snap" id="top" style="--i:0"></span>
+      <span class="snap" id="why" style="--i:1"></span>
+      <span class="snap" id="features" style="--i:2"></span>
+      <span class="snap" id="portions" style="--i:3"></span>
+      <span class="snap" id="more" style="--i:4"></span>
+      <span class="snap" id="how" style="--i:5"></span>
 
-      <div class="hero-visual">
-        <div class="halo" aria-hidden="true"></div>
-        <figure class="phone">
-          <img src="assets/screens/today.webp" width="390" height="460" data-i18n-attr="alt:hero.shotAlt" alt="หน้าวันนี้ในแอป KinDee แสดงงบคงเหลือ 1,190 จากงบ 1,810 kcal">
-        </figure>
-        <div class="float float-a" aria-hidden="true">
-          <span class="float-icon"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 0 1 1 1 8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8 1 1 0 0 1 1-1Z"/><path d="M9 8.5c-1-1.3 1-1.9 0-3.5M12 8.5c-1-1.3 1-1.9 0-3.5M15 8.5c-1-1.3 1-1.9 0-3.5"/></svg></span>
-          <span><b data-i18n="hero.floatDish">ข้าวกะเพราหมูสับไข่ดาว</b><small data-i18n="hero.floatMeta">1 จาน · บันทึกแล้ว</small></span>
-          <span class="kcal">620</span>
+      <div class="stage">
+        <div class="stage-grid">
+          <div class="chapters">
+            <!-- 1. Hero -->
+            <article class="chapter" data-bg="base" data-screen="today">
+              <p class="badge"><span class="dot" aria-hidden="true"></span><span data-i18n="hero.badge">เปิดให้ร่วมทดสอบรอบแรก</span></p>
+              <h1 data-i18n-html="hero.title"><span class="soft">กินดี</span><br><span class="nowrap">ไม่ต้องนับยาก</span></h1>
+              <p class="lede" data-i18n-html="hero.lede">KinDee ตั้งงบแคลอรีรายวันจาก TDEE ของคุณ แล้วให้จดอาหารไทยเป็น <b>จาน ทัพพี หรือไม้</b> ได้ในไม่กี่วินาที เห็นทันทีว่าวันนี้เหลืองบอีกเท่าไร</p>
+              <div class="cta-row">
+                <a class="btn" id="cta-app" href="https://kindee.pages.dev/" rel="noopener" data-i18n="hero.cta">เริ่มใช้ฟรี ไม่ต้องสมัคร</a>
+                <a class="link-arrow" href="#contact" data-topic="beta"><span data-i18n="hero.beta">สมัครร่วมทดสอบ</span> <span aria-hidden="true">→</span></a>
+              </div>
+              <ul class="trust" data-i18n-attr="aria-label:hero.trustLabel" aria-label="จุดเด่น">
+                <li data-i18n-html="hero.trust1"><b>1,300+</b> เมนูไทย</li>
+                <li data-i18n="hero.trust2">ใช้ได้แม้ไม่มีเน็ต</li>
+                <li data-i18n="hero.trust3">ข้อมูลตาม PDPA</li>
+              </ul>
+              <figure class="chapter-phone phone">
+                <img src="assets/screens/today.webp" width="390" height="480" data-i18n-attr="alt:hero.shotAlt" alt="หน้าวันนี้ในแอป KinDee แสดงงบคงเหลือ 1,190 จากงบ 1,810 kcal">
+              </figure>
+            </article>
+
+            <!-- 2. The problem -->
+            <article class="chapter" data-bg="mint" data-screen="today">
+              <p class="eyebrow" data-i18n="why.eyebrow">ทำไมต้อง KinDee</p>
+              <h2 data-i18n="why.title">ออกแบบมาสำหรับคนกินอาหารไทย</h2>
+              <p class="lede" data-i18n="why.lede">แอปนับแคลอรีจากต่างประเทศหาเมนูไทยไม่เจอ ต้องชั่งเป็นกรัม และทำให้รู้สึกผิด KinDee แก้ทั้งสามเรื่อง</p>
+              <ul class="why-list">
+                <li>
+                  <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>
+                  <div><h3 data-i18n="why.1t">ค้นเจอทุกเมนูไทย</h3><p data-i18n="why.1p">ผัดกะเพรา ข้าวขาหมู ส้มตำ มีครบในคลัง พิมพ์ผิดวรรณยุกต์ก็ยังค้นเจอ</p></div>
+                </li>
+                <li>
+                  <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 0 1 1 1 8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8 1 1 0 0 1 1-1Z"/><path d="M9 8.5c-1-1.3 1-1.9 0-3.5M12 8.5c-1-1.3 1-1.9 0-3.5M15 8.5c-1-1.3 1-1.9 0-3.5"/></svg></span>
+                  <div><h3 data-i18n="why.2t">ใช้หน่วยที่คุ้นเคย</h3><p data-i18n="why.2p">เลือกเป็นจาน ชาม ทัพพี ไม้ หรือแก้ว แล้ว KinDee แปลงเป็นแคลอรีให้</p></div>
+                </li>
+                <li>
+                  <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg></span>
+                  <div><h3 data-i18n="why.3t">ไม่ตัดสิน ไม่ตำหนิ</h3><p data-i18n="why.3p">ใช้งบหมดก็แค่บอกยอดตามจริง ไม่มีสีแดง ไม่มีคำตำหนิ เพื่อให้จดต่อได้ทุกวัน</p></div>
+                </li>
+              </ul>
+            </article>
+
+            <!-- 3. Search -->
+            <article class="chapter" data-bg="sky" data-screen="search">
+              <p class="eyebrow" data-i18n="show.searchEyebrow">ค้นหา</p>
+              <h2 data-i18n="show.searchTitle">พิมพ์ไม่กี่ตัว ก็เจอเมนูที่กิน</h2>
+              <p class="lede" data-i18n="show.searchText">คลังอาหารไทยกว่า 1,300 รายการ แยกเป็นอาหารจานเดียว สินค้าในร้าน และเครื่องดื่ม เมนูที่เคยกินจะขึ้นก่อนเสมอ กดซ้ำได้ในแตะเดียว</p>
+              <ul class="chips" aria-hidden="true">
+                <li data-i18n="chip.s1">กะเพรา</li><li data-i18n="chip.s2">ข้าวมันไก่</li><li data-i18n="chip.s3">ส้มตำ</li><li data-i18n="chip.s4">ชาเย็น</li>
+              </ul>
+              <figure class="chapter-phone phone">
+                <img src="assets/screens/search.webp" width="390" height="480" loading="lazy" data-i18n-attr="alt:show.searchAlt" alt="ค้นหาคำว่า กระเพา แล้วเจอข้าวกะเพราหมูสับไข่ดาว 620 kcal ต่อจาน">
+              </figure>
+            </article>
+
+            <!-- 4. Thai portions -->
+            <article class="chapter" data-bg="peach" data-screen="portion">
+              <p class="eyebrow" data-i18n="show.portionEyebrow">ปริมาณ</p>
+              <h2 data-i18n="show.portionTitle">ครึ่งจาน หนึ่งทัพพี สองไม้</h2>
+              <p class="lede" data-i18n="show.portionText">เลือกปริมาณเหมือนสั่งอาหาร ไม่ต้องกะเป็นกรัม แต่ถ้าอยากละเอียดก็ระบุกรัมเองได้</p>
+              <ul class="chips" aria-hidden="true">
+                <li data-i18n="unit.1">จาน</li><li data-i18n="unit.2">ชาม</li><li data-i18n="unit.3">ทัพพี</li><li data-i18n="unit.4">ไม้</li><li data-i18n="unit.5">แก้ว</li>
+              </ul>
+              <figure class="chapter-phone phone">
+                <img src="assets/screens/portion.webp" width="390" height="480" loading="lazy" data-i18n-attr="alt:show.portionAlt" alt="เลือกหน่วยจาน ทัพพี หรือถ้วย และจำนวนครึ่งถึงสองจาน รวม 620 kcal">
+              </figure>
+            </article>
+
+            <!-- 5. More ways to log -->
+            <article class="chapter" data-bg="lime" data-screen="today">
+              <p class="eyebrow" data-i18n="more.eyebrow">บันทึกได้หลายทาง</p>
+              <h2 data-i18n="more.title">และอีกหลายทาง ให้จดเร็วขึ้น</h2>
+              <div class="mini-grid">
+                <article class="mini">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 8v8M11 8v8M14 8v8M16.5 8v8"/></svg>
+                  <h3 data-i18n="mini.1t">สแกนบาร์โค้ด</h3>
+                  <p data-i18n="mini.1p">ของจากร้านสะดวกซื้อ สแกนแล้วยืนยันก่อนบันทึก</p>
+                </article>
+                <article class="mini">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7l1.5-3h3L15 7"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+                  <h3 data-i18n="mini.2t">ถ่ายรูปให้ AI ช่วย</h3>
+                  <p data-i18n="mini.2p">AI เสนอเมนูที่ใกล้เคียง คุณเลือกและยืนยันเองเสมอ</p>
+                </article>
+                <article class="mini">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0"/><circle cx="12" cy="18.5" r="1"/><path d="M3 3l18 18"/></svg>
+                  <h3 data-i18n="mini.3t">ใช้ได้แม้ไม่มีเน็ต</h3>
+                  <p data-i18n="mini.3p">บันทึกลงเครื่องก่อน ซิงก์เองเมื่อกลับมาออนไลน์</p>
+                </article>
+                <article class="mini">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="11" height="15" rx="2.5"/><rect x="10" y="3" width="11" height="15" rx="2.5"/></svg>
+                  <h3 data-i18n="mini.4t">สำรองข้ามเครื่อง</h3>
+                  <p data-i18n="mini.4p">สมัครฟรีเมื่อพร้อม ข้อมูลที่จดไว้ไม่หาย</p>
+                </article>
+              </div>
+            </article>
+
+            <!-- 6. Three steps -->
+            <article class="chapter" data-bg="base" data-screen="today">
+              <p class="eyebrow" data-i18n="how.eyebrow">เริ่มใน 3 ขั้น</p>
+              <h2 data-i18n="how.title">ไม่ต้องสมัครก่อน เปิดแล้วใช้ได้เลย</h2>
+              <ol class="steps">
+                <li><div><h3 data-i18n="how.1t">ตั้งงบรายวัน</h3><p data-i18n="how.1p">กรอกเพศ อายุ ส่วนสูง น้ำหนัก กิจกรรม และเป้าหมาย KinDee คำนวณ TDEE ด้วยสูตร Mifflin–St Jeor และไม่ตั้งเป้าต่ำกว่าเกณฑ์ปลอดภัย</p></div></li>
+                <li><div><h3 data-i18n="how.2t">จดทุกมื้อ</h3><p data-i18n="how.2p">เลือกจากเมนูเคยกิน ค้นหา สแกนบาร์โค้ด หรือถ่ายรูป แล้วเลือกปริมาณที่คุ้นเคย</p></div></li>
+                <li><div><h3 data-i18n="how.3t">ดูยอดคงเหลือ</h3><p data-i18n="how.3p">รู้ทันทีว่าเหลืองบเท่าไรสำหรับมื้อถัดไป อยากสำรองข้อมูลค่อยสมัครบัญชีฟรี</p></div></li>
+              </ol>
+              <a class="btn" href="https://kindee.pages.dev/" rel="noopener" data-i18n="hero.cta">เริ่มใช้ฟรี ไม่ต้องสมัคร</a>
+            </article>
+          </div>
+
+          <!-- The one phone shared by every chapter on large screens. -->
+          <div class="stage-phone" aria-hidden="true">
+            <div class="halo"></div>
+            <figure class="phone">
+              <img data-screen="today" src="assets/screens/today.webp" width="390" height="480" alt="">
+              <img data-screen="search" src="assets/screens/search.webp" width="390" height="480" alt="">
+              <img data-screen="portion" src="assets/screens/portion.webp" width="390" height="480" alt="">
+            </figure>
+            <div class="float float-a">
+              <span class="float-icon"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 0 1 1 1 8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8 1 1 0 0 1 1-1Z"/><path d="M9 8.5c-1-1.3 1-1.9 0-3.5M12 8.5c-1-1.3 1-1.9 0-3.5M15 8.5c-1-1.3 1-1.9 0-3.5"/></svg></span>
+              <span><b data-i18n="hero.floatDish">ข้าวกะเพราหมูสับไข่ดาว</b><small data-i18n="hero.floatMeta">1 จาน · บันทึกแล้ว</small></span>
+              <span class="kcal">620</span>
+            </div>
+            <div class="float float-b">
+              <small data-i18n="hero.floatLeft">งบคงเหลือวันนี้</small>
+              <b>1,190 <span>kcal</span></b>
+            </div>
+          </div>
         </div>
-        <div class="float float-b" aria-hidden="true">
-          <small data-i18n="hero.floatLeft">งบคงเหลือวันนี้</small>
-          <b>1,190 <span>kcal</span></b>
-        </div>
+
+        <nav class="dots" data-i18n-attr="aria-label:story.nav" aria-label="ฉาก">
+          <a href="#top" data-i18n-attr="aria-label:dot.1;title:dot.1" aria-label="เริ่มต้น" title="เริ่มต้น"></a>
+          <a href="#why" data-i18n-attr="aria-label:dot.2;title:dot.2" aria-label="ทำไมต้อง KinDee" title="ทำไมต้อง KinDee"></a>
+          <a href="#features" data-i18n-attr="aria-label:dot.3;title:dot.3" aria-label="ค้นหา" title="ค้นหา"></a>
+          <a href="#portions" data-i18n-attr="aria-label:dot.4;title:dot.4" aria-label="ปริมาณ" title="ปริมาณ"></a>
+          <a href="#more" data-i18n-attr="aria-label:dot.5;title:dot.5" aria-label="บันทึกได้หลายทาง" title="บันทึกได้หลายทาง"></a>
+          <a href="#how" data-i18n-attr="aria-label:dot.6;title:dot.6" aria-label="เริ่มใน 3 ขั้น" title="เริ่มใน 3 ขั้น"></a>
+        </nav>
+        <p class="scroll-hint" aria-hidden="true"><span data-i18n="story.hint">เลื่อนลงเพื่อดูต่อ</span><i></i></p>
       </div>
     </section>
 
-    <section class="why" aria-labelledby="why-title">
-      <div class="section-head center">
-        <h2 id="why-title" data-i18n="why.title">ออกแบบมาสำหรับคนกินอาหารไทย</h2>
-        <p data-i18n="why.lede">แอปนับแคลอรีจากต่างประเทศหาเมนูไทยไม่เจอ ต้องชั่งเป็นกรัม และทำให้รู้สึกผิด KinDee แก้ทั้งสามเรื่อง</p>
-      </div>
-      <div class="why-grid">
-        <article>
-          <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>
-          <h3 data-i18n="why.1t">ค้นเจอทุกเมนูไทย</h3>
-          <p data-i18n="why.1p">ผัดกะเพรา ข้าวขาหมู ส้มตำ มีครบในคลัง พิมพ์ผิดวรรณยุกต์ก็ยังค้นเจอ</p>
-        </article>
-        <article>
-          <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16a1 1 0 0 1 1 1 8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8 1 1 0 0 1 1-1Z"/><path d="M9 8.5c-1-1.3 1-1.9 0-3.5M12 8.5c-1-1.3 1-1.9 0-3.5M15 8.5c-1-1.3 1-1.9 0-3.5"/></svg></span>
-          <h3 data-i18n="why.2t">ใช้หน่วยที่คุ้นเคย</h3>
-          <p data-i18n="why.2p">เลือกเป็นจาน ชาม ทัพพี ไม้ หรือแก้ว แล้ว KinDee แปลงเป็นแคลอรีให้</p>
-        </article>
-        <article>
-          <span class="why-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg></span>
-          <h3 data-i18n="why.3t">ไม่ตัดสิน ไม่ตำหนิ</h3>
-          <p data-i18n="why.3p">ใช้งบหมดก็แค่บอกยอดตามจริง ไม่มีสีแดง ไม่มีคำตำหนิ เพื่อให้จดต่อได้ทุกวัน</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="showcase" id="features" data-i18n-attr="aria-label:show.label" aria-label="ฟีเจอร์">
-      <div class="show-row">
-        <figure class="phone phone-sm">
-          <img src="assets/screens/search.webp" width="390" height="400" loading="lazy" data-i18n-attr="alt:show.searchAlt" alt="ค้นหาคำว่า กระเพา แล้วเจอข้าวกะเพราหมูสับไข่ดาว 620 kcal ต่อจาน">
-        </figure>
-        <div class="show-copy">
-          <p class="eyebrow" data-i18n="show.searchEyebrow">ค้นหา</p>
-          <h2 data-i18n="show.searchTitle">พิมพ์ไม่กี่ตัว ก็เจอเมนูที่กิน</h2>
-          <p data-i18n="show.searchText">คลังอาหารไทยกว่า 1,300 รายการ แยกเป็นอาหารจานเดียว สินค้าในร้าน และเครื่องดื่ม เมนูที่เคยกินจะขึ้นก่อนเสมอ กดซ้ำได้ในแตะเดียว</p>
-        </div>
-      </div>
-      <div class="show-row reverse">
-        <figure class="phone phone-sm">
-          <img src="assets/screens/portion.webp" width="390" height="480" loading="lazy" data-i18n-attr="alt:show.portionAlt" alt="เลือกหน่วยจาน ทัพพี หรือถ้วย และจำนวนครึ่งถึงสองจาน รวม 620 kcal">
-        </figure>
-        <div class="show-copy">
-          <p class="eyebrow" data-i18n="show.portionEyebrow">ปริมาณ</p>
-          <h2 data-i18n="show.portionTitle">ครึ่งจาน หนึ่งทัพพี สองไม้</h2>
-          <p data-i18n="show.portionText">เลือกปริมาณเหมือนสั่งอาหาร ไม่ต้องกะเป็นกรัม แต่ถ้าอยากละเอียดก็ระบุกรัมเองได้</p>
-        </div>
-      </div>
-
-      <div class="mini-grid">
-        <article class="mini">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 8v8M11 8v8M14 8v8M16.5 8v8"/></svg>
-          <h3 data-i18n="mini.1t">สแกนบาร์โค้ด</h3>
-          <p data-i18n="mini.1p">ของจากร้านสะดวกซื้อ สแกนแล้วยืนยันก่อนบันทึก</p>
-        </article>
-        <article class="mini">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7l1.5-3h3L15 7"/><circle cx="12" cy="13.5" r="3.5"/></svg>
-          <h3 data-i18n="mini.2t">ถ่ายรูปให้ AI ช่วย</h3>
-          <p data-i18n="mini.2p">AI เสนอเมนูที่ใกล้เคียง คุณเลือกและยืนยันเองเสมอ</p>
-        </article>
-        <article class="mini">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8 15.5a6 6 0 0 1 8 0"/><circle cx="12" cy="18.5" r="1"/><path d="M3 3l18 18"/></svg>
-          <h3 data-i18n="mini.3t">ใช้ได้แม้ไม่มีเน็ต</h3>
-          <p data-i18n="mini.3p">บันทึกลงเครื่องก่อน ซิงก์เองเมื่อกลับมาออนไลน์</p>
-        </article>
-        <article class="mini">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="11" height="15" rx="2.5"/><rect x="10" y="3" width="11" height="15" rx="2.5"/></svg>
-          <h3 data-i18n="mini.4t">สำรองข้ามเครื่อง</h3>
-          <p data-i18n="mini.4p">สมัครฟรีเมื่อพร้อม ข้อมูลที่จดไว้ไม่หาย</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="how tint" id="how" aria-labelledby="how-title">
-      <div class="inner">
+    <section class="page" id="plans" data-bg="base" aria-labelledby="plans-title">
+      <div class="page-inner reveal">
         <div class="section-head center">
-          <p class="eyebrow" data-i18n="how.eyebrow">เริ่มใน 3 ขั้น</p>
-          <h2 id="how-title" data-i18n="how.title">ไม่ต้องสมัครก่อน เปิดแล้วใช้ได้เลย</h2>
+          <p class="eyebrow" data-i18n="plans.eyebrow">แพ็กเกจ</p>
+          <h2 id="plans-title" data-i18n="plans.title">จดพื้นฐานฟรีตลอด</h2>
+          <p data-i18n="plans.lede">แพ็กเกจเสียเงินเพิ่มประวัติระยะยาวและโควตา AI ทดลองใช้ฟรี 30 วันในครั้งแรก ราคาจริงแสดงในแอปก่อนยืนยันเสมอ</p>
         </div>
-        <ol class="steps">
-          <li>
-            <h3 data-i18n="how.1t">ตั้งงบรายวัน</h3>
-            <p data-i18n="how.1p">กรอกเพศ อายุ ส่วนสูง น้ำหนัก กิจกรรม และเป้าหมาย KinDee คำนวณ TDEE ด้วยสูตร Mifflin–St Jeor และไม่ตั้งเป้าต่ำกว่าเกณฑ์ปลอดภัย</p>
-          </li>
-          <li>
-            <h3 data-i18n="how.2t">จดทุกมื้อ</h3>
-            <p data-i18n="how.2p">เลือกจากเมนูเคยกิน ค้นหา สแกนบาร์โค้ด หรือถ่ายรูป แล้วเลือกปริมาณที่คุ้นเคย</p>
-          </li>
-          <li>
-            <h3 data-i18n="how.3t">ดูยอดคงเหลือ</h3>
-            <p data-i18n="how.3p">รู้ทันทีว่าเหลืองบเท่าไรสำหรับมื้อถัดไป อยากสำรองข้อมูลค่อยสมัครบัญชีฟรี</p>
-          </li>
-        </ol>
+        <div class="table-scroll">
+          <table class="plan-table">
+            <caption class="sr-only" data-i18n="plans.caption">เปรียบเทียบแพ็กเกจ KinDee</caption>
+            <thead>
+              <tr><th scope="col" data-i18n="plans.feature">ความสามารถ</th><th scope="col">Free</th><th scope="col">Plus</th><th scope="col" class="pick">Pro<span class="tag" data-i18n="plans.pick">แนะนำ</span></th><th scope="col">Unlimited</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row" data-i18n="plans.r1">คำนวณ TDEE และจดอาหาร</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
+              <tr><th scope="row" data-i18n="plans.r2">ค้นหาอาหารไทย สแกนบาร์โค้ด ใช้ออฟไลน์</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
+              <tr><th scope="row" data-i18n="plans.r3">สำรองและซิงก์ข้ามเครื่อง</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
+              <tr><th scope="row" data-i18n="plans.r4">ประวัติและแนวโน้ม</th><td data-i18n="plans.basic">พื้นฐาน</td><td data-i18n="plans.unlimited">ไม่จำกัด</td><td class="pick" data-i18n="plans.unlimited">ไม่จำกัด</td><td data-i18n="plans.unlimited">ไม่จำกัด</td></tr>
+              <tr><th scope="row" data-i18n="plans.r5">วิเคราะห์รูปด้วย AI ต่อเดือน</th><td>3</td><td>30</td><td class="pick">100</td><td data-i18n="plans.fair">ตามการใช้งานที่เหมาะสม</td></tr>
+              <tr><th scope="row" data-i18n="plans.r6">เป้าหมายและ Macro ขั้นสูง</th><td>—</td><td>—</td><td class="pick">✓</td><td>✓</td></tr>
+              <tr><th scope="row" data-i18n="plans.r7">ทดลองฟีเจอร์ใหม่ก่อนใคร</th><td>—</td><td>—</td><td class="pick">—</td><td>✓</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <section class="plans" id="plans" aria-labelledby="plans-title">
-      <div class="section-head center">
-        <p class="eyebrow" data-i18n="plans.eyebrow">แพ็กเกจ</p>
-        <h2 id="plans-title" data-i18n="plans.title">จดพื้นฐานฟรีตลอด</h2>
-        <p data-i18n="plans.lede">แพ็กเกจเสียเงินเพิ่มประวัติระยะยาวและโควตา AI ทดลองใช้ฟรี 30 วันในครั้งแรก ราคาจริงแสดงในแอปก่อนยืนยันเสมอ</p>
-      </div>
-      <div class="table-scroll">
-        <table class="plan-table">
-          <caption class="sr-only" data-i18n="plans.caption">เปรียบเทียบแพ็กเกจ KinDee</caption>
-          <thead>
-            <tr><th scope="col" data-i18n="plans.feature">ความสามารถ</th><th scope="col">Free</th><th scope="col">Plus</th><th scope="col" class="pick">Pro<span class="tag" data-i18n="plans.pick">แนะนำ</span></th><th scope="col">Unlimited</th></tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row" data-i18n="plans.r1">คำนวณ TDEE และจดอาหาร</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
-            <tr><th scope="row" data-i18n="plans.r2">ค้นหาอาหารไทย สแกนบาร์โค้ด ใช้ออฟไลน์</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
-            <tr><th scope="row" data-i18n="plans.r3">สำรองและซิงก์ข้ามเครื่อง</th><td>✓</td><td>✓</td><td class="pick">✓</td><td>✓</td></tr>
-            <tr><th scope="row" data-i18n="plans.r4">ประวัติและแนวโน้ม</th><td data-i18n="plans.basic">พื้นฐาน</td><td data-i18n="plans.unlimited">ไม่จำกัด</td><td class="pick" data-i18n="plans.unlimited">ไม่จำกัด</td><td data-i18n="plans.unlimited">ไม่จำกัด</td></tr>
-            <tr><th scope="row" data-i18n="plans.r5">วิเคราะห์รูปด้วย AI ต่อเดือน</th><td>3</td><td>30</td><td class="pick">100</td><td data-i18n="plans.fair">ตามการใช้งานที่เหมาะสม</td></tr>
-            <tr><th scope="row" data-i18n="plans.r6">เป้าหมายและ Macro ขั้นสูง</th><td>—</td><td>—</td><td class="pick">✓</td><td>✓</td></tr>
-            <tr><th scope="row" data-i18n="plans.r7">ทดลองฟีเจอร์ใหม่ก่อนใคร</th><td>—</td><td>—</td><td class="pick">—</td><td>✓</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="privacy tint" id="privacy" aria-labelledby="privacy-title">
-      <div class="inner">
+    <section class="page on-deep" id="privacy" data-bg="deep" aria-labelledby="privacy-title">
+      <div class="page-inner reveal">
         <div class="section-head center">
           <p class="eyebrow" data-i18n="privacy.eyebrow">ความเป็นส่วนตัว</p>
           <h2 id="privacy-title" data-i18n="privacy.title">ข้อมูลสุขภาพของคุณ อยู่ในมือคุณ</h2>
@@ -225,92 +262,97 @@
       </div>
     </section>
 
-    <section class="faq" id="faq" aria-labelledby="faq-title">
-      <div class="section-head center">
-        <p class="eyebrow" data-i18n="faq.eyebrow">คำถามที่พบบ่อย</p>
-        <h2 id="faq-title" data-i18n="faq.title">ก่อนเริ่มใช้</h2>
-      </div>
-      <div class="faq-list">
-        <details>
-          <summary data-i18n="faq.1q">ต้องสมัครสมาชิกก่อนใช้ไหม</summary>
-          <p data-i18n="faq.1a">ไม่ต้อง เปิดแอปแล้วตั้งงบและจดอาหารได้ทันที การสมัครบัญชีฟรีมีไว้สำหรับสำรองข้อมูลและใช้งานหลายเครื่อง</p>
-        </details>
-        <details>
-          <summary data-i18n="faq.2q">ต้องดาวน์โหลดจาก App Store หรือ Play Store ไหม</summary>
-          <p data-i18n="faq.2a">ไม่ต้อง KinDee เป็นเว็บแอป (PWA) เปิดผ่านเบราว์เซอร์แล้วกด “เพิ่มไปยังหน้าจอโฮม” ก็ใช้ได้เหมือนแอปทั่วไป รวมถึงตอนไม่มีเน็ต</p>
-        </details>
-        <details>
-          <summary data-i18n="faq.3q">ตัวเลขแคลอรีแม่นแค่ไหน</summary>
-          <p data-i18n="faq.3a">เป็นค่าประมาณจากฐานข้อมูลอาหารและปริมาณมาตรฐาน อาหารแต่ละร้านอาจต่างกัน KinDee ช่วยให้เห็นภาพรวมการกิน ไม่ใช่คำแนะนำทางการแพทย์ หากมีโรคประจำตัวควรปรึกษาแพทย์หรือนักโภชนาการ</p>
-        </details>
-        <details>
-          <summary data-i18n="faq.4q">AI จะบันทึกอาหารให้อัตโนมัติไหม</summary>
-          <p data-i18n="faq.4a">ไม่ AI และการสแกนบาร์โค้ดทำได้แค่เสนอรายการ คุณต้องเลือกและยืนยันเองก่อนบันทึกทุกครั้ง</p>
-        </details>
-        <details>
-          <summary data-i18n="faq.5q">ถ้าวันไหนใช้งบหมดก่อนมื้อเย็นล่ะ</summary>
-          <p data-i18n="faq.5a">จดต่อได้ตามปกติ KinDee แสดงยอดตามจริงด้วยโทนสีกลาง ๆ ไม่มีข้อความตำหนิ เพราะความสม่ำเสมอสำคัญกว่าตัวเลขวันเดียว</p>
-        </details>
+    <section class="page" id="faq" data-bg="mint" aria-labelledby="faq-title">
+      <div class="page-inner reveal">
+        <div class="section-head center">
+          <p class="eyebrow" data-i18n="faq.eyebrow">คำถามที่พบบ่อย</p>
+          <h2 id="faq-title" data-i18n="faq.title">ก่อนเริ่มใช้</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary data-i18n="faq.1q">ต้องสมัครสมาชิกก่อนใช้ไหม</summary>
+            <p data-i18n="faq.1a">ไม่ต้อง เปิดแอปแล้วตั้งงบและจดอาหารได้ทันที การสมัครบัญชีฟรีมีไว้สำหรับสำรองข้อมูลและใช้งานหลายเครื่อง</p>
+          </details>
+          <details>
+            <summary data-i18n="faq.2q">ต้องดาวน์โหลดจาก App Store หรือ Play Store ไหม</summary>
+            <p data-i18n="faq.2a">ไม่ต้อง KinDee เป็นเว็บแอป (PWA) เปิดผ่านเบราว์เซอร์แล้วกด “เพิ่มไปยังหน้าจอโฮม” ก็ใช้ได้เหมือนแอปทั่วไป รวมถึงตอนไม่มีเน็ต</p>
+          </details>
+          <details>
+            <summary data-i18n="faq.3q">ตัวเลขแคลอรีแม่นแค่ไหน</summary>
+            <p data-i18n="faq.3a">เป็นค่าประมาณจากฐานข้อมูลอาหารและปริมาณมาตรฐาน อาหารแต่ละร้านอาจต่างกัน KinDee ช่วยให้เห็นภาพรวมการกิน ไม่ใช่คำแนะนำทางการแพทย์ หากมีโรคประจำตัวควรปรึกษาแพทย์หรือนักโภชนาการ</p>
+          </details>
+          <details>
+            <summary data-i18n="faq.4q">AI จะบันทึกอาหารให้อัตโนมัติไหม</summary>
+            <p data-i18n="faq.4a">ไม่ AI และการสแกนบาร์โค้ดทำได้แค่เสนอรายการ คุณต้องเลือกและยืนยันเองก่อนบันทึกทุกครั้ง</p>
+          </details>
+          <details>
+            <summary data-i18n="faq.5q">ถ้าวันไหนใช้งบหมดก่อนมื้อเย็นล่ะ</summary>
+            <p data-i18n="faq.5a">จดต่อได้ตามปกติ KinDee แสดงยอดตามจริงด้วยโทนสีกลาง ๆ ไม่มีข้อความตำหนิ เพราะความสม่ำเสมอสำคัญกว่าตัวเลขวันเดียว</p>
+          </details>
+        </div>
       </div>
     </section>
 
-    <section class="contact" id="contact" aria-labelledby="contact-title">
-      <div class="contact-copy">
-        <p class="eyebrow" data-i18n="contact.eyebrow">ติดต่อเรา</p>
-        <h2 id="contact-title" data-i18n="contact.title">อยากร่วมทดสอบ หรือมีคำถาม</h2>
-        <p data-i18n="contact.lede">บอกเราสั้น ๆ ว่าสนใจเรื่องอะไร ทีมงานจะตอบกลับทางอีเมลที่คุณให้ไว้</p>
-        <p class="direct"><span data-i18n="contact.direct">หรืออีเมลถึง</span> <span class="select" id="support-email">support@kindee.app</span></p>
+    <section class="page" id="contact" data-bg="base" aria-labelledby="contact-title">
+      <div class="page-inner contact reveal">
+        <div class="contact-copy">
+          <p class="eyebrow" data-i18n="contact.eyebrow">ติดต่อเรา</p>
+          <h2 id="contact-title" data-i18n="contact.title">อยากร่วมทดสอบ หรือมีคำถาม</h2>
+          <p data-i18n="contact.lede">บอกเราสั้น ๆ ว่าสนใจเรื่องอะไร ทีมงานจะตอบกลับทางอีเมลที่คุณให้ไว้</p>
+          <p class="direct"><span data-i18n="contact.direct">หรืออีเมลถึง</span> <span class="select" id="support-email">support@kindee.app</span></p>
+        </div>
+
+        <form class="contact-form" id="contact-form" novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label for="c-name" data-i18n="form.name">ชื่อ</label>
+              <input id="c-name" name="name" autocomplete="name" maxlength="80" required>
+            </div>
+            <div class="field">
+              <label for="c-email" data-i18n="form.email">อีเมลสำหรับตอบกลับ</label>
+              <input id="c-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="160" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="c-topic" data-i18n="form.topic">เรื่องที่ติดต่อ</label>
+            <select id="c-topic" name="topic">
+              <option value="beta" data-i18n="form.topicBeta">สมัครร่วมทดสอบ</option>
+              <option value="general" data-i18n="form.topicGeneral">สอบถามทั่วไป</option>
+              <option value="business" data-i18n="form.topicBusiness">ธุรกิจและความร่วมมือ</option>
+              <option value="support" data-i18n="form.topicSupport">แจ้งปัญหาการใช้งาน</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="c-message" data-i18n="form.message">ข้อความ</label>
+            <textarea id="c-message" name="message" rows="4" maxlength="2000" required data-i18n-attr="placeholder:form.placeholder" placeholder="เช่น ใช้ iPhone อยากลองจดอาหารช่วงลดน้ำหนัก"></textarea>
+          </div>
+          <!-- Honeypot: hidden from people, filled in by bots -->
+          <div class="hp" aria-hidden="true">
+            <label for="c-website">website</label>
+            <input id="c-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <label class="consent" for="c-consent">
+            <input id="c-consent" name="consent" type="checkbox" required>
+            <span data-i18n="form.consent">ยินยอมให้ KinDee ใช้ชื่อและอีเมลนี้เพื่อตอบกลับคำถามของฉันเท่านั้น และเก็บไว้ไม่เกิน 12 เดือน</span>
+          </label>
+          <button class="btn btn-block" type="submit" id="c-submit" data-i18n="form.submit">ส่งข้อความ</button>
+          <p class="form-status" id="c-status" role="status" aria-live="polite"></p>
+        </form>
       </div>
 
-      <form class="contact-form" id="contact-form" novalidate>
-        <div class="field-row">
-          <div class="field">
-            <label for="c-name" data-i18n="form.name">ชื่อ</label>
-            <input id="c-name" name="name" autocomplete="name" maxlength="80" required>
-          </div>
-          <div class="field">
-            <label for="c-email" data-i18n="form.email">อีเมลสำหรับตอบกลับ</label>
-            <input id="c-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="160" required>
-          </div>
+      <footer class="site-footer">
+        <div class="foot-brand">
+          <img src="assets/icon.svg" alt="" width="28" height="28">
+          <span data-i18n="footer.brand">KinDee · กินดีตาม TDEE ของคุณ</span>
         </div>
-        <div class="field">
-          <label for="c-topic" data-i18n="form.topic">เรื่องที่ติดต่อ</label>
-          <select id="c-topic" name="topic">
-            <option value="beta" data-i18n="form.topicBeta">สมัครร่วมทดสอบ</option>
-            <option value="general" data-i18n="form.topicGeneral">สอบถามทั่วไป</option>
-            <option value="business" data-i18n="form.topicBusiness">ธุรกิจและความร่วมมือ</option>
-            <option value="support" data-i18n="form.topicSupport">แจ้งปัญหาการใช้งาน</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="c-message" data-i18n="form.message">ข้อความ</label>
-          <textarea id="c-message" name="message" rows="4" maxlength="2000" required data-i18n-attr="placeholder:form.placeholder" placeholder="เช่น ใช้ iPhone อยากลองจดอาหารช่วงลดน้ำหนัก"></textarea>
-        </div>
-        <!-- Honeypot: hidden from people, filled in by bots -->
-        <div class="hp" aria-hidden="true">
-          <label for="c-website">website</label>
-          <input id="c-website" name="website" tabindex="-1" autocomplete="off">
-        </div>
-        <label class="consent" for="c-consent">
-          <input id="c-consent" name="consent" type="checkbox" required>
-          <span data-i18n="form.consent">ยินยอมให้ KinDee ใช้ชื่อและอีเมลนี้เพื่อตอบกลับคำถามของฉันเท่านั้น และเก็บไว้ไม่เกิน 12 เดือน</span>
-        </label>
-        <button class="btn btn-block" type="submit" id="c-submit" data-i18n="form.submit">ส่งข้อความ</button>
-        <p class="form-status" id="c-status" role="status" aria-live="polite"></p>
-      </form>
+        <p data-i18n="footer.disclaimer">KinDee ไม่ใช่อุปกรณ์หรือบริการทางการแพทย์ ข้อมูลพลังงานเป็นค่าประมาณเพื่อช่วยดูแลพฤติกรรมการกินเท่านั้น</p>
+        <p>© 2026 KinDee</p>
+      </footer>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="foot-brand">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
-      <span data-i18n="footer.brand">KinDee · กินดีตาม TDEE ของคุณ</span>
-    </div>
-    <p data-i18n="footer.disclaimer">KinDee ไม่ใช่อุปกรณ์หรือบริการทางการแพทย์ ข้อมูลพลังงานเป็นค่าประมาณเพื่อช่วยดูแลพฤติกรรมการกินเท่านั้น</p>
-    <p>© 2026 KinDee</p>
-  </footer>
-
   <script src="i18n.js"></script>
+  <script src="story.js" defer></script>
   <script src="main.js" defer></script>
 </body>
 </html>

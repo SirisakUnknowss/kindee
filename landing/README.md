@@ -9,10 +9,19 @@ landing/
 │  ├─ styles.css             ธีม "บัญชีแคลอรี" ตาม KinDee/brand-theme.md
 │  ├─ main.js                ตรวจฟอร์มฝั่ง browser แล้วส่งไป /api/contact
 │  ├─ i18n.js                คำแปลภาษาอังกฤษ + ปุ่มสลับภาษา TH/EN และธีม ระบบ/สว่าง/มืด
-│  └─ assets/icon.svg        ไอคอนเดียวกับแอป
+│  ├─ story.js               scroll storytelling: ฉากเปลี่ยนทีละหน้า + พื้นหลังเปลี่ยนสี
+│  └─ assets/                ไอคอน + ภาพหน้าจอแอป (WebP 780×960)
 ├─ functions/api/contact.ts  บันทึกข้อความลง Supabase (service key)
 └─ README.md                 ไฟล์นี้ — ไม่ถูก publish
 ```
+
+## Scroll storytelling
+
+- จอกว้าง ≥ 960px, สูง ≥ 680px และไม่ได้ตั้ง reduced motion → **story mode**: ส่วนเล่าเรื่อง 6 ฉากเป็นเวทีค้าง (sticky) มือถือจำลองอยู่กับที่ เปลี่ยนภาพหน้าจอ ข้อความ crossfade เลื่อนเมาส์/กดลูกศร/PageDown หนึ่งครั้ง = หนึ่งฉาก ต่อด้วยหน้าเต็มจอ แพ็กเกจ → ความเป็นส่วนตัว → FAQ → ติดต่อ
+- ไม่ใช้ CSS scroll-snap เพราะ snap แบบ mandatory ดึงการเลื่อนเล็ก ๆ (trackpad/ล้อเมาส์) กลับที่เดิม การพลิกหน้าจึงทำใน `story.js` (ล็อก ~0.9 วิ กัน momentum ของ trackpad) หน้าที่สูงกว่าจอเลื่อนปกติจนถึงขอบก่อนพลิก
+- พื้นหลังทั้งหน้าคือ `.scene-bg` ที่เปลี่ยนสีตาม `data-bg` ของฉาก/หน้า (`base`, `mint`, `sky`, `peach`, `lime`, `deep`) กำหนดสีใน `styles.css` ทั้งธีมสว่างและมืด
+- มือถือ/จอเตี้ย/reduced motion → เรียงต่อกันปกติ แต่ยังเปลี่ยนพื้นหลังและค่อย ๆ เผยเนื้อหา
+- เพิ่มฉาก: เพิ่ม `.chapter` + `.snap` + จุดใน `.dots` และแก้ `6 * 100vh` ใน `styles.css`
 
 ## ภาษาและธีม
 
