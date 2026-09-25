@@ -160,57 +160,52 @@ export function AddPanel({
   }, [tab])
 
   // Camera access starts only after the user opens Scan and is always released.
+  // Uses ZXing rather than the native BarcodeDetector API, which Safari/iOS
+  // (and therefore most iPhones) never implemented — on those devices the old
+  // native-only detector silently never fired, so scanning looked "stuck".
   useEffect(() => {
-    let stream: MediaStream | null = null
-    let timer: number | undefined
+    if (tab !== 'scan') return
     let cancelled = false
-    if (tab === 'scan') {
-      navigator.mediaDevices
-        ?.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            // @ts-expect-error focusMode is not in the TS DOM lib yet but is supported by Chromium/Android
-            advanced: [{ focusMode: 'continuous' }],
-          },
+    let reader: import('@zxing/library').BrowserMultiFormatReader | undefined
+
+    // Loaded on demand — most sessions never open the scan tab, and ZXing
+    // alone is ~380KB, not worth it in the initial app bundle.
+    import('@zxing/library')
+      .then(({ BrowserMultiFormatReader }) => {
+        if (cancelled) return null
+        reader = new BrowserMultiFormatReader()
+        return navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
+      })
+      .then(async (probe) => {
+        if (!probe || cancelled || !reader) return
+        probe.getTracks().forEach((t) => t.stop())
+        const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput')
+        const backCam = devices.find((d) => /back|environment|rear/i.test(d.label)) || devices[devices.length - 1]
+        if (cancelled || !videoRef.current) return
+        reader.decodeFromVideoDevice(backCam?.deviceId, videoRef.current, (result) => {
+          if (cancelled || scanningRef.current || !result) return
+          const code = result.getText()
+          const previous = lastDetected.current
+          if (previous?.code === code && Date.now() - previous.at < 2_000) return
+          lastDetected.current = { code, at: Date.now() }
+          void handleBarcodeLookup(code)
+        }).catch(() => {
+          if (!cancelled) setScan('denied')
         })
-        .then((s) => {
-          stream = s
-          if (videoRef.current) {
-            videoRef.current.srcObject = s
-          }
-          // Some devices default to fixed focus; ask the track directly so close-up
-          // barcodes (a few cm from the lens) stay sharp instead of blurring out.
-          const [track] = s.getVideoTracks()
-          const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined
-          if (capabilities?.focusMode?.includes('continuous')) {
-            track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }).catch(() => {})
-          }
-          const NativeDetector = (window as typeof window & {
-            BarcodeDetector?: new (options: { formats: string[] }) => {
-              detect(source: HTMLVideoElement): Promise<Array<{ rawValue: string }>>
-            }
-          }).BarcodeDetector
-          if (NativeDetector) {
-            const detector = new NativeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] })
-            timer = window.setInterval(async () => {
-              if (cancelled || scanningRef.current || !videoRef.current || videoRef.current.readyState < 2) return
-              const [result] = await detector.detect(videoRef.current).catch(() => [])
-              if (!result?.rawValue) return
-              const previous = lastDetected.current
-              if (previous?.code === result.rawValue && Date.now() - previous.at < 2_000) return
-              lastDetected.current = { code: result.rawValue, at: Date.now() }
-              void handleBarcodeLookup(result.rawValue)
-            }, 200)
-          }
-        })
-        .catch(() => setScan('denied'))
-    }
+        // Some devices default to fixed focus; ask the track directly so close-up
+        // barcodes (a few cm from the lens) stay sharp instead of blurring out.
+        const stream = videoRef.current?.srcObject as MediaStream | undefined
+        const [track] = stream?.getVideoTracks() ?? []
+        const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined
+        if (capabilities?.focusMode?.includes('continuous')) {
+          track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }).catch(() => {})
+        }
+      })
+      .catch(() => setScan('denied'))
+
     return () => {
       cancelled = true
-      if (timer) window.clearInterval(timer)
-      stream?.getTracks().forEach((t) => t.stop())
+      reader?.reset()
     }
   }, [tab])
 
