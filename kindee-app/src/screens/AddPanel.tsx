@@ -145,11 +145,26 @@ export function AddPanel({
     let cancelled = false
     if (tab === 'scan') {
       navigator.mediaDevices
-        ?.getUserMedia({ video: { facingMode: 'environment' } })
+        ?.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            // @ts-expect-error focusMode is not in the TS DOM lib yet but is supported by Chromium/Android
+            advanced: [{ focusMode: 'continuous' }],
+          },
+        })
         .then((s) => {
           stream = s
           if (videoRef.current) {
             videoRef.current.srcObject = s
+          }
+          // Some devices default to fixed focus; ask the track directly so close-up
+          // barcodes (a few cm from the lens) stay sharp instead of blurring out.
+          const [track] = s.getVideoTracks()
+          const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined
+          if (capabilities?.focusMode?.includes('continuous')) {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }).catch(() => {})
           }
           const NativeDetector = (window as typeof window & {
             BarcodeDetector?: new (options: { formats: string[] }) => {
