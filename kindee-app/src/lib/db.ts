@@ -56,6 +56,24 @@ export interface MetaItem {
   value: any
 }
 
+export interface FavoriteItem {
+  client_id: string
+  remote_id?: string
+  name: string
+  amount: number
+  unit: string
+  kcal: number
+  protein?: number
+  carb?: number
+  fat?: number
+  note?: string
+  created_at: string
+  last_used_at: string
+  deleted_at?: string | null
+  updated_at: string
+  dirty: number // 1 = pending sync, 0 = synced
+}
+
 export interface ScanQueueItem {
   seq?: number
   barcode: string
@@ -68,6 +86,7 @@ export class KinDeeDatabase extends Dexie {
   outbox!: Table<OutboxItem, number>
   meta!: Table<MetaItem, string>
   scan_queue!: Table<ScanQueueItem, number>
+  favorites!: Table<FavoriteItem, string>
 
   constructor() {
     super('KinDeeOfflineDB')
@@ -84,6 +103,14 @@ export class KinDeeDatabase extends Dexie {
       outbox: '++seq, client_id, op, tries, next_attempt_at',
       meta: 'key',
       scan_queue: '++seq, barcode'
+    })
+    this.version(3).stores({
+      entries: 'client_id, eaten_on, [eaten_on+meal], updated_at, dirty',
+      foods_cache: 'id, barcode, *tokens, cached_at',
+      outbox: '++seq, client_id, op, tries, next_attempt_at',
+      meta: 'key',
+      scan_queue: '++seq, barcode',
+      favorites: 'client_id, deleted_at, dirty, last_used_at',
     })
   }
 }

@@ -5,7 +5,21 @@ import { entryKcal } from './calc'
 import { foodById } from '../data/foods'
 import { db } from './db'
 import { deleteLocalEntry, flushOutbox, retryFailedSync, saveLocalEntry } from './sync'
+import { deleteFavoriteLocal, pullFavorites, saveFavoriteLocal, touchFavoriteUsage } from './favorites'
 import type { Entry, Meal, Profile, Session, Toast } from './types'
+
+export type FavoriteEntry = {
+  uid: string
+  name: string
+  amount: number
+  unit: string
+  kcal: number
+  protein?: number
+  carb?: number
+  fat?: number
+  note?: string
+  lastUsedAt: string
+}
 
 const KEY = 'kindee.v1'
 
@@ -55,9 +69,18 @@ type Store = Persisted & {
   addManualEntry: (e: {
     meal: Meal; name: string; amount: number; unitLabel: string; kcal: number
     protein?: number; carb?: number; fat?: number; note?: string; day?: string
+    saveAsFavorite?: boolean
   }) => Entry
+  addManualEntries: (items: {
+    meal: Meal; name: string; amount: number; unitLabel: string; kcal: number
+    protein?: number; carb?: number; fat?: number; note?: string; day?: string
+    saveAsFavorite?: boolean
+  }[]) => Entry[]
   updateEntry: (uid: string, patch: Partial<Pick<Entry, 'unitIx' | 'amount' | 'meal'>>) => void
   removeEntry: (uid: string) => void
+  favorites: FavoriteEntry[]
+  logFavorite: (favoriteUid: string, meal: Meal, day?: string) => Entry | null
+  removeFavorite: (favoriteUid: string) => void
   addContribution: () => void
   showToast: (text: string, opts?: { undoUid?: string; entryUid?: string }) => void
   hideToast: () => void
@@ -72,6 +95,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<Toast>(null)
   const [outboxCount, setOutboxCount] = useState(0)
   const [syncFailedCount, setSyncFailedCount] = useState(0)
+  const [favorites, setFavorites] = useState<FavoriteEntry[]>([])
   const toastTimer = useRef<number>()
 
   useEffect(() => {
@@ -137,9 +161,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       error: console.error,
     })
+    const favoritesSubscription = liveQuery(() => db.favorites.toArray()).subscribe({
+      next: (rows) => {
+        const mapped: FavoriteEntry[] = rows
+          .filter((f) => !f.deleted_at)
+          .sort((a, b) => b.last_used_at.localeCompare(a.last_used_at))
+          .map((f) => ({
+            uid: f.client_id,
+            name: f.name,
+            amount: f.amount,
+            unit: f.unit,
+            kcal: f.kcal,
+            protein: f.protein,
+            carb: f.carb,
+            fat: f.fat,
+            note: f.note,
+            lastUsedAt: f.last_used_at,
+          }))
+        setFavorites(mapped)
+      },
+      error: console.error,
+    })
     return () => {
       entriesSubscription.unsubscribe()
       outboxSubscription.unsubscribe()
+      favoritesSubscription.unsubscribe()
     }
   }, [])
 
@@ -156,17 +202,76 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setToast(null)
   }, [])
 
+  const createManualEntry = useCallback((e: {
+    meal: Meal; name: string; amount: number; unitLabel: string; kcal: number
+    protein?: number; carb?: number; fat?: number; note?: string; day?: string
+    saveAsFavorite?: boolean
+  }): Entry => {
+    const uid = crypto.randomUUID()
+    const day = e.day ?? dayKey()
+    const entry: Entry = {
+      uid,
+      meal: e.meal,
+      foodId: 'custom',
+      unitIx: 0,
+      amount: e.amount,
+      day,
+      kcal: Math.round(e.kcal),
+      foodName: e.name.trim(),
+      unitLabel: e.unitLabel.trim() || 'หน่วย',
+      note: e.note?.trim() || undefined,
+      protein: e.protein,
+      carb: e.carb,
+      fat: e.fat,
+      entrySource: 'manual',
+      pending: state.session?.kind === 'account',
+    }
+    saveLocalEntry({
+      client_id: uid,
+      qty: e.amount,
+      meal: e.meal,
+      eaten_at: new Date().toISOString(),
+      eaten_on: day,
+      food_name: entry.foodName!,
+      unit_label: entry.unitLabel,
+      note: entry.note,
+      kcal: entry.kcal,
+      protein: e.protein,
+      carb: e.carb,
+      fat: e.fat,
+      entry_source: 'manual',
+    }).catch(console.error)
+    if (e.saveAsFavorite) {
+      saveFavoriteLocal({
+        name: entry.foodName!,
+        amount: e.amount,
+        unit: entry.unitLabel!,
+        kcal: entry.kcal,
+        protein: e.protein,
+        carb: e.carb,
+        fat: e.fat,
+        note: entry.note,
+      }).catch(console.error)
+    }
+    setState((s) => ({ ...s, entries: [...s.entries, entry] }))
+    return entry
+  }, [state.session])
+
   const value = useMemo<Store>(() => {
     return {
       ...state,
       online,
       toast,
+      favorites,
       pendingCount: state.session?.kind === 'account' ? outboxCount : 0,
       syncFailedCount: state.session?.kind === 'account' ? syncFailedCount : 0,
       retrySync: () => { void retryFailedSync() },
       setSession: (session) => {
         setState((s) => ({ ...s, session }))
-        if (session?.kind === 'account') void flushOutbox(true)
+        if (session?.kind === 'account') {
+          void flushOutbox(true)
+          void pullFavorites()
+        }
       },
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
       setShowMacros: (showMacros) => setState((s) => ({ ...s, showMacros })),
@@ -206,43 +311,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, entries: [...s.entries, entry] }))
         return entry
       },
-      addManualEntry: (e) => {
-        const uid = crypto.randomUUID()
-        const day = e.day ?? dayKey()
-        const entry: Entry = {
-          uid,
-          meal: e.meal,
-          foodId: 'custom',
-          unitIx: 0,
-          amount: e.amount,
+      addManualEntry: createManualEntry,
+      addManualEntries: (items) => items.map((item) => createManualEntry(item)),
+      logFavorite: (favoriteUid, meal, day) => {
+        const favorite = favorites.find((f) => f.uid === favoriteUid)
+        if (!favorite) return null
+        const entry = createManualEntry({
+          meal,
+          name: favorite.name,
+          amount: favorite.amount,
+          unitLabel: favorite.unit,
+          kcal: favorite.kcal,
+          protein: favorite.protein,
+          carb: favorite.carb,
+          fat: favorite.fat,
+          note: favorite.note,
           day,
-          kcal: Math.round(e.kcal),
-          foodName: e.name.trim(),
-          unitLabel: e.unitLabel.trim() || 'หน่วย',
-          note: e.note?.trim() || undefined,
-          protein: e.protein,
-          carb: e.carb,
-          fat: e.fat,
-          entrySource: 'manual',
-          pending: state.session?.kind === 'account',
-        }
-        saveLocalEntry({
-          client_id: uid,
-          qty: e.amount,
-          meal: e.meal,
-          eaten_at: new Date().toISOString(),
-          eaten_on: day,
-          food_name: entry.foodName!,
-          unit_label: entry.unitLabel,
-          note: entry.note,
-          kcal: entry.kcal,
-          protein: e.protein,
-          carb: e.carb,
-          fat: e.fat,
-          entry_source: 'manual',
-        }).catch(console.error)
-        setState((s) => ({ ...s, entries: [...s.entries, entry] }))
+        })
+        touchFavoriteUsage(favoriteUid).catch(console.error)
         return entry
+      },
+      removeFavorite: (favoriteUid) => {
+        deleteFavoriteLocal(favoriteUid).catch(console.error)
       },
       updateEntry: (uid, patch) =>
         setState((s) => ({
@@ -280,7 +370,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       hideToast,
       reset: () => setState(empty),
     }
-  }, [state, online, toast, outboxCount, syncFailedCount, showToast, hideToast])
+  }, [state, online, toast, outboxCount, syncFailedCount, favorites, showToast, hideToast, createManualEntry])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

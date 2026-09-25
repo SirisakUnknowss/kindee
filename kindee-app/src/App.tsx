@@ -44,7 +44,7 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
 
 export default function App() {
   const store = useStore()
-  const { session, profile, setSession, setProfile, addEntry, addManualEntry, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
+  const { session, profile, setSession, setProfile, addEntry, addManualEntry, addManualEntries, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
 
   const [tab, setTab] = useState<Tab>('overview')
   const [dayOffset, setDayOffset] = useState(0)
@@ -199,6 +199,13 @@ export default function App() {
             const entry = addManualEntry({ ...manualEntry, day: dayKey() })
             setAddOpen(null)
             showToast(`จด ${manualEntry.name} แล้ว ${num(entry.kcal)} kcal`, { undoUid: entry.uid })
+          }}
+          onManualAddMany={(items) => {
+            const day = dayKey()
+            const added = addManualEntries(items.map((item) => ({ ...item, day })))
+            setAddOpen(null)
+            const total = added.reduce((sum, e) => sum + e.kcal, 0)
+            showToast(`บันทึก ${added.length} รายการแล้ว รวม ${num(total)} kcal`)
           }}
           onQuickAddMany={(ids, meal) => {
             ids.forEach((id) => addEntry({ meal, foodId: id, unitIx: 0, amount: 1, day: today }))
