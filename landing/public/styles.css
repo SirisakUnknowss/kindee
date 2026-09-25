@@ -177,7 +177,8 @@ a { color: var(--pandan); }
 }
 .nav { max-width: var(--maxw); margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 21px; flex: none; }
-.brand img { border-radius: 10px; width: 34px; height: 34px; }
+.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--surface); box-shadow: var(--shadow-soft); flex: none; }
+.brand-mark img { width: 24px; height: 24px; object-fit: contain; }
 .nav-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .nav-link { color: var(--ink-soft); text-decoration: none; font-size: 15px; padding: 6px 8px; display: none; }
 .nav-link:hover { color: var(--ink); }
@@ -216,11 +217,14 @@ main > section { padding: var(--gap-section) 20px; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--btn-glow); } 70% { box-shadow: 0 0 0 9px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 .hero-copy h1 { font-size: clamp(46px, 10.5vw, 104px); line-height: 1.08; }
 .hero-copy h1 .soft { color: var(--pandan); }
+.hero-reveal { display: grid; gap: 20px; justify-items: center; }
 .hero-copy .lede { font-size: clamp(17px, 2vw, 21px); color: var(--ink-soft); max-width: 30em; }
 .cta-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 24px; }
 
 .hero-visual { position: relative; width: 100%; display: grid; place-items: center; }
 .hero-glow { position: absolute; width: min(620px, 120vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, var(--mint), transparent 70%); pointer-events: none; }
+.app-icon { display: none; }
+.app-icon img { width: 100%; height: 100%; object-fit: contain; }
 
 /* Illustrated phone: its ring and rows are real elements so they can move. */
 .mock {
@@ -260,18 +264,39 @@ html.pin .hero-seq { height: 320vh; padding: 0 !important; }
 html.pin .hero-stage {
   position: sticky; top: 0; height: 100vh; max-width: none;
   display: block; overflow: hidden; perspective: 1200px;
-  --k1: clamp(0, calc((var(--t, 0) - .1) / .22), 1);   /* headline away */
+  --k1: clamp(0, calc((var(--t, 0) - .28) / .2), 1);   /* copy away, once revealed */
   --k2: clamp(0, calc((var(--t, 0) - .08) / .34), 1);  /* phone up + in */
   --k3: clamp(0, calc((var(--t, 0) - .82) / .1), 1);   /* explain */
+  --press: clamp(0, calc(var(--t, 0) / .02), 1);           /* icon tap: pressed down */
+  --release: clamp(0, calc((var(--t, 0) - .02) / .04), 1); /* icon tap: released */
+  --kicon: clamp(0, calc((var(--t, 0) - .05) / .16), 1);   /* icon "opens" into the phone */
 }
 @supports (height: 100svh) { html.pin .hero-stage { height: 100svh; } }
 html.pin .hero-copy {
   position: absolute; left: 50%; top: calc(var(--header-h) + 5vh); width: min(780px, calc(100% - 40px));
-  transform: translateX(-50%) translateY(calc(var(--k1) * -90px)) scale(calc(1 - var(--k1) * .08));
+  transform: translateX(-50%);
+}
+html.pin .hero-hook {
   opacity: calc(1 - var(--k1) * 1.2);
+  transform: translateY(calc(var(--k1) * -90px)) scale(calc(1 - var(--k1) * .08));
 }
 html.pin .hero-visual { position: absolute; inset: 0; }
+html.pin .hero-reveal {
+  opacity: calc(var(--kicon) * (1 - var(--k1) * 1.2));
+  transform: translateY(calc((1 - var(--kicon)) * 14px + var(--k1) * -90px)) scale(calc(1 - var(--k1) * .08));
+  transition: none;
+}
+html.pin .app-icon {
+  display: grid; place-items: center; position: absolute; z-index: 2;
+  width: min(132px, 22vh); aspect-ratio: 1; padding: 22px;
+  background: var(--surface); border-radius: 28%;
+  box-shadow: var(--shadow-lift);
+  transform: scale(calc(1 - (var(--press) - var(--release)) * .1 + var(--kicon) * 2.6));
+  opacity: calc(1 - var(--kicon) * 1.4);
+  pointer-events: none;
+}
 html.pin .mock {
+  opacity: var(--kicon);
   transform:
     translateY(calc((1 - var(--k2)) * 44vh))
     rotateX(calc((1 - var(--k2)) * 24deg))
@@ -426,6 +451,8 @@ html.anim .calm-line {
 .plan { scroll-snap-align: center; display: grid; gap: 10px; align-content: start; padding: 26px 22px; border-radius: 28px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-soft); position: relative; }
 .plan h3 { font-size: 26px; }
 .plan-note { color: var(--ink-soft); font-size: 15px; }
+.plan-price { font-size: 22px; font-weight: 700; }
+.plan-price small { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
 .plan ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; font-size: 15.5px; }
 .plan li { position: relative; padding-left: 26px; }
 .plan li::before { content: '✓'; position: absolute; left: 0; color: var(--pandan); font-weight: 700; }
@@ -486,7 +513,6 @@ html.anim .calm-line {
   border-top: 1px solid var(--line); display: grid; gap: 6px; font-size: 14px; color: var(--ink-soft);
 }
 .foot-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink); }
-.foot-brand img { border-radius: 8px; }
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));

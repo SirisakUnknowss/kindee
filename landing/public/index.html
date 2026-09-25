@@ -22,7 +22,7 @@
   <meta property="og:title" content="KinDee — กินดีตาม TDEE ของคุณ">
   <meta property="og:description" content="นับแคลอรีอาหารไทยแบบง่าย ๆ งบวันนี้ ใช้ไป คงเหลือ บันทึกเป็นจาน ทัพพี หรือไม้ ไม่ต้องชั่งกรัม">
   <meta property="og:type" content="website">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/LINESeedSansTH/LINESeedSansTH.css">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -33,7 +33,7 @@
   <header class="site-header">
     <nav class="nav" data-i18n-attr="aria-label:nav.label" aria-label="เมนูหลัก">
       <a class="brand" href="#top" data-i18n-attr="aria-label:nav.home" aria-label="KinDee หน้าแรก">
-        <img src="assets/icon.svg" alt="" width="34" height="34">
+        <span class="brand-mark"><img src="assets/logo.png" alt="" width="34" height="34"></span>
         <span>KinDee</span>
       </a>
       <div class="nav-actions">
@@ -68,17 +68,20 @@
     <section class="hero-seq" id="top" data-bg="base" data-pin>
       <div class="hero-stage">
         <div class="hero-copy">
-          <p class="badge"><span class="dot" aria-hidden="true"></span><span data-i18n="hero.badge">เปิดให้ร่วมทดสอบรอบแรก</span></p>
-          <h1 data-i18n-html="hero.title"><span class="soft">กินดี</span> <span class="nowrap">ไม่ต้องนับยาก</span></h1>
-          <p class="lede" data-i18n="hero.lede">นับแคลอรีอาหารไทยแบบจดบัญชี ตั้งงบรายวัน จดเป็นจาน ทัพพี หรือไม้ แล้วรู้ทันทีว่าเหลือเท่าไร</p>
-          <div class="cta-row">
-            <a class="btn" href="https://kindee.pages.dev/" rel="noopener" data-i18n="hero.cta">เริ่มใช้ฟรี ไม่ต้องสมัคร</a>
-            <a class="link-arrow" href="#install"><span data-i18n="hero.install">วิธีติดตั้งบนมือถือ</span> <span aria-hidden="true">→</span></a>
+          <h1 class="hero-hook" data-i18n-html="hero.title"><span class="soft">กินดี</span> <span class="nowrap">ไม่ต้องนับยาก</span></h1>
+          <div class="hero-reveal">
+            <p class="badge"><span class="dot" aria-hidden="true"></span><span data-i18n="hero.badge">เปิดให้ร่วมทดสอบรอบแรก</span></p>
+            <p class="lede" data-i18n="hero.lede">นับแคลอรีอาหารไทยแบบจดบัญชี ตั้งงบรายวัน จดเป็นจาน ทัพพี หรือไม้ แล้วรู้ทันทีว่าเหลือเท่าไร</p>
+            <div class="cta-row">
+              <a class="btn" href="https://kindee.pages.dev/" rel="noopener" data-i18n="hero.cta">เริ่มใช้ฟรี ไม่ต้องสมัคร</a>
+              <a class="link-arrow" href="#install"><span data-i18n="hero.install">วิธีติดตั้งบนมือถือ</span> <span aria-hidden="true">→</span></a>
+            </div>
           </div>
         </div>
 
         <div class="hero-visual">
           <div class="hero-glow" aria-hidden="true"></div>
+          <div class="app-icon" aria-hidden="true"><img src="assets/logo.png" width="88" height="88" alt=""></div>
 
           <!-- An illustrated phone (not a screenshot) so the numbers can move. -->
           <div class="mock" data-i18n-attr="aria-label:mock.label" role="img" aria-label="ตัวอย่างหน้าวันนี้ในแอป: งบ 1,810 kcal กินไป 960 เหลือ 850">
@@ -252,6 +255,7 @@
       <div class="plan-row">
         <article class="plan" data-reveal="zoom" style="--d:0">
           <h3>Free</h3>
+          <p class="plan-price" data-i18n="plans.freePrice">ฟรี</p>
           <p class="plan-note" data-i18n="plans.freeNote">เริ่มต้นและใช้ทุกวัน</p>
           <ul>
             <li data-i18n="plans.f1">จดอาหาร + TDEE</li>
@@ -262,6 +266,7 @@
         </article>
         <article class="plan" data-reveal="zoom" style="--d:1">
           <h3>Plus</h3>
+          <p class="plan-price" data-i18n-html="plans.plusPrice">฿199<small>/เดือน</small></p>
           <p class="plan-note" data-i18n="plans.plusNote">จดต่อเนื่องทุกวัน</p>
           <ul>
             <li data-i18n="plans.allFree">ทุกอย่างใน Free</li>
@@ -272,6 +277,7 @@
         <article class="plan pick" data-reveal="zoom" style="--d:2">
           <p class="plan-tag" data-i18n="plans.pick">แนะนำ</p>
           <h3>Pro</h3>
+          <p class="plan-price" data-i18n-html="plans.proPrice">฿599<small>/เดือน</small></p>
           <p class="plan-note" data-i18n="plans.proNote">มีเป้าหมายชัดเจน</p>
           <ul>
             <li data-i18n="plans.allPlus">ทุกอย่างใน Plus</li>
@@ -281,6 +287,7 @@
         </article>
         <article class="plan" data-reveal="zoom" style="--d:3">
           <h3>Unlimited</h3>
+          <p class="plan-price" data-i18n-html="plans.unlPrice">฿1,999<small>/เดือน</small></p>
           <p class="plan-note" data-i18n="plans.unlNote">ใช้ AI บ่อยมาก</p>
           <ul>
             <li data-i18n="plans.allPro">ทุกอย่างใน Pro</li>
@@ -386,7 +393,7 @@
 
   <footer class="site-footer" data-bg="base">
     <div class="foot-brand">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span class="brand-mark"><img src="assets/logo.png" alt="" width="28" height="28"></span>
       <span data-i18n="footer.brand">KinDee · กินดีตาม TDEE ของคุณ</span>
     </div>
     <p data-i18n="footer.disclaimer">KinDee ไม่ใช่อุปกรณ์หรือบริการทางการแพทย์ ข้อมูลพลังงานเป็นค่าประมาณเพื่อช่วยดูแลพฤติกรรมการกินเท่านั้น</p>
