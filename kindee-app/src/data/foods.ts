@@ -1,3 +1,5 @@
+import thaiFoods from './thai-foods.json'
+
 export type Quality = 'verified' | 'open' | 'user'
 export type FoodCat = 'dish' | 'store' | 'drink' | 'sweet' | 'fruit'
 export type Unit = { label: string; f: number }
@@ -31,6 +33,12 @@ export const QUALITY: Record<Quality, { label: string; icon: string; color: stri
 }
 
 export const FOODS: Food[] = [
+  { id: 'steamed-rice', name: 'ข้าวสวย', kcal: 234, kind: 'dish', q: 'open', icon: 'ph ph-bowl-food', cat: 'dish',
+    protein: 4.3, carb: 51.5, fat: 0.5,
+    units: [{ label: 'จาน (180 ก.)', f: 1 }, { label: 'ทัพพี (60 ก.)', f: 1 / 3 }, { label: 'ถ้วย (150 ก.)', f: 5 / 6 }] },
+  { id: 'butter-cookie', name: 'คุกกี้เนย', kcal: 70, kind: 'dish', q: 'open', icon: 'ph ph-cookie', cat: 'sweet',
+    protein: 1, carb: 9, fat: 3.5,
+    units: [{ label: 'ชิ้น (15 ก.)', f: 1 }, { label: '2 ชิ้น', f: 2 }, { label: '100 ก.', f: 100 / 15 }] },
   { id: 'kaprao', name: 'ข้าวกะเพราหมูสับไข่ดาว', kcal: 620, kind: 'dish', q: 'verified', icon: 'ph ph-bowl-food', cat: 'dish',
     protein: 28, carb: 74, fat: 24, updated: '12 ก.ค. 2026',
     units: [{ label: 'จาน', f: 1 }, { label: 'ทัพพี', f: 0.42 }, { label: 'ถ้วย', f: 0.6 }] },
@@ -81,6 +89,33 @@ export const FOODS: Food[] = [
     units: [{ label: 'ถ้วย', f: 1 }, { label: '2 ถ้วย', f: 2 }] },
 ]
 
+// The same curated catalogue is seeded into Supabase and bundled here so the
+// full searchable menu remains available offline. Keep hand-curated overrides
+// above the generated data when names overlap.
+const handCuratedNames = new Set(FOODS.map((food) => food.name))
+FOODS.push(...thaiFoods
+  .filter((food) => !handCuratedNames.has(food.name))
+  .map((food) => {
+    const grams = food.grams
+    return {
+      id: food.id,
+      name: food.name,
+      kind: 'dish' as const,
+      cat: food.cat as FoodCat,
+      kcal: Math.round(food.kcal100g * grams / 100),
+      q: 'open' as const,
+      icon: food.cat === 'drink' ? 'ph ph-coffee' : food.cat === 'sweet' ? 'ph ph-cookie' : 'ph ph-bowl-food',
+      protein: Math.round(food.protein100g * grams / 100 * 10) / 10,
+      carb: Math.round(food.carb100g * grams / 100 * 10) / 10,
+      fat: Math.round(food.fat100g * grams / 100 * 10) / 10,
+      units: [
+        { label: `${food.portion} (${grams} ก.)`, f: 1 },
+        { label: `ครึ่ง${food.portion}`, f: 0.5 },
+        { label: '100 ก.', f: Math.round(100 / grams * 100) / 100 },
+      ],
+    }
+  }))
+
 export const foodById = (id: string): Food =>
   FOODS.find((f) => f.id === id) ?? FOODS[0]
 
@@ -92,7 +127,7 @@ export function registerRuntimeFood(food: Food) {
 }
 
 /** คลังที่ bundle มากับแอป ใช้ได้ตอนออฟไลน์ */
-export const OFFLINE_COUNT = 320
+export const OFFLINE_COUNT = FOODS.length
 
 export const FILTERS: { id: 'all' | FoodCat; label: string }[] = [
   { id: 'all', label: 'ทั้งหมด' },

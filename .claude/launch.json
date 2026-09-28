@@ -8,9 +8,9 @@
       "port": 5183
     },
     {
-      "name": "kindee-admin",
+      "name": "kindee-pages",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "kindee-app", "run", "pages:dev"],
+      "runtimeArgs": ["--prefix", "kindee-app", "run", "pages:dev", "--", "--port", "8788"],
       "port": 8788
     },
     {
