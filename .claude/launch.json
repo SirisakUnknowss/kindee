@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "kindee-app", "run", "dev", "--", "--port", "5183"],
       "port": 5183
+    },
+    {
+      "name": "kindee-pages",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "kindee-app", "run", "pages:dev", "--", "--port", "8788"],
+      "port": 8788
     }
   ]
 }
