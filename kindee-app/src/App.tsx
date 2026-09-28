@@ -16,6 +16,7 @@ import { QtySheet } from './screens/QtySheet'
 import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 import { Pricing } from './screens/Pricing'
+import { AdminAccess } from './screens/AdminAccess'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -43,7 +44,7 @@ function TabBar({ tab, onTab, onAdd }: { tab: Tab; onTab: (t: Tab) => void; onAd
 
 export default function App() {
   const store = useStore()
-  const { session, profile, setSession, setProfile, addEntry, addManualEntry, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
+  const { session, profile, setSession, setProfile, addEntry, addManualEntry, addManualEntries, updateEntry, removeEntry, entriesFor, showToast, hideToast, toast } = store
 
   const [tab, setTab] = useState<Tab>('overview')
   const [dayOffset, setDayOffset] = useState(0)
@@ -53,6 +54,7 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
   const [pricingOpen, setPricingOpen] = useState(() => new URLSearchParams(window.location.search).has('billing'))
+  const adminMode = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')
 
   const persistCloudProfile = async (p: Profile, userId = session?.kind === 'account' ? session.userId : undefined) => {
     if (!userId || !supabase) return
@@ -77,6 +79,10 @@ export default function App() {
     const t = window.setTimeout(() => setLoading(false), 600)
     return () => window.clearTimeout(t)
   }, [])
+
+  if (adminMode) {
+    return <AdminAccess onExit={() => window.location.assign('/')} />
+  }
 
   if (!session) {
     return (
@@ -193,6 +199,13 @@ export default function App() {
             const entry = addManualEntry({ ...manualEntry, day: dayKey() })
             setAddOpen(null)
             showToast(`จด ${manualEntry.name} แล้ว ${num(entry.kcal)} kcal`, { undoUid: entry.uid })
+          }}
+          onManualAddMany={(items) => {
+            const day = dayKey()
+            const added = addManualEntries(items.map((item) => ({ ...item, day })))
+            setAddOpen(null)
+            const total = added.reduce((sum, e) => sum + e.kcal, 0)
+            showToast(`บันทึก ${added.length} รายการแล้ว รวม ${num(total)} kcal`)
           }}
           onQuickAddMany={(ids, meal) => {
             ids.forEach((id) => addEntry({ meal, foodId: id, unitIx: 0, amount: 1, day: today }))

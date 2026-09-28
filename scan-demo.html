@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Barcode Scan Demo</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Sarabun, sans-serif;
+    background: #0b0b0c;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  .video-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 4 / 3;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  video { width: 100%; height: 100%; object-fit: cover; }
+  .frame {
+    position: absolute; inset: 12%;
+    border: 3px solid #4ade80;
+    border-radius: 12px;
+    pointer-events: none;
+  }
+  .status {
+    margin-top: 14px;
+    font-size: 14px;
+    color: #aaa;
+    text-align: center;
+    min-height: 20px;
+  }
+  .result {
+    margin-top: 10px;
+    width: 100%;
+    max-width: 480px;
+    background: #17181b;
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .result code {
+    font-size: 18px;
+    font-weight: 600;
+    color: #4ade80;
+  }
+  .log {
+    margin-top: 16px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: #888;
+    background: #111;
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .log div { padding: 3px 0; border-bottom: 1px solid #222; }
+  button {
+    margin-top: 14px;
+    background: #4ade80;
+    color: #06210f;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+  <h1>🔍 Barcode Scan Demo (single-file test page)</h1>
+  <div class="video-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="frame"></div>
+  </div>
+  <div class="status" id="status">กำลังขอสิทธิ์ใช้กล้อง...</div>
+  <div class="result" id="result" style="display:none">
+    ล่าสุด: <code id="code"></code>
+    <div style="font-size:12px;color:#888;margin-top:4px" id="meta"></div>
+  </div>
+  <button id="resume" style="display:none">สแกนต่อ</button>
+  <div class="log" id="log"></div>
+
+  <!-- ZXing covers Safari/iOS too, unlike the native BarcodeDetector API -->
+  <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+  <script>
+    const video = document.getElementById('video')
+    const statusEl = document.getElementById('status')
+    const resultEl = document.getElementById('result')
+    const codeEl = document.getElementById('code')
+    const metaEl = document.getElementById('meta')
+    const logEl = document.getElementById('log')
+    const resumeBtn = document.getElementById('resume')
+
+    let lastCode = null
+    let lastAt = 0
+    let paused = false
+
+    function log(msg) {
+      const line = document.createElement('div')
+      const t = new Date().toLocaleTimeString('th-TH')
+      line.textContent = `[${t}] ${msg}`
+      logEl.prepend(line)
+    }
+
+    async function lookup(code) {
+      statusEl.textContent = 'พบบาร์โค้ด กำลังค้นหาข้อมูลสินค้า...'
+      resultEl.style.display = 'block'
+      codeEl.textContent = code
+      metaEl.textContent = ''
+      log(`ตรวจพบ: ${code}`)
+
+      // Tries the KinDee API if this page happens to be served from the same
+      // origin as the app (e.g. dropped into kindee-app/public/ during a
+      // wrangler pages dev session). On a plain file:// or unrelated host
+      // this will just fail silently and the page still shows the raw code.
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 6000)
+        const res = await fetch(`/api/barcode/${encodeURIComponent(code)}`, { signal: controller.signal })
+        clearTimeout(timeout)
+        const data = await res.json()
+        if (res.ok && data.food) {
+          metaEl.textContent = `พบ: ${data.food.name_th || data.food.name || '(ไม่ทราบชื่อ)'} — ${data.food.kcal_100g ?? '?'} kcal/100g [${data.source}]`
+          log(`API พบสินค้า: ${data.food.name_th || data.food.name}`)
+        } else {
+          metaEl.textContent = 'ไม่พบในฐานข้อมูล API (แสดงแค่เลขบาร์โค้ดที่อ่านได้)'
+          log('API ไม่พบสินค้านี้')
+        }
+      } catch (e) {
+        metaEl.textContent = 'อ่านบาร์โค้ดสำเร็จ แต่เรียก API ไม่ได้ (หน้านี้ไม่ได้รันอยู่บน origin เดียวกับแอป)'
+        log(`เรียก API ไม่สำเร็จ: ${e.message || e}`)
+      }
+      statusEl.textContent = 'เจอแล้ว! กด "สแกนต่อ" เพื่ออ่านชิ้นถัดไป'
+      paused = true
+      resumeBtn.style.display = 'inline-block'
+    }
+
+    resumeBtn.onclick = () => {
+      paused = false
+      lastCode = null
+      resumeBtn.style.display = 'none'
+      statusEl.textContent = 'เล็งกล้องไปที่บาร์โค้ด...'
+    }
+
+    async function start() {
+      const reader = new ZXing.BrowserMultiFormatReader()
+      try {
+        // Ask for camera permission first so device labels are populated,
+        // then enumerate via the standard MediaDevices API (more portable
+        // across ZXing versions than its own device-listing helper).
+        const probe = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        probe.getTracks().forEach((t) => t.stop())
+        const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput')
+        const backCam = devices.find((d) => /back|environment|rear/i.test(d.label)) || devices[devices.length - 1]
+        statusEl.textContent = 'เล็งกล้องไปที่บาร์โค้ด...'
+        await reader.decodeFromVideoDevice(backCam?.deviceId, video, (result, err) => {
+          if (paused || !result) return
+          const text = result.getText()
+          const now = Date.now()
+          if (text === lastCode && now - lastAt < 3000) return
+          lastCode = text
+          lastAt = now
+          void lookup(text)
+        })
+      } catch (e) {
+        statusEl.textContent = `เปิดกล้องไม่ได้: ${e.message || e}`
+        log(`Error: ${e.message || e}`)
+      }
+    }
+
+    start()
+  </script>
+</body>
+</html>

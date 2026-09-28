@@ -18,7 +18,7 @@ export const supabase = isSupabaseConfigured
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: !window.location.pathname.startsWith('/admin'),
       },
     })
   : null

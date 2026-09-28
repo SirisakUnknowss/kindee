@@ -22,6 +22,7 @@ KinDee เป็น Progressive Web App สำหรับบันทึกอ�
 
 รายละเอียด product และ architecture อยู่ที่ [Product roadmap](KinDee/product-roadmap-architecture.md)
 ส่วนความแตกต่างของแพ็กเกจสมาชิกอยู่ที่ [Subscription packages](KinDee/subscription-packages.md)
+คู่มือหน้า dashboard สำหรับผู้ดูแลอยู่ที่ [Admin monitoring](kindee-app/docs/ADMIN_MONITORING.md)
 
 ## Technology
 

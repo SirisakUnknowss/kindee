@@ -3,6 +3,9 @@ export interface Env {
   SUPABASE_URL: string
   SUPABASE_PUBLISHABLE_KEY: string
   SUPABASE_SERVICE_ROLE_KEY?: string
+  ADMIN_SUPABASE_URL?: string
+  ADMIN_SUPABASE_PUBLISHABLE_KEY?: string
+  ADMIN_USER_IDS?: string
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
   BARCODE_PROVIDER_URL?: string
@@ -46,7 +49,11 @@ export async function authenticatedUser(request: Request, env: Env) {
     headers: { authorization, apikey: env.SUPABASE_PUBLISHABLE_KEY },
   })
   if (!response.ok) return null
-  return await response.json() as { id: string; email?: string }
+  return await response.json() as {
+    id: string
+    email?: string
+    app_metadata?: Record<string, unknown>
+  }
 }
 
 export function supabaseHeaders(env: Env, authorization?: string, privileged = false): HeadersInit {
