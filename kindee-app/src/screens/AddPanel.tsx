@@ -140,6 +140,11 @@ export function AddPanel({
   const [manualBarcode, setManualBarcode] = useState('')
   const lastDetected = useRef<{ code: string; at: number } | null>(null)
   const scanningRef = useRef(false)
+  const scanTrackRef = useRef<MediaStreamTrack | null>(null)
+  const [zoomSupported, setZoomSupported] = useState(false)
+  const [zoomLevel, setZoomLevel] = useState<1 | 2 | 5>(1)
+  const barcodeFileInputRef = useRef<HTMLInputElement>(null)
+  const [galleryScanning, setGalleryScanning] = useState(false)
 
   // Photo states
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -196,18 +201,62 @@ export function AddPanel({
         // barcodes (a few cm from the lens) stay sharp instead of blurring out.
         const stream = videoRef.current?.srcObject as MediaStream | undefined
         const [track] = stream?.getVideoTracks() ?? []
-        const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined
+        scanTrackRef.current = track ?? null
+        const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[]; zoom?: { min: number; max: number } }) | undefined
         if (capabilities?.focusMode?.includes('continuous')) {
           track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }).catch(() => {})
         }
+        // Not every device/browser exposes zoom as a track capability (mainly
+        // Android Chrome does); hide the x2/x5 buttons where it isn't there.
+        setZoomSupported(!!capabilities?.zoom && capabilities.zoom.max >= 2)
       })
       .catch(() => setScan('denied'))
 
     return () => {
       cancelled = true
       reader?.reset()
+      scanTrackRef.current = null
+      setZoomSupported(false)
+      setZoomLevel(1)
     }
   }, [tab])
+
+  // Applies optical/digital zoom via the track's `zoom` constraint, clamped to
+  // what the device reports so requesting x5 on a x3-max camera doesn't throw.
+  const applyZoom = (level: 1 | 2 | 5) => {
+    const track = scanTrackRef.current
+    const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { zoom?: { min: number; max: number } }) | undefined
+    if (!track || !capabilities?.zoom) return
+    const clamped = Math.min(level, capabilities.zoom.max)
+    track.applyConstraints({ advanced: [{ zoom: clamped } as MediaTrackConstraintSet] })
+      .then(() => setZoomLevel(level))
+      .catch(() => {})
+  }
+
+  // Lets the user pick a photo from their gallery when the live camera can't
+  // get a clean read (small, glossy, or damaged barcodes are easier to zoom
+  // and crop in the OS photo picker first).
+  const handleGalleryBarcodePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setGalleryScanning(true)
+    try {
+      const { BrowserMultiFormatReader } = await import('@zxing/library')
+      const reader = new BrowserMultiFormatReader()
+      const url = URL.createObjectURL(file)
+      try {
+        const result = await reader.decodeFromImageUrl(url)
+        void handleBarcodeLookup(result.getText())
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    } catch {
+      showToast('อ่านบาร์โค้ดจากรูปนี้ไม่ได้ ลองถ่ายให้ชัดขึ้นหรือพิมพ์เลขแทน')
+    } finally {
+      setGalleryScanning(false)
+    }
+  }
 
   // Barcode Lookup Handler
   const handleBarcodeLookup = async (code: string) => {
@@ -694,7 +743,27 @@ export function AddPanel({
 
         {tab === 'scan' && (
           <div style={{ position: 'relative', minHeight: 400, background: '#000', color: '#fff', padding: 16 }}>
-            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 16 }} />
+            <div style={{ position: 'relative' }}>
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: 260, objectFit: 'cover', borderRadius: 16 }} />
+              {zoomSupported && (
+                <div className="kd-row" style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', gap: 6, background: 'rgba(0,0,0,0.55)', borderRadius: 999, padding: 4 }}>
+                  {([1, 2, 5] as const).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => applyZoom(level)}
+                      style={{
+                        width: 36, height: 28, borderRadius: 999, border: 'none',
+                        background: zoomLevel === level ? '#fff' : 'transparent',
+                        color: zoomLevel === level ? '#000' : '#fff',
+                        fontSize: 13, fontWeight: 600,
+                      }}
+                    >
+                      {level}x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="kd-row" style={{ justifyContent: 'space-between', margin: '10px 0' }}>
               <span className="kd-caption" style={{ color: '#aaa' }}>
@@ -720,6 +789,16 @@ export function AddPanel({
                   ค้นหา
                 </button>
               </div>
+
+              <input ref={barcodeFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleGalleryBarcodePick} />
+              <button
+                className="kd-btn"
+                style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+                disabled={galleryScanning}
+                onClick={() => barcodeFileInputRef.current?.click()}
+              >
+                <Icon name="ph ph-image" size={18} /> {galleryScanning ? 'กำลังอ่านบาร์โค้ด...' : 'เลือกภาพบาร์โค้ดจากแกลอรี่'}
+              </button>
             </div>
           </div>
         )}
