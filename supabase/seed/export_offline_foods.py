@@ -7,7 +7,13 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "supabase/migrations/20260918060000_seed_thai_foods.sql"
+# The first seed plus every later delta (--since) migration; later files only add names.
+SOURCES = [
+    ROOT / "supabase/migrations/20260918060000_seed_thai_foods.sql",
+    ROOT / "supabase/migrations/20260921060000_add_missing_thai_foods.sql",
+    ROOT / "supabase/migrations/20260928090000_add_more_drinks_and_dishes.sql",
+    ROOT / "supabase/migrations/20260929090000_add_drink_menu_catalogue.sql",
+]
 TARGET = ROOT / "kindee-app/src/data/thai-foods.json"
 
 
@@ -48,9 +54,9 @@ def text(value: str) -> str | None:
     return value[1:-1].replace("''", "'")
 
 
-def main() -> None:
-    source = SOURCE.read_text(encoding="utf-8")
+def read_foods(path: Path, seen: set[str]) -> list[dict]:
     foods = []
+    source = path.read_text(encoding="utf-8")
     for match in re.finditer(r"^\s*\('(seed:th:\d+)'(.*?)\),?$", source, re.MULTILINE):
         seed_id, remainder = match.groups()
         row = split_fields("'" + seed_id + "'" + remainder)
@@ -58,8 +64,9 @@ def main() -> None:
             raise ValueError(f"Unexpected seed row ({len(row)} fields): {match.group(0)}")
         _, name, name_en, aliases, category, _is_dish, kcal, protein, carb, fat, grams, portion, _popularity = row
         name = text(name)
-        if not name:
+        if not name or name in seen:
             continue
+        seen.add(name)
         category = text(category) or "dish"
         cat = {"drink": "drink", "fruit": "fruit", "sweet": "sweet", "dessert": "sweet", "store": "store"}.get(category, "dish")
         digest = hashlib.md5(name.encode("utf-8")).hexdigest()
@@ -76,8 +83,12 @@ def main() -> None:
             "grams": float(grams),
             "portion": text(portion) or "ที่",
         })
-    if len(foods) != 1000:
-        raise ValueError(f"Expected 1000 curated foods, found {len(foods)}")
+    return foods
+
+
+def main() -> None:
+    seen: set[str] = set()
+    foods = [food for path in SOURCES for food in read_foods(path, seen)]
     TARGET.write_text(json.dumps(foods, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"Wrote {len(foods)} offline foods to {TARGET}")
 

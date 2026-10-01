@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-09-25 16:37 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-01 14:15 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -122,6 +122,14 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-01 14:15 +07:00 (Asia/Bangkok) — More drinks and dishes (uncommitted)
+
+- User could not find many drinks (e.g. อเมริกาโน่ส้ม) or dishes (แกงเห็ด, แหนมเนือง). Root cause for แกงเห็ด: the bundled offline catalogue `kindee-app/src/data/thai-foods.json` was exported only from the first seed migration (1,000 foods), so the 321 foods added by `20260921060000_add_missing_thai_foods.sql` (all mushroom dishes) existed in the DB but not offline.
+- Extended `supabase/seed/generate_thai_foods.py` (flavoured americanos/lattes/teas/sodas/smoothies/herbal drinks; Vietnamese, northern/Isan, mushroom, hotpot dishes; `--since` now takes several migrations) and generated `supabase/migrations/20260928090000_add_more_drinks_and_dishes.sql` (267 new foods). `export_offline_foods.py` now reads all three seed migrations and dedupes by name → offline JSON has 1,588 foods. Typecheck + 67 tests pass.
+- Not done: the new migration is NOT applied to Supabase `kindee-development` (shared dev/prod DB) and nothing is committed/pushed; the app only shows the new items offline once deployed. Nutrition values are rough estimates (quality=community), Not confirmed by any source.
+- Follow-up (same day): user pasted a 300-item cafe drink menu (English + Thai names). Added as `supabase/migrations/20260929090000_add_drink_menu_catalogue.sql` (284 new foods after dedupe against existing names; names kept exactly as pasted). Offline JSON now 1,872 foods. Values are base-drink + flavour-adder estimates, Not confirmed. Search lowercases but does not strip accents, so "Cafe Latte" will not match "Café Latte" (not fixed). Migrations 20260928 and 20260929 are both unapplied to Supabase; nothing committed.
+- No ClickUp task was created for this work.
 
 ### 2026-09-25 16:37 +07:00 (Asia/Bangkok) — Stripe test-mode billing wired up, landing hero/logo/pricing polish
 
