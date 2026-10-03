@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-01 14:15 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-04 09:30 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -38,6 +38,7 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 | Supabase (admin auth) | Project `kindee-admin-auth` (`nqnosxdpajyphweobiqe`, ap-southeast-1) | Separate project for `/admin` sign-in only (Google OAuth + TOTP MFA); no app data lives here |
 | Product/architecture docs | `KinDee/` | Roadmap, implementation plan P1–P7, brand theme, subscription packages |
 | Ops runbooks | `kindee-app/docs/` | Admin monitoring, PDPA incident/launch checklist, UAT monitoring |
+| Mobile app (Expo/React Native, iOS-first) | `kindee-mobile/` | Free-only round 1; see its README for the App Store steps; uncommitted as of 2026-10-04 |
 | Landing page | `landing/` | `public/` is the only published dir; `functions/api/contact.ts`; deploy command in `landing/README.md`; live at https://kindee-landing.pages.dev |
 | Local preview configs | `.claude/launch.json` | `kindee` (port 5183) and `landing` (port 5190, wrangler pages dev) |
 | ClickUp workflow skill | `.claude/skills/clickup-task-workflow/SKILL.md` | IDs, workflow, rate-limit fallback |
@@ -122,6 +123,17 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-04 06:00 +07:00 (Asia/Bangkok) — React Native (Expo) port for the App Store (uncommitted)
+
+- User asked to rebuild as React Native and publish to the App Store. Decisions (user-confirmed): owner already has an Apple Developer account; round 1 is **Free-only** (no Pricing/Stripe, because Apple requires In-App Purchase for digital subscriptions, guideline 3.1.1); new app lives in `kindee-mobile/` next to the unchanged web app. Also left out: AI photo tab (disabled on web too), admin, Google sign-in (guideline 4.8).
+- Built `kindee-mobile/` (Expo SDK 57, RN 0.86, plain state-machine navigation, no router). Ported screens: Auth (email/password, verify, forgot), Onboarding, Overview, Today, Calendar, Me (export/delete account/feedback), AddPanel (recent/favorites/search/manual/scan), QtySheet, Terms. Native barcode scanning uses `expo-camera` (replaces ZXing) with 1x/2x/5x zoom and gallery pick. Data layer `src/lib/db.ts` = in-memory + AsyncStorage replacing Dexie; sync/favorites/report/privacy ported to call `EXPO_PUBLIC_API_BASE` (default https://kindee.pages.dev). `calc/thai/types`, foods data and legal text copied from `kindee-app`.
+- Verified: `tsc --noEmit` clean, 20 unit tests pass, `expo-doctor` 21/21, and a browser (react-native-web) walk-through at 375×812: splash → onboarding (target 1,810 kcal) → search "กะเพรา" → quick-add → Today ring/ledger → Calendar → Profile → Terms, no console errors. Real-device iOS run, camera scan and Supabase login/sync from the app are **Not confirmed** (no Mac/device; Windows session). The EAS build later succeeded (see below).
+- Config: `app.json` (bundle id `com.kindee.app` — **Not confirmed**, owner may need to change), `eas.json` (`ascAppId` 6818893338), icon generated from `images/logo.png` (1024 opaque), `.env` (git-ignored, publishable Supabase key + API base), `.claude/launch.json` got `kindee-mobile-web` (port 8081). `kindee-mobile/README.md` has the publish checklist.
+- Release steps done by the owner this session (Expo account `kindee`, Apple Developer account already existed): `eas init` → project `@kindee/kindee` (ID `b0a62a22-d743-4da6-9264-97898e59001e`, written into `app.json`); production EAS env vars `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_API_BASE` (first two were briefly set to a placeholder string and then corrected with `env:set`); `eas build --platform ios --profile production` succeeded (build `20970306-ce5d-4f6b-85c0-fe536e2cb43a`, version 1.0.0, build number 1, bundle id `com.kindee.app`); `eas submit` uploaded it to App Store Connect app `6818893338` on the second try (first try: EAS "Service Unavailable"). Apple was still processing the build when last checked; it appears in TestFlight afterwards. npm scripts `build:ios`/`submit:ios` now call `npx eas-cli@latest` because `eas` is not installed globally on the owner's machine.
+- Terms rewritten for iOS in `kindee-mobile/src/content/legal.ts` only (web copy untouched): section 7 now "ค่าบริการ" (free, no in-app purchases; any future purchases via Apple), removed Stripe and payment-customer-ID mentions, "guest data stays on this device", Gemini noted as not enabled on iOS. Drafted by Claude, not reviewed by a lawyer/DPO. These texts are **not** in the uploaded build 1; they need a new build + submit.
+- Still to do (owner): test build 1 from TestFlight on a real iPhone (camera scan, sign-up/login, sync to web, account deletion); App Store Connect listing (screenshots, description, category, public privacy-policy and support URLs — Not confirmed to exist, privacy labels, review notes); Submit for Review. Not committed to git yet.
+- ClickUp: [Port KinDee to React Native (Expo) for iOS App Store](https://app.clickup.com/t/86d4d4f3c) created in 02 In Progress (not closed).
 
 ### 2026-10-01 14:15 +07:00 (Asia/Bangkok) — More drinks and dishes (uncommitted)
 
