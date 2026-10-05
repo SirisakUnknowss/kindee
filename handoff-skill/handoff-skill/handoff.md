@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-05 20:30 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-05 22:00 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -123,6 +123,13 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-05 22:00 +07:00 (Asia/Bangkok) — iOS app 1.0 (build 2) submitted to App Review by the owner
+
+- Checked App Store Connect with the owner's signed-in Chrome: Content Rights ("Yes, necessary rights"), Regulated Medical Device (declared not regulated), DSA (non-trader, Active for 27 EU countries), build 2, 6 screenshots (generated from the web build, not a real iPhone), App Privacy (published), Free price, 175-country availability, age rating 18+, manual release were all in place.
+- The owner pressed Add for Review themselves: review submission `ea2759aa-3b0a-4be9-ac3e-a2efc57b26cf`, status "Waiting for Review", submitted 2026-10-05 17:06 (Apple's page time, owner's local zone). Claude did not submit it. App Review result: Not confirmed yet.
+- Next: watch for Apple's reply (email / App Store Connect); if rejected, likely causes are the web-rendered screenshots, a Terms/credits mismatch, or login/delete-account flow; ship a new build with the corrected credits text (PR #12 is already on `main`, mobile build 2 does not contain it). After approval the release is manual.
+- Still open from earlier: origin of the 9,640 `ai` foods; migration for the existing `favorites` table; real-device test of build 2 (camera scan, signup/login, sync, account deletion) is Not confirmed; public privacy/support mailboxes unconfirmed.
 
 ### 2026-10-05 20:30 +07:00 (Asia/Bangkok) — Data-source credits corrected (branch `fix/data-source-credits`)
 
