@@ -125,8 +125,8 @@ export function Me({ onEditTarget, onOpenLegal, onOpenPricing }: { onEditTarget:
         <div className="kd-card" style={{ padding: 14, marginTop: 14 }}>
           <div className="kd-body" style={{ fontWeight: 500, marginBottom: 6 }}>เครดิตแหล่งข้อมูลโภชนาการ</div>
           <p className="kd-caption kd-muted">
-            Thai Food Composition Database — สถาบันโภชนาการ มหาวิทยาลัยมหิดล (ใช้เพื่อวัตถุประสงค์ที่ไม่ใช่เชิงพาณิชย์) ·
-            Open Food Facts (ODbL) · USDA FoodData Central (public domain) · ข้อมูลที่ผู้ใช้ช่วยกันเพิ่ม
+            ค่าโภชนาการของเมนูอาหารไทยเป็นค่าประมาณที่ KinDee รวบรวมจากส่วนประกอบของแต่ละเมนู ไม่ใช่ค่าจากห้องปฏิบัติการ ·
+            ข้อมูลสินค้าที่ได้จากการสแกนบาร์โค้ดมาจาก Open Food Facts (ODbL) · รายการที่จดเองมาจากข้อมูลที่คุณกรอก
           </p>
         </div>
 
