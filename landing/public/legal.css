@@ -6,9 +6,6 @@
   --tint: #f0f7f3;
   --line: #e1dbcd;
 }
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #101a16; --text: #e6efe9; --muted: #a3b2a9; --accent: #8fd1b6; --tint: #17241f; --line: #2a3a33; }
-}
 * { box-sizing: border-box; }
 body {
   margin: 0;

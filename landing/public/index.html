@@ -6,8 +6,8 @@
   <script>
     // Apply saved theme and language before first paint so nothing flashes.
     (function () {
-      var d = document.documentElement, theme = 'system', lang = null
-      try { theme = localStorage.getItem('kd-theme') || 'system'; lang = localStorage.getItem('kd-lang') } catch (e) {}
+      var d = document.documentElement, theme = 'light', lang = null
+      try { theme = localStorage.getItem('kd-theme') || 'light'; lang = localStorage.getItem('kd-lang') } catch (e) {}
       if (theme === 'light' || theme === 'dark') d.setAttribute('data-theme', theme)
       if (!lang) lang = /^th\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || 'th') ? 'th' : 'en'
       d.setAttribute('data-lang', lang)

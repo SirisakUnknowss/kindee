@@ -201,8 +201,8 @@
   var markTheme = function (choice) {
     Array.prototype.forEach.call(themeButtons, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-theme-opt') === choice)) })
   }
-  var current = 'system'
-  try { current = localStorage.getItem('kd-theme') || 'system' } catch (e) {}
+  var current = 'light'
+  try { current = localStorage.getItem('kd-theme') || 'light' } catch (e) {}
   markTheme(current)
   Array.prototype.forEach.call(themeButtons, function (b) {
     b.addEventListener('click', function () {
