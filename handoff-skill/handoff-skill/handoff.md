@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-05 15:30 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-05 17:30 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -123,6 +123,13 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-05 17:30 +07:00 (Asia/Bangkok) — Account-deletion fix merged, privacy/support deployed, light mode for web pages (branch `fix/landing-light-mode`, not pushed)
+
+- Merged [PR #10](https://github.com/SirisakUnknowss/kindee/pull/10) (`a4bd910`): `DELETE /api/account` now deletes `app_reports` (by user id and claimed installation ids) before the auth user. Needs a live check after the web deploy: delete a test account and confirm its `app_reports` rows are gone (the PostgREST `or=(…)` filter was Not confirmed against the real database).
+- Deployed the landing to production with wrangler (`node ../kindee-app/node_modules/wrangler/bin/wrangler.js pages deploy public --project-name kindee-landing --branch main`, run from `landing/`): new pages live at https://kindee-landing.pages.dev/privacy and https://kindee-landing.pages.dev/support (`.html` redirects 308 to the clean URLs). These are the intended App Store Connect Privacy Policy URL and Support URL; whether they were entered in App Store Connect: Not confirmed. `support@kindee.app` / `privacy@kindee.app` mailboxes: still Not confirmed.
+- User asked for all web pages in light mode. `landing/public/legal.css` (privacy/support) no longer has a dark theme and declares `color-scheme: light`; the landing `index.html` + `i18n.js` now default the theme to `light` instead of `system` (the system/light/dark switch stays, and a previously saved choice in `localStorage` still wins). Checked with dark OS emulation: privacy page and landing render white. **Not yet pushed or deployed**, so the live site is still the old behaviour. The web PWA (`kindee-app`) and the iOS app were not changed (the iOS app is already light-only: `userInterfaceStyle: light`).
+- App Store Connect version 1.0 is still "Prepare for Submission" (build not chosen, contact info, content rights, category, age rating, English description/keywords/support URL missing as of the owner's screenshot). A new iOS build with the iOS Terms (`npm run build:ios` then `npm run submit:ios` in `kindee-mobile/`) is still needed. Not submitted for review.
 
 ### 2026-10-05 15:30 +07:00 (Asia/Bangkok) — Account deletion now removes app_reports (branch `fix/account-delete-reports`, not pushed)
 
