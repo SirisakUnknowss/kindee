@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-04 09:30 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-05 15:30 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -123,6 +123,12 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-05 15:30 +07:00 (Asia/Bangkok) — Account deletion now removes app_reports (branch `fix/account-delete-reports`, not pushed)
+
+- Server audit for the App Store privacy labels found that `DELETE /api/account` left `app_reports` rows behind (FK is `on delete set null`, so feedback text, user-agent and installation id survived account deletion). `kindee-app/functions/api/account.ts` now first deletes reports by `user_id` and by every installation id the user claimed (covers reports sent as a guest), aborts with 502 before touching the account if that fails, then deletes the auth user. 4 new tests in `functions/api/account.test.ts`; full suite 71/71, typecheck clean. The PostgREST `or=(…in.(…))` filter was not run against the live Supabase database (Not confirmed); it needs a deploy of the web app (push to `main`) to take effect, and the iOS app calls the same endpoint.
+- Audit also found: `favorites` and `line_users` tables exist in Supabase but have no migration in the repo (drift; `favorites` is used by web and mobile, so a fresh database would break favorites). Guest feedback/error reports are sent to the server with the installation id.
+- App Store Connect (screenshot from owner): version 1.0 "Prepare for Submission" is blocked on: choose a build, contact information, content rights, primary category, age rating answers, and (English U.S.) description, keywords, support URL. Not submitted for review yet.
 
 ### 2026-10-04 06:00 +07:00 (Asia/Bangkok) — React Native (Expo) port for the App Store (uncommitted)
 
