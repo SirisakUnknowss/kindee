@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Alert, Linking, Pressable, ScrollView, Text, View } from 'react-native'
 import { Button, Card, Checkbox, Chip, Field, Icon, Row, Screen } from '../components/ui'
+import { ACCOUNTS_ENABLED } from '../config/features'
 import { legalConfig } from '../config/legal'
 import { num } from '../lib/calc'
 import { clearDeviceData, deleteAccount, downloadMyData } from '../lib/privacy'
@@ -99,7 +100,7 @@ export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; on
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[T.body, { fontWeight: '500' }]}>{session?.kind === 'account' ? session.email : 'ใช้งานแบบไม่สมัครสมาชิก'}</Text>
-            <Text style={[T.caption, T.muted]}>{session?.kind === 'account' ? 'ข้อมูลซิงก์ให้ทุกเครื่องที่ล็อกอิน' : 'ข้อมูลเก็บอยู่ในเครื่องนี้ ยังไม่ได้สำรอง'}</Text>
+            <Text style={[T.caption, T.muted]}>{session?.kind === 'account' ? 'ข้อมูลซิงก์ให้ทุกเครื่องที่ล็อกอิน' : (ACCOUNTS_ENABLED ? 'ข้อมูลเก็บอยู่ในเครื่องนี้ ยังไม่ได้สำรอง' : 'ข้อมูลเก็บอยู่ในเครื่องนี้เท่านั้น')}</Text>
           </View>
         </Card>
 
@@ -182,7 +183,9 @@ export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; on
           </View>
         </Card>
 
-        <Button variant="outline" onPress={signOut}>{session?.kind === 'account' ? 'ออกจากระบบ' : 'สำรองข้อมูลฟรี'}</Button>
+        {(ACCOUNTS_ENABLED || session?.kind === 'account') && (
+          <Button variant="outline" onPress={signOut}>{session?.kind === 'account' ? 'ออกจากระบบ' : 'สำรองข้อมูลฟรี'}</Button>
+        )}
       </ScrollView>
     </Screen>
   )

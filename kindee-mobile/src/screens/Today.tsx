@@ -2,6 +2,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { BrandLogo, Button, CalorieRing, Card, Chip, Icon, IconButton, MacroBar, OfflineBar, Row, Screen, TextButton } from '../components/ui'
 import { foodById } from '../data/foods'
 import { MEALS, amountLabel, num, ringTone, totalMacros } from '../lib/calc'
+import { ACCOUNTS_ENABLED } from '../config/features'
 import { dayKey, useStore } from '../lib/store'
 import type { Entry, Meal } from '../lib/types'
 import { C, R, T } from '../theme'
@@ -84,7 +85,7 @@ export function Today({ dayOffset, onDayChange, onAdd, onScan, onEditEntry, load
       </Row>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 152 }}>
-        {session?.kind === 'guest' && allEntries.length >= 3 && (
+        {ACCOUNTS_ENABLED && session?.kind === 'guest' && allEntries.length >= 3 && (
           <Card style={{ flexDirection: 'row', alignItems: 'center', padding: 12, marginTop: 8, gap: 10 }}>
             <Icon name="ph ph-cloud-arrow-up" size={22} color={C.accentPressed} />
             <View style={{ flex: 1 }}>

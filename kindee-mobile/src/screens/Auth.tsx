@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { BrandLogo, Button, Checkbox, Field, Icon, IconButton, Row, Screen, TextButton } from '../components/ui'
 import { useStore } from '../lib/store'
+import { ACCOUNTS_ENABLED } from '../config/features'
 import { API_BASE, isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
 import { C, R, T } from '../theme'
@@ -150,12 +151,12 @@ export function Auth({ onSignedIn, onGuest }: {
         </View>
         <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 8 }}>
           <Button onPress={onGuest}>เริ่มบันทึกเลย</Button>
-          <Button variant="outline" onPress={() => go('signup')}>สำรองข้อมูลฟรี</Button>
-          <Button variant="ghost" onPress={() => go('login')}>มีบัญชีแล้ว · เข้าสู่ระบบ</Button>
+          {ACCOUNTS_ENABLED && <Button variant="outline" onPress={() => go('signup')}>สำรองข้อมูลฟรี</Button>}
+          {ACCOUNTS_ENABLED && <Button variant="ghost" onPress={() => go('login')}>มีบัญชีแล้ว · เข้าสู่ระบบ</Button>}
         </View>
         <Row style={{ gap: 6 }}>
-          <Icon name="ph ph-cloud-arrow-up" size={14} color={C.muted} />
-          <Text style={[T.caption, T.muted]}>ใช้แบบไม่สมัครสมาชิกได้ ข้อมูลจะเก็บไว้ในเครื่องนี้</Text>
+          <Icon name="ph ph-cellphone" size={14} color={C.muted} />
+          <Text style={[T.caption, T.muted]}>{ACCOUNTS_ENABLED ? 'ใช้แบบไม่สมัครสมาชิกได้ ข้อมูลจะเก็บไว้ในเครื่องนี้' : 'ไม่ต้องสมัครสมาชิก ข้อมูลทั้งหมดเก็บไว้ในเครื่องนี้'}</Text>
         </Row>
         <Pressable onPress={openTerms} accessibilityRole="link"><Text style={{ color: C.accentPressed, fontSize: 13.5, textDecorationLine: 'underline' }}>อ่านเงื่อนไขการใช้งานและประกาศความเป็นส่วนตัว</Text></Pressable>
       </Screen>

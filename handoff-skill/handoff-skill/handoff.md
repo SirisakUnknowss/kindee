@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-05 22:00 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-06 12:30 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -123,6 +123,13 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-06 12:30 +07:00 (Asia/Bangkok) — App Review asked for information; iOS app switched to guest-only (branch `feat/mobile-guest-only`, not pushed)
+
+- Apple rejected build 2 on 2026-10-06 with Guideline 2.1 "Information Needed" (new developer account): it asks for a screen recording from a physical device (including sign-up/login/account deletion), purpose and audience, access instructions with a demo login, external services, regional differences and regulated-industry proof. The reply text is saved in `kindee-mobile/store-assets/app-review-reply.md` (untracked) and a version of it is saved in the Notes field of version 1.0 in App Store Connect with placeholders `[iOS VERSION]`, `[DEMO EMAIL]`, `[DEMO PASSWORD]`. Nothing was sent to Apple and the version was not resubmitted.
+- Sign-up emails never arrive: Supabase auth logs show `/signup` and `/resend` returning 200 with no error, so the likely cause is the built-in Supabase mailer (only reaches org members, very low rate limit). Custom SMTP in the dashboard: Not confirmed either way. Setup steps were given to the owner (Resend + a domain they own; domain ownership of `kindee.app`: Not confirmed). Third-party login alone is not an option for iOS because of Guideline 4.8 (needs Sign in with Apple too).
+- Decision (owner): ship iOS 1.0 as guest-only (no accounts) to pass review quickly. `kindee-mobile/src/config/features.ts` has `ACCOUNTS_ENABLED = false`: the splash only shows "เริ่มบันทึกเลย", the Today backup banner and the Profile "สำรองข้อมูลฟรี"/sign-out button are hidden. All account code is still in the app; set the flag to `true` once custom SMTP and Sign in with Apple exist. Checked: `tsc` clean, 20 tests pass, and a web-preview walk-through (fresh start → onboarding → Profile) showed no sign-up/sign-in entry points.
+- NOT done yet (needs build 3): `eas build` + `eas submit` for the guest-only build, then in App Store Connect: select the new build, rewrite Notes (no demo account, no sign-up/deletion flow in the video; keep data export and "delete local data"), and update App Privacy (Email Address, Health, Fitness and User ID are no longer collected; feedback and error reports still reach the server, so Customer Support, Device ID and Other Diagnostic Data remain). The owner records a screen recording on a physical iPhone from the new build and replies to App Review.
 
 ### 2026-10-05 22:00 +07:00 (Asia/Bangkok) — iOS app 1.0 (build 2) submitted to App Review by the owner
 
