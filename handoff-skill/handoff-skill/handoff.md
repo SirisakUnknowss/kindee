@@ -1,6 +1,6 @@
 # Project Handoff
 
-Last updated: 2026-10-06 12:30 +07:00 (Asia/Bangkok)
+Last updated: 2026-10-06 14:40 +07:00 (Asia/Bangkok)
 Project: KinDee — Thai food calorie-ledger PWA ("กินดีตาม TDEE ของคุณ")
 Overall status: Feature-complete for closed UAT; not ready for public release (1 of 7 launch gates met, 0 of 40 launch-readiness tasks done).
 
@@ -123,6 +123,19 @@ Overall status: Feature-complete for closed UAT; not ready for public release (1
 - What the user means by "usage" and "version control" for the next session: Not confirmed — ask before assuming scope.
 
 ## Session log
+
+### 2026-10-06 14:40 +07:00 (Asia/Bangkok) — iOS 1.0 (build 3) resubmitted to App Review
+
+- The owner replied to Apple's Guideline 2.1 "Information Needed" message in the Resolution Center (14:14) with a short answer to the six points and a screen recording from a physical iPhone 15 (iOS 26.6.2); Claude drafted the text but did not send it. App Privacy was published by the owner (3 data types: Customer Support, Device ID, Other Diagnostic Data).
+- At the owner's request Claude pressed "Resubmit to App Review" at 14:22 (submission `ea2759aa-3b0a-4be9-ac3e-a2efc57b26cf`); status is now "Waiting for Review" for iOS App 1.0, build 1.0.0 (3). Apple's result: Not confirmed yet.
+- Known leftovers: the Notes field of version 1.0 still contains the literal placeholder `[iOS VERSION]`; the guest-only build keeps account code behind `ACCOUNTS_ENABLED`; sign-up emails need custom SMTP before accounts can be enabled (and Sign in with Apple for Guideline 4.8 if a third-party login is added); origin of the 9,640 `ai` foods and a migration for `favorites` are still open; the App Store screenshots were rendered from the web build.
+
+### 2026-10-06 14:30 +07:00 (Asia/Bangkok) — Guest-only iOS build 3 uploaded and attached to version 1.0
+
+- Merged [PR #14](https://github.com/SirisakUnknowss/kindee/pull/14) (`6289e58`, guest-only via `ACCOUNTS_ENABLED = false`), built iOS build number 3 on EAS (build `401e452e-467d-422e-a57d-7e10959bd88f`) and uploaded it to App Store Connect with `eas submit`; it finished processing and shows in TestFlight.
+- In App Store Connect (version 1.0, status back to "Prepare for Submission"): build 3 selected and saved; the Notes field now has the guest-only reply text (build 3, no sign-in/demo account, delete-local-data instead of account deletion) with the single placeholder `[iOS VERSION]`; saved and re-checked after a reload. Tip: form_input on that page only sticks if the Save button is clicked and the page is reloaded afterwards to verify.
+- App Privacy: Email Address, Health, Fitness and User ID were unticked in the editor but NOT published (the dialog was left open in a Chrome tab for the owner to press Publish, it is a legal accuracy attestation). Until the owner publishes, the live privacy answers still list the account-related types. Remaining types: Customer Support, Device ID, Other Diagnostic Data.
+- Still for the owner: install build 3 from TestFlight on a physical iPhone, record the screen recording (guest flow, data export, delete local data), fill `[iOS VERSION]` in Notes, reply to App Review in the Resolution Center attaching the video, press Resubmit to App Review. Not sent and not resubmitted by Claude.
 
 ### 2026-10-06 12:30 +07:00 (Asia/Bangkok) — App Review asked for information; iOS app switched to guest-only (branch `feat/mobile-guest-only`, not pushed)
 
