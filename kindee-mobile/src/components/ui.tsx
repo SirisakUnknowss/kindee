@@ -26,6 +26,7 @@ const ICONS: Record<string, [MciName, MciName?]> = {
   calendar: ['calendar-outline'],
   'calendar-dots': ['calendar-month-outline', 'calendar-month'],
   camera: ['camera-outline'],
+  cellphone: ['cellphone'],
   'caret-left': ['chevron-left'],
   'caret-right': ['chevron-right'],
   carrot: ['carrot'],
