@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aggregate, applyToProfile, latestValues, parseMeasurementInput, periodLabel, periodStart, signed, type BodyMeasurement } from './body'
+import { aggregate, applyToProfile, latestValues, parseMeasurementInput, periodLabel, periodStart, signed, toUnit, unitLabel, type BodyMeasurement } from './body'
 import type { Profile } from './types'
 
 const m = (day: string, values: Partial<BodyMeasurement>): BodyMeasurement => ({ day, updatedAt: `${day}T08:00:00Z`, ...values })
@@ -67,6 +67,20 @@ describe('measurement input', () => {
     expect(parseMeasurementInput({ waist: '5' })).toEqual({ ok: false, error: 'รอบเอวต้องอยู่ระหว่าง 30–250 ซม.' })
     expect(parseMeasurementInput({ weight: 'abc' }).ok).toBe(false)
     expect(parseMeasurementInput({})).toEqual({ ok: false, error: 'กรอกอย่างน้อยหนึ่งค่า' })
+  })
+  it('accepts inches and stores centimetres, keeping weight in kg', () => {
+    expect(parseMeasurementInput({ waist: '32', weight: '70', height: '64.5' }, 'in')).toEqual({ ok: true, values: { waist: 81.3, weight: 70, height: 163.8 } })
+    expect(parseMeasurementInput({ waist: '5' }, 'in')).toEqual({ ok: false, error: 'รอบเอวต้องอยู่ระหว่าง 11.8–98.4 นิ้ว' })
+  })
+  it('keeps untouched prefilled values exactly instead of re-rounding through inches', () => {
+    expect(parseMeasurementInput({ height: '63.8', waist: '33' }, 'in', { height: 162, waist: 81.3 })).toEqual({ ok: true, values: { height: 162, waist: 83.8 } })
+  })
+  it('converts stored values and changes for display', () => {
+    expect(toUnit('waist', 81.3, 'in')).toBe(32)
+    expect(toUnit('waist', -2.54, 'in')).toBe(-1)
+    expect(toUnit('weight', 70, 'in')).toBe(70)
+    expect(toUnit('hip', 95, 'cm')).toBe(95)
+    expect([unitLabel('calf', 'in'), unitLabel('calf', 'cm'), unitLabel('weight', 'in')]).toEqual(['นิ้ว', 'ซม.', 'กก.'])
   })
   it('formats signed changes', () => {
     expect(signed(-1.25)).toBe('−1.3')

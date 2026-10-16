@@ -7,7 +7,7 @@ import { db } from './db'
 import { deleteLocalEntry, flushOutbox, retryFailedSync, saveLocalEntry } from './sync'
 import { deleteFavoriteLocal, pullFavorites, saveFavoriteLocal, touchFavoriteUsage } from './favorites'
 import type { Entry, Meal, Profile, Session, Toast } from './types'
-import type { BodyMeasurement, BodyValues } from './body'
+import type { BodyMeasurement, BodyValues, LengthUnit } from './body'
 import { deleteMeasurementLocal, pullMeasurements, saveMeasurementLocal, syncMeasurements, toMeasurement } from './measurements'
 
 export type FavoriteEntry = {
@@ -31,6 +31,8 @@ type Persisted = {
   entries: Entry[]
   showMacros: boolean
   contributions: number
+  /** หน่วยความยาวในหน้าติดตามรูปร่าง */
+  lengthUnit: LengthUnit
 }
 
 const empty: Persisted = {
@@ -39,6 +41,7 @@ const empty: Persisted = {
   entries: [],
   showMacros: true,
   contributions: 0,
+  lengthUnit: 'cm',
 }
 
 function load(): Persisted {
@@ -66,6 +69,7 @@ type Store = Persisted & {
   setSession: (s: Session | null) => void
   setProfile: (p: Profile | null) => void
   setShowMacros: (v: boolean) => void
+  setLengthUnit: (u: LengthUnit) => void
   entriesFor: (day: string) => Entry[]
   addEntry: (e: { meal: Meal; foodId: string; unitIx: number; amount: number; day?: string }) => Entry
   addManualEntry: (e: {
@@ -293,6 +297,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
       setShowMacros: (showMacros) => setState((s) => ({ ...s, showMacros })),
+      setLengthUnit: (lengthUnit) => setState((s) => ({ ...s, lengthUnit })),
       entriesFor: (day) => state.entries.filter((e) => e.day === day),
       addEntry: (e) => {
         const uid = crypto.randomUUID()

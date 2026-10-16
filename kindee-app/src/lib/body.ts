@@ -22,6 +22,24 @@ export const MEASURES: { key: MeasureKey; label: string; unit: string; min: numb
 
 export const measureMeta = (key: MeasureKey) => MEASURES.find((m) => m.key === key)!
 
+/** หน่วยความยาวที่ผู้ใช้เลือกดู/กรอก — เก็บจริงเป็นซม. เสมอ น้ำหนักเป็นกก. เสมอ */
+export type LengthUnit = 'cm' | 'in'
+
+export const CM_PER_INCH = 2.54
+
+const round1 = (n: number) => Math.round(n * 10) / 10
+
+export const unitLabel = (key: MeasureKey, unit: LengthUnit) =>
+  key === 'weight' ? 'กก.' : unit === 'in' ? 'นิ้ว' : 'ซม.'
+
+/** ค่าที่เก็บ (ซม./กก.) → หน่วยที่แสดง ทศนิยม 1 ตำแหน่ง ใช้กับค่าส่วนต่างได้ด้วย */
+export const toUnit = (key: MeasureKey, value: number, unit: LengthUnit) =>
+  key !== 'weight' && unit === 'in' ? round1(value / CM_PER_INCH) : value
+
+/** หน่วยที่กรอก → ซม./กก. (ยังไม่ปัดเศษ) */
+export const fromUnit = (key: MeasureKey, value: number, unit: LengthUnit) =>
+  key !== 'weight' && unit === 'in' ? value * CM_PER_INCH : value
+
 export type Period = 'day' | 'week' | 'month'
 
 export const PERIODS: { id: Period; label: string; previous: string }[] = [
@@ -65,8 +83,6 @@ export function periodLabel(start: string, period: Period) {
     ? `${d.getDate()}–${end.getDate()} ${THAI_MONTHS[d.getMonth()]}`
     : `${shortDay(start)} – ${shortDay(formatDay(end))}`
 }
-
-const round1 = (n: number) => Math.round(n * 10) / 10
 
 export type PeriodRow = {
   start: string
@@ -129,15 +145,23 @@ export function latestValues(rows: BodyMeasurement[]): BodyValues {
 
 export type ParsedMeasurement = { ok: true; values: BodyValues } | { ok: false; error: string }
 
-/** แปลงข้อความจากฟอร์ม — ช่องว่างคือไม่ได้วัด ต้องมีอย่างน้อยหนึ่งค่า */
-export function parseMeasurementInput(input: Partial<Record<MeasureKey, string>>): ParsedMeasurement {
+/**
+ * แปลงข้อความจากฟอร์ม (กรอกในหน่วยที่เลือก) เป็นซม./กก. — ช่องว่างคือไม่ได้วัด ต้องมีอย่างน้อยหนึ่งค่า
+ * `prefilled` = ค่าเดิมที่เติมไว้ในฟอร์ม ช่องที่ผู้ใช้ไม่ได้แก้จะคงค่าซม.เดิม ไม่ปัดเศษซ้ำจนค่าเลื่อน
+ */
+export function parseMeasurementInput(input: Partial<Record<MeasureKey, string>>, unit: LengthUnit = 'cm', prefilled: BodyValues = {}): ParsedMeasurement {
   const values: BodyValues = {}
   for (const m of MEASURES) {
     const raw = input[m.key]?.trim().replace(',', '.')
     if (!raw) continue
-    const v = Number(raw)
+    const kept = prefilled[m.key]
+    if (kept != null && raw === String(toUnit(m.key, kept, unit))) {
+      values[m.key] = kept
+      continue
+    }
+    const v = fromUnit(m.key, Number(raw), unit)
     if (!Number.isFinite(v) || v < m.min || v > m.max) {
-      return { ok: false, error: `${m.label}ต้องอยู่ระหว่าง ${m.min}–${m.max} ${m.unit}` }
+      return { ok: false, error: `${m.label}ต้องอยู่ระหว่าง ${toUnit(m.key, m.min, unit)}–${toUnit(m.key, m.max, unit)} ${unitLabel(m.key, unit)}` }
     }
     values[m.key] = round1(v)
   }

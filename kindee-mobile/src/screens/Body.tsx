@@ -3,15 +3,15 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg'
 import { Button, Card, Checkbox, Chip, Header, Icon, IconButton, Row, Screen, Sheet, TextButton } from '../components/ui'
 import {
-  MEASURES, PERIODS, aggregate, applyToProfile, latestValues, measureMeta, parseMeasurementInput, shortDay, signed,
-  type BodyMeasurement, type MeasureKey, type Period,
+  MEASURES, PERIODS, aggregate, applyToProfile, latestValues, measureMeta, parseMeasurementInput, shortDay, signed, toUnit, unitLabel,
+  type BodyMeasurement, type BodyValues, type LengthUnit, type MeasureKey, type Period,
 } from '../lib/body'
 import { ageFrom, num } from '../lib/calc'
 import { dayKey, useStore } from '../lib/store'
 import type { Profile } from '../lib/types'
 import { C, R, T } from '../theme'
 
-type Draft = { day: string; fields: Partial<Record<MeasureKey, string>>; editing: boolean }
+type Draft = { day: string; fields: Partial<Record<MeasureKey, string>>; prefilled: BodyValues; editing: boolean }
 
 const shiftDay = (day: string, delta: number) => {
   const [y, m, d] = day.split('-').map(Number)
@@ -62,7 +62,9 @@ const Change = ({ value }: { value?: number }) =>
     : <Text style={[{ fontSize: 12.5, color: C.accentPressed, fontWeight: '500' }, T.tnum]}>{signed(value)}</Text>
 
 export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfileUpdate: (p: Profile) => void }) {
-  const { profile, measurements, saveMeasurement, removeMeasurement, showToast } = useStore()
+  const { profile, measurements, saveMeasurement, removeMeasurement, showToast, lengthUnit, setLengthUnit } = useStore()
+  const unit = (key: MeasureKey) => unitLabel(key, lengthUnit)
+  const show = (key: MeasureKey, v: number) => toUnit(key, v, lengthUnit)
   const [period, setPeriod] = useState<Period>('week')
   const [metric, setMetric] = useState<MeasureKey>('weight')
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -75,7 +77,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
   const lastDay = measurements.length ? measurements[measurements.length - 1].day : ''
   const meta = measureMeta(metric)
   const metricRows = rows.filter((r) => r.values[metric] != null)
-  const chartPoints = metricRows.slice(-12).map((r) => ({ label: r.label, value: r.values[metric]! }))
+  const chartPoints = metricRows.slice(-12).map((r) => ({ label: r.label, value: show(metric, r.values[metric]!) }))
   const current = rows[rows.length - 1]
   const periodMeta = PERIODS.find((p) => p.id === period)!
   const age = profile ? ageFrom(profile.bDay, profile.bMonth, profile.bYear) : null
@@ -84,8 +86,13 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
   const openForm = (m?: BodyMeasurement) => {
     const source = m ?? { ...latest, weight: latest.weight ?? profile?.weight, height: latest.height ?? profile?.height }
     const fields: Draft['fields'] = {}
-    for (const { key } of MEASURES) if (source[key] != null) fields[key] = String(source[key])
-    setDraft({ day: m?.day ?? today, fields, editing: Boolean(m) })
+    const prefilled: BodyValues = {}
+    for (const { key } of MEASURES) {
+      if (source[key] == null) continue
+      prefilled[key] = source[key]
+      fields[key] = String(show(key, source[key]!))
+    }
+    setDraft({ day: m?.day ?? today, fields, prefilled, editing: Boolean(m) })
     setApplyProfile(true)
     setError('')
   }
@@ -94,7 +101,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
 
   const save = () => {
     if (!draft) return
-    const parsed = parseMeasurementInput(draft.fields)
+    const parsed = parseMeasurementInput(draft.fields, lengthUnit, draft.prefilled)
     if (!parsed.ok) return setError(parsed.error)
     saveMeasurement(draft.day, parsed.values)
     const next = profile && isNewest && applyProfile ? applyToProfile(profile, parsed.values) : null
@@ -116,7 +123,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
         <Card style={{ padding: 14, flexDirection: 'row' }}>
           {[
             ['อายุ', age != null ? `${age} ปี` : '—'],
-            ['ส่วนสูง', `${latest.height ?? profile?.height ?? '—'} ซม.`],
+            ['ส่วนสูง', (latest.height ?? profile?.height) != null ? `${show('height', (latest.height ?? profile?.height)!)} ${unit('height')}` : '—'],
             ['น้ำหนัก', `${latest.weight ?? profile?.weight ?? '—'} กก.`],
           ].map(([label, value]) => (
             <View key={label} style={{ flex: 1, gap: 2 }}>
@@ -125,7 +132,17 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
             </View>
           ))}
         </Card>
-        <Text style={[T.caption, T.muted, { marginTop: -6 }]}>อายุคำนวณจากวันเกิดในโปรไฟล์ · แก้ได้ที่ Profile → เป้าหมาย</Text>
+        <Row style={{ marginTop: -6, gap: 10, justifyContent: 'space-between' }}>
+          <Text style={[T.caption, T.muted, { flex: 1 }]}>อายุคำนวณจากวันเกิดในโปรไฟล์ · แก้ได้ที่ Profile → เป้าหมาย</Text>
+          <Row style={{ padding: 3, borderWidth: 1, borderColor: C.border, borderRadius: 10, backgroundColor: C.surface }} accessibilityRole="radiogroup" accessibilityLabel="หน่วยความยาว">
+            {([['cm', 'ซม.'], ['in', 'นิ้ว']] as [LengthUnit, string][]).map(([id, label]) => (
+              <Pressable key={id} onPress={() => setLengthUnit(id)} accessibilityRole="radio" accessibilityState={{ checked: lengthUnit === id }}
+                style={{ minHeight: 32, minWidth: 48, paddingHorizontal: 10, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: lengthUnit === id ? C.accent : 'transparent' }}>
+                <Text style={{ fontSize: 12.5, color: lengthUnit === id ? C.onAccent : C.muted, fontWeight: lengthUnit === id ? '600' : '400' }}>{label}</Text>
+              </Pressable>
+            ))}
+          </Row>
+        </Row>
 
         <Button icon={<Icon name="ph ph-ruler" size={20} color={C.onAccent} />} onPress={() => openForm()}>บันทึกค่าวัดวันนี้</Button>
 
@@ -155,8 +172,8 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                     <Pressable key={m.key} onPress={() => setMetric(m.key)} accessibilityRole="button" accessibilityState={{ selected: metric === m.key }}
                       style={{ width: '48.5%', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: metric === m.key ? C.accentLine : C.border, backgroundColor: metric === m.key ? C.accentTint : C.accentTintSoft, gap: 2 }}>
                       <Text style={[T.caption, T.muted]}>{m.label}</Text>
-                      <Text style={[{ fontSize: 18, fontWeight: '600', color: C.text }, T.tnum]}>{current.values[m.key]} <Text style={[T.caption, T.muted]}>{m.unit}</Text></Text>
-                      <Change value={current.change[m.key]} />
+                      <Text style={[{ fontSize: 18, fontWeight: '600', color: C.text }, T.tnum]}>{show(m.key, current.values[m.key]!)} <Text style={[T.caption, T.muted]}>{unit(m.key)}</Text></Text>
+                      <Change value={current.change[m.key] == null ? undefined : show(m.key, current.change[m.key]!)} />
                     </Pressable>
                   ))}
                 </View>
@@ -167,19 +184,19 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {MEASURES.map((m) => <Chip key={m.key} on={metric === m.key} onPress={() => setMetric(m.key)} style={{ minHeight: 36 }}>{m.label}</Chip>)}
               </ScrollView>
-              <TrendChart points={chartPoints} unit={meta.unit} />
+              <TrendChart points={chartPoints} unit={unit(metric)} />
               {metricRows.length > 0 ? (
                 <View>
                   <Row style={{ borderBottomWidth: 1, borderBottomColor: C.border, paddingBottom: 6 }}>
                     <Text style={[T.caption, T.muted, { flex: 1.4 }]}>{periodMeta.label.replace('ราย', '')}</Text>
-                    <Text style={[T.caption, T.muted, { flex: 1, textAlign: 'right' }]}>{meta.label} ({meta.unit})</Text>
+                    <Text style={[T.caption, T.muted, { flex: 1, textAlign: 'right' }]}>{meta.label} ({unit(metric)})</Text>
                     <Text style={[T.caption, T.muted, { flex: 1, textAlign: 'right' }]}>เปลี่ยนแปลง</Text>
                   </Row>
                   {[...metricRows].reverse().map((r, i) => (
                     <Row key={r.start} style={{ paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderTopColor: C.border }}>
                       <Text style={[T.body, { flex: 1.4 }]}>{r.label}</Text>
-                      <Text style={[T.body, T.tnum, { flex: 1, textAlign: 'right' }]}>{r.values[metric]}</Text>
-                      <View style={{ flex: 1, alignItems: 'flex-end' }}><Change value={r.change[metric]} /></View>
+                      <Text style={[T.body, T.tnum, { flex: 1, textAlign: 'right' }]}>{show(metric, r.values[metric]!)}</Text>
+                      <View style={{ flex: 1, alignItems: 'flex-end' }}><Change value={r.change[metric] == null ? undefined : show(metric, r.change[metric]!)} /></View>
                     </Row>
                   ))}
                 </View>
@@ -194,7 +211,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                 <Row key={m.day} style={{ gap: 4, paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.border }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[T.body, { fontWeight: '500' }]}>{shortDay(m.day)}{m.pending ? <Text style={[T.caption, T.muted]}> · รอซิงก์</Text> : null}</Text>
-                    <Text style={[T.caption, T.muted, T.tnum]}>{MEASURES.filter((x) => m[x.key] != null).map((x) => `${x.label} ${m[x.key]}`).join(' · ')}</Text>
+                    <Text style={[T.caption, T.muted, T.tnum]}>{MEASURES.filter((x) => m[x.key] != null).map((x) => `${x.label} ${show(x.key, m[x.key]!)} ${unit(x.key)}`).join(' · ')}</Text>
                   </View>
                   {confirmDelete === m.day ? (
                     <>
@@ -239,10 +256,10 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                       keyboardType="decimal-pad"
                       placeholder="–"
                       placeholderTextColor="#9aa29c"
-                      accessibilityLabel={`${m.label} (${m.unit})`}
+                      accessibilityLabel={`${m.label} (${unit(m.key)})`}
                       style={[{ minHeight: 52, borderWidth: 1, borderColor: C.borderStrong, borderRadius: R.btn, paddingLeft: 14, paddingRight: 46, fontSize: 15, color: C.text, backgroundColor: C.surface }, T.tnum]}
                     />
-                    <Text style={[T.caption, T.muted, { position: 'absolute', right: 13 }]} pointerEvents="none">{m.unit}</Text>
+                    <Text style={[T.caption, T.muted, { position: 'absolute', right: 13 }]} pointerEvents="none">{unit(m.key)}</Text>
                   </View>
                 </View>
               ))}

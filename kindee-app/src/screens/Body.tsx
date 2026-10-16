@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Header, Icon, Sheet } from '../components/ui'
 import {
-  MEASURES, PERIODS, aggregate, applyToProfile, latestValues, measureMeta, parseMeasurementInput, shortDay, signed,
-  type BodyMeasurement, type MeasureKey, type Period,
+  MEASURES, PERIODS, aggregate, applyToProfile, latestValues, measureMeta, parseMeasurementInput, shortDay, signed, toUnit, unitLabel,
+  type BodyMeasurement, type BodyValues, type LengthUnit, type MeasureKey, type Period,
 } from '../lib/body'
 import { ageFrom, num } from '../lib/calc'
 import { dayKey, useStore } from '../lib/store'
 import type { Profile } from '../lib/types'
 
-type Draft = { day: string; fields: Partial<Record<MeasureKey, string>>; editing: boolean }
+type Draft = { day: string; fields: Partial<Record<MeasureKey, string>>; prefilled: BodyValues; editing: boolean }
 
 /** กราฟเส้นเล็ก ๆ ของค่าเดียว — ช่วงละหนึ่งจุด */
 function TrendChart({ points, unit }: { points: { label: string; value: number }[]; unit: string }) {
@@ -49,7 +49,9 @@ const Change = ({ value }: { value?: number }) =>
   value == null ? <span className="kd-muted">—</span> : <span className="tnum kd-body-change">{signed(value)}</span>
 
 export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfileUpdate: (p: Profile) => void }) {
-  const { profile, measurements, saveMeasurement, removeMeasurement, showToast } = useStore()
+  const { profile, measurements, saveMeasurement, removeMeasurement, showToast, lengthUnit, setLengthUnit } = useStore()
+  const unit = (key: MeasureKey) => unitLabel(key, lengthUnit)
+  const show = (key: MeasureKey, v: number) => toUnit(key, v, lengthUnit)
   const [period, setPeriod] = useState<Period>('week')
   const [metric, setMetric] = useState<MeasureKey>('weight')
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -62,7 +64,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
   const lastDay = measurements.length ? measurements[measurements.length - 1].day : ''
   const meta = measureMeta(metric)
   const metricRows = rows.filter((r) => r.values[metric] != null)
-  const chartPoints = metricRows.slice(-12).map((r) => ({ label: r.label, value: r.values[metric]! }))
+  const chartPoints = metricRows.slice(-12).map((r) => ({ label: r.label, value: show(metric, r.values[metric]!) }))
   const current = rows[rows.length - 1]
   const previousLabel = PERIODS.find((p) => p.id === period)!.previous
   const age = profile ? ageFrom(profile.bDay, profile.bMonth, profile.bYear) : null
@@ -70,8 +72,13 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
   const openForm = (m?: BodyMeasurement) => {
     const source = m ?? { ...latestValues(measurements), weight: latest.weight ?? profile?.weight, height: latest.height ?? profile?.height }
     const fields: Draft['fields'] = {}
-    for (const { key } of MEASURES) if (source[key] != null) fields[key] = String(source[key])
-    setDraft({ day: m?.day ?? dayKey(), fields, editing: Boolean(m) })
+    const prefilled: BodyValues = {}
+    for (const { key } of MEASURES) {
+      if (source[key] == null) continue
+      prefilled[key] = source[key]
+      fields[key] = String(show(key, source[key]!))
+    }
+    setDraft({ day: m?.day ?? dayKey(), fields, prefilled, editing: Boolean(m) })
     setApplyProfile(true)
     setError('')
   }
@@ -81,7 +88,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
   const save = () => {
     if (!draft) return
     if (!draft.day || draft.day > dayKey()) return setError('เลือกวันที่ไม่เกินวันนี้')
-    const parsed = parseMeasurementInput(draft.fields)
+    const parsed = parseMeasurementInput(draft.fields, lengthUnit, draft.prefilled)
     if (!parsed.ok) return setError(parsed.error)
     saveMeasurement(draft.day, parsed.values)
     const next = profile && isNewest && applyProfile ? applyToProfile(profile, parsed.values) : null
@@ -106,13 +113,20 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
         <section className="kd-card kd-body-summary">
           {[
             ['อายุ', age != null ? `${age} ปี` : '—'],
-            ['ส่วนสูง', `${latest.height ?? profile?.height ?? '—'} ซม.`],
+            ['ส่วนสูง', (latest.height ?? profile?.height) != null ? `${show('height', (latest.height ?? profile?.height)!)} ${unit('height')}` : '—'],
             ['น้ำหนัก', `${latest.weight ?? profile?.weight ?? '—'} กก.`],
           ].map(([label, value]) => (
             <div key={label}><span className="kd-caption kd-muted">{label}</span><strong className="tnum">{value}</strong></div>
           ))}
         </section>
-        <p className="kd-caption kd-muted kd-body-note">อายุคำนวณจากวันเกิดในโปรไฟล์ · แก้ได้ที่ ฉัน → เป้าหมาย</p>
+        <div className="kd-body-note">
+          <p className="kd-caption kd-muted">อายุคำนวณจากวันเกิดในโปรไฟล์ · แก้ได้ที่ ฉัน → เป้าหมาย</p>
+          <div className="kd-body-units" role="radiogroup" aria-label="หน่วยความยาว">
+            {([['cm', 'ซม.'], ['in', 'นิ้ว']] as [LengthUnit, string][]).map(([id, label]) => (
+              <button key={id} role="radio" aria-checked={lengthUnit === id} className={lengthUnit === id ? 'on' : ''} onClick={() => setLengthUnit(id)}>{label}</button>
+            ))}
+          </div>
+        </div>
 
         <button className="kd-btn kd-btn-primary" onClick={() => openForm()}>
           <Icon name="ph ph-ruler" size={20} /> บันทึกค่าวัดวันนี้
@@ -141,8 +155,8 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                   {MEASURES.filter((m) => current.values[m.key] != null).map((m) => (
                     <button key={m.key} className={metric === m.key ? 'on' : ''} onClick={() => setMetric(m.key)} aria-pressed={metric === m.key}>
                       <span>{m.label}</span>
-                      <strong className="tnum">{current.values[m.key]} <small>{m.unit}</small></strong>
-                      <Change value={current.change[m.key]} />
+                      <strong className="tnum">{show(m.key, current.values[m.key]!)} <small>{unit(m.key)}</small></strong>
+                      <Change value={current.change[m.key] == null ? undefined : show(m.key, current.change[m.key]!)} />
                     </button>
                   ))}
                 </div>
@@ -155,13 +169,13 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                   <button key={m.key} className={`kd-chip${metric === m.key ? ' on' : ''}`} aria-pressed={metric === m.key} onClick={() => setMetric(m.key)}>{m.label}</button>
                 ))}
               </div>
-              <TrendChart points={chartPoints} unit={meta.unit} />
+              <TrendChart points={chartPoints} unit={unit(metric)} />
               {metricRows.length > 0 ? (
                 <table className="kd-body-table">
-                  <thead><tr><th>{PERIODS.find((p) => p.id === period)!.label.replace('ราย', '')}</th><th>{meta.label} ({meta.unit})</th><th>เปลี่ยนแปลง</th></tr></thead>
+                  <thead><tr><th>{PERIODS.find((p) => p.id === period)!.label.replace('ราย', '')}</th><th>{meta.label} ({unit(metric)})</th><th>เปลี่ยนแปลง</th></tr></thead>
                   <tbody>
                     {[...metricRows].reverse().map((r) => (
-                      <tr key={r.start}><td>{r.label}</td><td className="tnum">{r.values[metric]}</td><td><Change value={r.change[metric]} /></td></tr>
+                      <tr key={r.start}><td>{r.label}</td><td className="tnum">{show(metric, r.values[metric]!)}</td><td><Change value={r.change[metric] == null ? undefined : show(metric, r.change[metric]!)} /></td></tr>
                     ))}
                   </tbody>
                 </table>
@@ -176,7 +190,7 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                 <div key={m.day} className="kd-body-history-row">
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <strong>{shortDay(m.day)}{m.pending && <span className="kd-caption kd-muted"> · รอซิงก์</span>}</strong>
-                    <p className="kd-caption kd-muted tnum">{MEASURES.filter((x) => m[x.key] != null).map((x) => `${x.label} ${m[x.key]}`).join(' · ')}</p>
+                    <p className="kd-caption kd-muted tnum">{MEASURES.filter((x) => m[x.key] != null).map((x) => `${x.label} ${show(x.key, m[x.key]!)} ${unit(x.key)}`).join(' · ')}</p>
                   </div>
                   {confirmDelete === m.day ? (
                     <>
@@ -210,10 +224,10 @@ export function Body({ onBack, onProfileUpdate }: { onBack: () => void; onProfil
                 <label key={m.key}>
                   <span className="kd-field-label">{m.label}</span>
                   <div className="kd-input-with-unit">
-                    <input className="kd-input tnum" type="number" inputMode="decimal" step="0.1" min={m.min} max={m.max} placeholder="–"
+                    <input className="kd-input tnum" type="number" inputMode="decimal" step="0.1" placeholder="–"
                       value={draft.fields[m.key] ?? ''}
                       onChange={(e) => { setDraft({ ...draft, fields: { ...draft.fields, [m.key]: e.target.value } }); setError('') }} />
-                    <span>{m.unit}</span>
+                    <span>{unit(m.key)}</span>
                   </div>
                 </label>
               ))}
