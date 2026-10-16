@@ -7,6 +7,8 @@ import { db } from './db'
 import { deleteLocalEntry, flushOutbox, retryFailedSync, saveLocalEntry } from './sync'
 import { deleteFavoriteLocal, pullFavorites, saveFavoriteLocal, touchFavoriteUsage } from './favorites'
 import type { Entry, Meal, Profile, Session, Toast } from './types'
+import type { BodyMeasurement, BodyValues } from './body'
+import { deleteMeasurementLocal, pullMeasurements, saveMeasurementLocal, syncMeasurements, toMeasurement } from './measurements'
 
 export type FavoriteEntry = {
   uid: string
@@ -81,6 +83,10 @@ type Store = Persisted & {
   favorites: FavoriteEntry[]
   logFavorite: (favoriteUid: string, meal: Meal, day?: string) => Entry | null
   removeFavorite: (favoriteUid: string) => void
+  /** ค่าวัดรูปร่าง เรียงจากเก่าไปใหม่ */
+  measurements: BodyMeasurement[]
+  saveMeasurement: (day: string, values: BodyValues) => void
+  removeMeasurement: (day: string) => void
   addContribution: () => void
   showToast: (text: string, opts?: { undoUid?: string; entryUid?: string }) => void
   hideToast: () => void
@@ -96,6 +102,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [outboxCount, setOutboxCount] = useState(0)
   const [syncFailedCount, setSyncFailedCount] = useState(0)
   const [favorites, setFavorites] = useState<FavoriteEntry[]>([])
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([])
   const toastTimer = useRef<number>()
 
   useEffect(() => {
@@ -106,6 +113,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const up = () => {
       setOnline(true)
       void flushOutbox()
+      void syncMeasurements()
     }
     const down = () => setOnline(false)
     const visible = () => { if (document.visibilityState === 'visible') void flushOutbox() }
@@ -182,7 +190,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       },
       error: console.error,
     })
+    const measurementsSubscription = liveQuery(() => db.body_measurements.orderBy('measured_on').toArray()).subscribe({
+      next: (rows) => setMeasurements(rows.filter((r) => !r.deleted_at).map(toMeasurement)),
+      error: console.error,
+    })
     return () => {
+      measurementsSubscription.unsubscribe()
       entriesSubscription.unsubscribe()
       outboxSubscription.unsubscribe()
       favoritesSubscription.unsubscribe()
@@ -263,6 +276,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       online,
       toast,
       favorites,
+      // Guest rows never sync, so only an account shows them as pending.
+      measurements: state.session?.kind === 'account' ? measurements : measurements.map((m) => ({ ...m, pending: false })),
+      saveMeasurement: (day, values) => { saveMeasurementLocal(day, values).catch(console.error) },
+      removeMeasurement: (day) => { deleteMeasurementLocal(day).catch(console.error) },
       pendingCount: state.session?.kind === 'account' ? outboxCount : 0,
       syncFailedCount: state.session?.kind === 'account' ? syncFailedCount : 0,
       retrySync: () => { void retryFailedSync() },
@@ -271,6 +288,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (session?.kind === 'account') {
           void flushOutbox(true)
           void pullFavorites()
+          void pullMeasurements().then(syncMeasurements)
         }
       },
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
@@ -370,7 +388,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       hideToast,
       reset: () => setState(empty),
     }
-  }, [state, online, toast, outboxCount, syncFailedCount, favorites, showToast, hideToast, createManualEntry])
+  }, [state, online, toast, outboxCount, syncFailedCount, favorites, measurements, showToast, hideToast, createManualEntry])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

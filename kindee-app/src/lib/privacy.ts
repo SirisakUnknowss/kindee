@@ -4,14 +4,14 @@ import { supabase } from './supabase'
 import type { Profile, Session } from './types'
 
 const EXPORT_TABLES = [
-  'profiles', 'weight_logs', 'entries', 'daily_summaries', 'food_reports',
+  'profiles', 'weight_logs', 'body_measurements', 'entries', 'daily_summaries', 'food_reports',
   'photo_jobs', 'privacy_consents',
 ] as const
 
 export async function downloadMyData(session: Session, profile: Profile | null) {
-  const [entries, foodsCache, outbox, meta, scanQueue] = await Promise.all([
+  const [entries, foodsCache, outbox, meta, scanQueue, bodyMeasurements] = await Promise.all([
     db.entries.toArray(), db.foods_cache.toArray(), db.outbox.toArray(),
-    db.meta.toArray(), db.scan_queue.toArray(),
+    db.meta.toArray(), db.scan_queue.toArray(), db.body_measurements.toArray(),
   ])
   const cloud: Record<string, unknown> = {}
   const warnings: string[] = []
@@ -29,7 +29,7 @@ export async function downloadMyData(session: Session, profile: Profile | null) 
     generatedAt: new Date().toISOString(),
     account: session.kind === 'account' ? { userId: session.userId, email: session.email } : { kind: 'guest' },
     profile,
-    deviceData: { entries, foodsCache, pendingSyncOperations: outbox, settings: meta, pendingBarcodeScans: scanQueue },
+    deviceData: { entries, foodsCache, pendingSyncOperations: outbox, settings: meta, pendingBarcodeScans: scanQueue, bodyMeasurements },
     cloudData: cloud,
     warnings,
   }

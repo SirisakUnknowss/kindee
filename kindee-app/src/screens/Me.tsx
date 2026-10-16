@@ -8,7 +8,7 @@ import { legalConfig } from '../config/legal'
 import { sendFeedback } from '../lib/report'
 
 /** หน้า 23 ฉัน — ระดับ wireframe (P1) พร้อมทางเข้าแก้เป้าหมายและตั้งค่าที่จำเป็น */
-export function Me({ onEditTarget, onOpenLegal, onOpenPricing }: { onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void; onOpenPricing: () => void }) {
+export function Me({ onEditTarget, onOpenLegal, onOpenPricing, onOpenBody }: { onOpenBody: () => void; onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void; onOpenPricing: () => void }) {
   const { profile, session, entries, contributions, showMacros, setShowMacros, setSession, reset } = useStore()
   const daysUsed = new Set(entries.map((e) => e.day)).size
   const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null)
@@ -112,6 +112,12 @@ export function Me({ onEditTarget, onOpenLegal, onOpenPricing }: { onEditTarget:
           <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 52 }} onClick={onEditTarget}>
             <Icon name="ph ph-fire" size={20} color="var(--accent-pressed)" />
             <span style={{ flex: 1, textAlign: 'left' }}>เป้าหมาย</span>
+            <Icon name="ph ph-caret-right" size={16} color="var(--text-muted)" />
+          </button>
+          <div style={{ borderTop: '1px solid var(--border)' }} />
+          <button className="kd-row" style={{ width: '100%', padding: 14, gap: 10, minHeight: 52 }} onClick={onOpenBody}>
+            <Icon name="ph ph-ruler" size={20} color="var(--accent-pressed)" />
+            <span style={{ flex: 1, textAlign: 'left' }}>ติดตามรูปร่าง</span>
             <Icon name="ph ph-caret-right" size={16} color="var(--text-muted)" />
           </button>
           <div style={{ borderTop: '1px solid var(--border)' }} />

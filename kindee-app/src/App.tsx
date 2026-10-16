@@ -17,6 +17,7 @@ import { Today } from './screens/Today'
 import { Terms } from './screens/Terms'
 import { Pricing } from './screens/Pricing'
 import { AdminAccess } from './screens/AdminAccess'
+import { Body } from './screens/Body'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -52,6 +53,7 @@ export default function App() {
   const [addOpen, setAddOpen] = useState<{ tab: AddTab; meal: Meal } | null>(null)
   const [qty, setQty] = useState<QtyTarget | null>(null)
   const [editTarget, setEditTarget] = useState(false)
+  const [bodyOpen, setBodyOpen] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
   const [pricingOpen, setPricingOpen] = useState(() => new URLSearchParams(window.location.search).has('billing'))
   const adminMode = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')
@@ -145,6 +147,26 @@ export default function App() {
     )
   }
 
+  if (bodyOpen) {
+    return (
+      <>
+        <Body
+          onBack={() => setBodyOpen(false)}
+          onProfileUpdate={(p) => {
+            setProfile(p)
+            void persistCloudProfile(p)
+          }}
+        />
+        {toast && (
+          <div className="kd-toast kd-anim-up" role="status">
+            <Icon name="ph-fill ph-check-circle" size={20} color="#b5abfc" />
+            <span style={{ flex: 1 }}>{toast.text}</span>
+          </div>
+        )}
+      </>
+    )
+  }
+
   const today = dayKey(dayOffset)
   const mealTotal = (m: Meal) =>
     entriesFor(today).filter((e) => e.meal === m).reduce((s, e) => s + e.kcal, 0)
@@ -160,7 +182,7 @@ export default function App() {
 
   return (
     <>
-      {tab === 'overview' && <Overview onOpenHealth={() => { setDayOffset(0); setTab('health') }} onAdd={() => { setDayOffset(0); openAdd('recent') }} />}
+      {tab === 'overview' && <Overview onOpenBody={() => setBodyOpen(true)} onOpenHealth={() => { setDayOffset(0); setTab('health') }} onAdd={() => { setDayOffset(0); openAdd('recent') }} />}
       {tab === 'health' && (
         <Today
           dayOffset={dayOffset}
@@ -184,7 +206,7 @@ export default function App() {
           }}
         />
       )}
-      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} onOpenPricing={() => setPricingOpen(true)} />}
+      {tab === 'me' && <Me onOpenBody={() => setBodyOpen(true)} onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} onOpenPricing={() => setPricingOpen(true)} />}
 
       <TabBar tab={tab} onTab={setTab} onAdd={() => { setDayOffset(0); openAdd('recent') }} />
 

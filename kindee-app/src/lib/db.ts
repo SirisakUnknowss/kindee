@@ -74,6 +74,22 @@ export interface FavoriteItem {
   dirty: number // 1 = pending sync, 0 = synced
 }
 
+export interface BodyMeasurementItem {
+  /** YYYY-MM-DD — หนึ่งชุดต่อวัน */
+  measured_on: string
+  weight?: number
+  height?: number
+  shoulder?: number
+  chest?: number
+  waist?: number
+  hip?: number
+  thigh?: number
+  calf?: number
+  deleted_at?: string | null
+  updated_at: string
+  dirty: number // 1 = pending sync, 0 = synced
+}
+
 export interface ScanQueueItem {
   seq?: number
   barcode: string
@@ -87,6 +103,7 @@ export class KinDeeDatabase extends Dexie {
   meta!: Table<MetaItem, string>
   scan_queue!: Table<ScanQueueItem, number>
   favorites!: Table<FavoriteItem, string>
+  body_measurements!: Table<BodyMeasurementItem, string>
 
   constructor() {
     super('KinDeeOfflineDB')
@@ -111,6 +128,9 @@ export class KinDeeDatabase extends Dexie {
       meta: 'key',
       scan_queue: '++seq, barcode',
       favorites: 'client_id, deleted_at, dirty, last_used_at',
+    })
+    this.version(4).stores({
+      body_measurements: 'measured_on, dirty',
     })
   }
 }

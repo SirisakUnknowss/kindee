@@ -24,7 +24,7 @@ function MenuRow({ icon, label, onPress, disabled, color = C.accentPressed, hint
 }
 
 /** หน้า "ฉัน" — โปรไฟล์ เป้าหมาย ความเป็นส่วนตัว และฟีดแบ็ก (ไม่มีหน้าชำระเงินในแอป iOS รอบแรก) */
-export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void }) {
+export function Me({ onEditTarget, onOpenLegal, onOpenBody }: { onOpenBody: () => void; onEditTarget: () => void; onOpenLegal: (tab: 'terms' | 'privacy') => void }) {
   const { profile, session, entries, contributions, showMacros, setShowMacros, setSession, reset, showToast } = useStore()
   const daysUsed = new Set(entries.map((e) => e.day)).size
   const [privacyBusy, setPrivacyBusy] = useState<'export' | 'delete' | null>(null)
@@ -124,6 +124,11 @@ export function Me({ onEditTarget, onOpenLegal }: { onEditTarget: () => void; on
           <Pressable onPress={onEditTarget} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, minHeight: 52 }}>
             <Icon name="ph ph-fire" size={20} color={C.accentPressed} />
             <Text style={{ flex: 1, fontSize: 14.5, color: C.text }}>เป้าหมาย</Text>
+            <Icon name="ph ph-caret-right" size={16} color={C.muted} />
+          </Pressable>
+          <Pressable onPress={onOpenBody} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, minHeight: 52, borderTopWidth: 1, borderTopColor: C.border }}>
+            <Icon name="ph ph-ruler" size={20} color={C.accentPressed} />
+            <Text style={{ flex: 1, fontSize: 14.5, color: C.text }}>ติดตามรูปร่าง</Text>
             <Icon name="ph ph-caret-right" size={16} color={C.muted} />
           </Pressable>
           <View style={{ borderTopWidth: 1, borderTopColor: C.border, padding: 14, minHeight: 52 }}>
