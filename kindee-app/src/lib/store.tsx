@@ -9,6 +9,7 @@ import { deleteFavoriteLocal, pullFavorites, saveFavoriteLocal, touchFavoriteUsa
 import type { Entry, Meal, Profile, Session, Toast } from './types'
 import type { BodyMeasurement, BodyValues, LengthUnit } from './body'
 import { deleteMeasurementLocal, pullMeasurements, saveMeasurementLocal, syncMeasurements, toMeasurement } from './measurements'
+import { addWaterLocal, deleteExerciseLocal, pullActivity, saveExerciseLocal, syncActivity, toExercise, type Exercise, type ExerciseMode } from './activity'
 
 export type FavoriteEntry = {
   uid: string
@@ -33,6 +34,9 @@ type Persisted = {
   contributions: number
   /** หน่วยความยาวในหน้าติดตามรูปร่าง */
   lengthUnit: LengthUnit
+  /** มล./วัน — null = คำนวณจากน้ำหนัก */
+  waterGoal: number | null
+  exerciseMode: ExerciseMode
 }
 
 const empty: Persisted = {
@@ -42,6 +46,8 @@ const empty: Persisted = {
   showMacros: true,
   contributions: 0,
   lengthUnit: 'cm',
+  waterGoal: null,
+  exerciseMode: 'included',
 }
 
 function load(): Persisted {
@@ -91,6 +97,15 @@ type Store = Persisted & {
   measurements: BodyMeasurement[]
   saveMeasurement: (day: string, values: BodyValues) => void
   removeMeasurement: (day: string) => void
+  /** มล. ต่อวัน */
+  water: Record<string, number>
+  addWater: (day: string, delta: number) => void
+  setWaterGoal: (ml: number | null) => void
+  exercises: Exercise[]
+  exercisesFor: (day: string) => Exercise[]
+  addExercise: (e: { day: string; name: string; minutes?: number; kcal: number }) => void
+  removeExercise: (uid: string) => void
+  setExerciseMode: (mode: ExerciseMode) => void
   addContribution: () => void
   showToast: (text: string, opts?: { undoUid?: string; entryUid?: string }) => void
   hideToast: () => void
@@ -107,6 +122,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [syncFailedCount, setSyncFailedCount] = useState(0)
   const [favorites, setFavorites] = useState<FavoriteEntry[]>([])
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([])
+  const [water, setWater] = useState<Record<string, number>>({})
+  const [exercises, setExercises] = useState<Exercise[]>([])
   const toastTimer = useRef<number>()
 
   useEffect(() => {
@@ -118,6 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setOnline(true)
       void flushOutbox()
       void syncMeasurements()
+      void syncActivity()
     }
     const down = () => setOnline(false)
     const visible = () => { if (document.visibilityState === 'visible') void flushOutbox() }
@@ -198,7 +216,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       next: (rows) => setMeasurements(rows.filter((r) => !r.deleted_at).map(toMeasurement)),
       error: console.error,
     })
+    const waterSubscription = liveQuery(() => db.water_logs.toArray()).subscribe({
+      next: (rows) => setWater(Object.fromEntries(rows.map((r) => [r.day, r.ml]))),
+      error: console.error,
+    })
+    const exerciseSubscription = liveQuery(() => db.exercise_logs.orderBy('done_on').toArray()).subscribe({
+      next: (rows) => setExercises(rows.filter((r) => !r.deleted_at).map(toExercise)),
+      error: console.error,
+    })
     return () => {
+      waterSubscription.unsubscribe()
+      exerciseSubscription.unsubscribe()
       measurementsSubscription.unsubscribe()
       entriesSubscription.unsubscribe()
       outboxSubscription.unsubscribe()
@@ -293,6 +321,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           void flushOutbox(true)
           void pullFavorites()
           void pullMeasurements().then(syncMeasurements)
+          void pullActivity().then(syncActivity)
         }
       },
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
@@ -388,12 +417,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteLocalEntry(uid).catch(console.error)
         setState((s) => ({ ...s, entries: s.entries.filter((e) => e.uid !== uid) }))
       },
+      water,
+      addWater: (day, delta) => { addWaterLocal(day, delta).catch(console.error) },
+      setWaterGoal: (waterGoal) => setState((s) => ({ ...s, waterGoal })),
+      exercises: state.session?.kind === 'account' ? exercises : exercises.map((e) => ({ ...e, pending: false })),
+      exercisesFor: (day) => exercises.filter((e) => e.day === day),
+      addExercise: (e) => { saveExerciseLocal(e).catch(console.error) },
+      removeExercise: (uid) => { deleteExerciseLocal(uid).catch(console.error) },
+      setExerciseMode: (exerciseMode) => setState((s) => ({ ...s, exerciseMode })),
       addContribution: () => setState((s) => ({ ...s, contributions: s.contributions + 1 })),
       showToast,
       hideToast,
       reset: () => setState(empty),
     }
-  }, [state, online, toast, outboxCount, syncFailedCount, favorites, measurements, showToast, hideToast, createManualEntry])
+  }, [state, online, toast, outboxCount, syncFailedCount, favorites, measurements, water, exercises, showToast, hideToast, createManualEntry])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

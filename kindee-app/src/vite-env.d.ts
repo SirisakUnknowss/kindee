@@ -8,6 +8,9 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY?: string
   readonly VITE_ADMIN_SUPABASE_URL?: string
   readonly VITE_ADMIN_SUPABASE_PUBLISHABLE_KEY?: string
+  readonly VITE_BILLING_ENABLED?: string
+  readonly VITE_DONATE_QR_URL?: string
+  readonly VITE_DONATE_RECIPIENT?: string
 }
 
 interface ImportMeta {

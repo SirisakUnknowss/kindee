@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { ExerciseCard, WaterCard } from '../components/ActivityCards'
+import { dailyBudget } from '../lib/activity'
 import { BrandLogo, CalorieRing, Icon, MacroBar, OfflineBar } from '../components/ui'
 import { foodById } from '../data/foods'
 import { MEALS, amountLabel, mealLabel, num, ringTone, totalMacros } from '../lib/calc'
@@ -111,13 +113,15 @@ export function Today({
   onEditEntry: (uid: string) => void
   loading?: boolean
 }) {
-  const { profile, entriesFor, entries: allEntries, session, setSession, removeEntry, online, showMacros, pendingCount, syncFailedCount, retrySync } = useStore()
-  const target = profile?.target ?? 1850
+  const { profile, entriesFor, entries: allEntries, session, setSession, removeEntry, online, showMacros, pendingCount, syncFailedCount, retrySync, exercisesFor, exerciseMode } = useStore()
+  const baseTarget = profile?.target ?? 1850
 
   const d = new Date()
   d.setDate(d.getDate() + dayOffset)
   const dayStr = dayKey(dayOffset)
   const entries = entriesFor(dayStr)
+  const burned = exercisesFor(dayStr).reduce((s, e) => s + e.kcal, 0)
+  const target = dailyBudget(baseTarget, burned, exerciseMode)
   const consumed = entries.reduce((s, e) => s + e.kcal, 0)
   const tone = ringTone(consumed, target)
   const over = consumed > target
@@ -187,8 +191,14 @@ export function Today({
             <div className="kd-budget-ledger" aria-label="สรุปบัญชีแคลอรีวันนี้">
               <div className="kd-budget-row">
                 <span><Icon name="ph ph-wallet" size={16} /> งบวันนี้</span>
-                <strong className="tnum kd-ledger-credit">+{num(target)}</strong>
+                <strong className="tnum kd-ledger-credit">+{num(baseTarget)}</strong>
               </div>
+              {exerciseMode === 'add' && burned > 0 && (
+                <div className="kd-budget-row">
+                  <span><Icon name="ph ph-person-simple-run" size={16} /> ออกกำลังกาย</span>
+                  <strong className="tnum kd-ledger-credit">+{num(burned)}</strong>
+                </div>
+              )}
               <div className="kd-budget-row">
                 <span><Icon name="ph ph-receipt" size={16} /> ใช้ไป</span>
                 <strong className="tnum kd-ledger-debit">−{num(consumed)}</strong>
@@ -272,6 +282,13 @@ export function Today({
                 </section>
               )
             })}
+          </div>
+        )}
+
+        {!loading && (
+          <div style={{ display: 'grid', gap: 12, marginTop: 22 }}>
+            <WaterCard day={dayStr} readOnly={readOnly} />
+            <ExerciseCard day={dayStr} readOnly={readOnly} />
           </div>
         )}
       </div>

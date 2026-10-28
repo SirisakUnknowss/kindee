@@ -18,6 +18,8 @@ import { Terms } from './screens/Terms'
 import { Pricing } from './screens/Pricing'
 import { AdminAccess } from './screens/AdminAccess'
 import { Body } from './screens/Body'
+import { Leaderboard } from './screens/Leaderboard'
+import { billingEnabled } from './config/features'
 
 type Tab = 'overview' | 'calendar' | 'health' | 'me'
 type AddTab = 'recent' | 'search' | 'manual' | 'scan' | 'photo'
@@ -55,7 +57,8 @@ export default function App() {
   const [editTarget, setEditTarget] = useState(false)
   const [bodyOpen, setBodyOpen] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
-  const [pricingOpen, setPricingOpen] = useState(() => new URLSearchParams(window.location.search).has('billing'))
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+  const [pricingOpen, setPricingOpen] = useState(() => billingEnabled && new URLSearchParams(window.location.search).has('billing'))
   const adminMode = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')
 
   const persistCloudProfile = async (p: Profile, userId = session?.kind === 'account' ? session.userId : undefined) => {
@@ -129,6 +132,10 @@ export default function App() {
 
   if (pricingOpen) {
     return <Pricing session={session} onBack={() => setPricingOpen(false)} onRequireAccount={() => setSession(null)} />
+  }
+
+  if (leaderboardOpen) {
+    return <Leaderboard onBack={() => setLeaderboardOpen(false)} />
   }
 
   if (editTarget) {
@@ -206,7 +213,13 @@ export default function App() {
           }}
         />
       )}
-      {tab === 'me' && <Me onOpenBody={() => setBodyOpen(true)} onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} onOpenPricing={() => setPricingOpen(true)} />}
+      {tab === 'me' && <Me onOpenBody={() => setBodyOpen(true)} onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} onOpenPricing={() => setPricingOpen(true)}
+          onOpenLeaderboard={() => setLeaderboardOpen(true)}
+          onProfileRestore={(p) => {
+            setProfile(p)
+            void persistCloudProfile(p)
+          }}
+        />}
 
       <TabBar tab={tab} onTab={setTab} onAdd={() => { setDayOffset(0); openAdd('recent') }} />
 
