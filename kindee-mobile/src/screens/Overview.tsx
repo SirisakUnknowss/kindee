@@ -3,12 +3,15 @@ import Svg, { Circle } from 'react-native-svg'
 import { Card, Icon, IconButton, Row, Screen } from '../components/ui'
 import { MEALS, num, ringColor, ringTone, totalMacros } from '../lib/calc'
 import { dayKey, useStore } from '../lib/store'
+import { aggregate, signed } from '../lib/body'
 import { C, T } from '../theme'
 
 const WEEK_DAYS = ['พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.', 'จ.', 'อ.']
 
-export function Overview({ onOpenHealth, onAdd }: { onOpenHealth: () => void; onAdd: () => void }) {
-  const { entries, entriesFor, profile } = useStore()
+export function Overview({ onOpenHealth, onAdd, onOpenBody }: { onOpenHealth: () => void; onAdd: () => void; onOpenBody: () => void }) {
+  const { entries, entriesFor, profile, measurements } = useStore()
+  const weightWeeks = aggregate(measurements.filter((m) => m.weight != null), 'week')
+  const lastWeek = weightWeeks[weightWeeks.length - 1]
   const target = profile?.target ?? 1850
   const todayEntries = entriesFor(dayKey())
   const consumed = todayEntries.reduce((sum, e) => sum + e.kcal, 0)
@@ -92,6 +95,19 @@ export function Overview({ onOpenHealth, onAdd }: { onOpenHealth: () => void; on
             ))}
           </Row>
         </Card>
+
+        <Pressable onPress={onOpenBody} accessibilityRole="button">
+          <Card style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Icon name="ph ph-ruler" size={22} color={C.accentPressed} />
+            <View style={{ flex: 1 }}>
+              <Text style={[T.body, { fontWeight: '500' }]}>ติดตามรูปร่าง</Text>
+              <Text style={[T.caption, T.muted]}>
+                {lastWeek ? `น้ำหนักเฉลี่ย ${lastWeek.label} ${lastWeek.values.weight} กก.${lastWeek.change.weight != null ? ` (${signed(lastWeek.change.weight)} จากสัปดาห์ก่อน)` : ''}` : 'บันทึกน้ำหนักและรอบสัดส่วน ดูการเปลี่ยนแปลง'}
+              </Text>
+            </View>
+            <Icon name="ph ph-caret-right" size={16} color={C.muted} />
+          </Card>
+        </Pressable>
 
         <Card style={{ padding: 16 }}>
           <Row style={{ justifyContent: 'space-between', marginBottom: 12 }}>

@@ -13,6 +13,7 @@ SOURCES = [
     ROOT / "supabase/migrations/20260921060000_add_missing_thai_foods.sql",
     ROOT / "supabase/migrations/20260928090000_add_more_drinks_and_dishes.sql",
     ROOT / "supabase/migrations/20260929090000_add_drink_menu_catalogue.sql",
+    ROOT / "supabase/migrations/20261005090000_add_coke_drinks.sql",
 ]
 TARGET = ROOT / "kindee-app/src/data/thai-foods.json"
 

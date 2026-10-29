@@ -1,9 +1,12 @@
 import { Icon } from '../components/ui'
 import { MEALS, num, ringTone, totalMacros } from '../lib/calc'
 import { dayKey, useStore } from '../lib/store'
+import { aggregate, signed } from '../lib/body'
 
-export function Overview({ onOpenHealth, onAdd }: { onOpenHealth: () => void; onAdd: () => void }) {
-  const { entries, entriesFor, profile } = useStore()
+export function Overview({ onOpenHealth, onAdd, onOpenBody }: { onOpenHealth: () => void; onAdd: () => void; onOpenBody: () => void }) {
+  const { entries, entriesFor, profile, measurements } = useStore()
+  const weightWeeks = aggregate(measurements.filter((m) => m.weight != null), 'week')
+  const lastWeek = weightWeeks[weightWeeks.length - 1]
   const target = profile?.target ?? 1850
   const todayEntries = entriesFor(dayKey())
   const consumed = todayEntries.reduce((sum, entry) => sum + entry.kcal, 0)
@@ -56,6 +59,17 @@ export function Overview({ onOpenHealth, onAdd }: { onOpenHealth: () => void; on
             {week.map((total, index) => <div key={index}><i style={{ height: `${Math.max(4, (total / weekMax) * 100)}%` }} className={total > target ? 'over' : ''} /><span>{['พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.', 'จ.', 'อ.'][index]}</span></div>)}
           </div>
         </section>
+
+        <button className="kd-card kd-overview-body" onClick={onOpenBody}>
+          <Icon name="ph ph-ruler" size={22} />
+          <span>
+            <strong className="kd-body" style={{ display: 'block', fontWeight: 500 }}>ติดตามรูปร่าง</strong>
+            <span className="kd-caption kd-muted">
+              {lastWeek ? `น้ำหนักเฉลี่ย ${lastWeek.label} ${lastWeek.values.weight} กก.${lastWeek.change.weight != null ? ` (${signed(lastWeek.change.weight)} จากสัปดาห์ก่อน)` : ''}` : 'บันทึกน้ำหนักและรอบสัดส่วน ดูการเปลี่ยนแปลง'}
+            </span>
+          </span>
+          <Icon name="ph ph-caret-right" size={16} color="var(--text-muted)" />
+        </button>
 
         <section className="kd-card kd-overview-meals">
           <div className="kd-section-title"><div><h2 className="kd-h2">มื้อวันนี้</h2><p className="kd-caption kd-muted">{todayEntries.length} รายการ</p></div><button onClick={onAdd}>เพิ่มอาหาร</button></div>

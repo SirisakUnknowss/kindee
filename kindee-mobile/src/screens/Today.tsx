@@ -1,7 +1,8 @@
 import { Pressable, ScrollView, Text, View } from 'react-native'
-import { BrandLogo, Button, CalorieRing, Card, Chip, Icon, IconButton, MacroBar, OfflineBar, Row, Screen, TextButton } from '../components/ui'
+import { NutrientCard } from '../components/NutrientCard'
+import { BrandLogo, Button, CalorieRing, Card, Chip, Icon, IconButton, OfflineBar, Row, Screen, TextButton } from '../components/ui'
 import { foodById } from '../data/foods'
-import { MEALS, amountLabel, num, ringTone, totalMacros } from '../lib/calc'
+import { MEALS, amountLabel, num, ringTone } from '../lib/calc'
 import { ACCOUNTS_ENABLED } from '../config/features'
 import { dayKey, useStore } from '../lib/store'
 import type { Entry, Meal } from '../lib/types'
@@ -62,7 +63,7 @@ export function Today({ dayOffset, onDayChange, onAdd, onScan, onEditEntry, load
   const tone = ringTone(consumed, target)
   const over = consumed > target
   const readOnly = dayOffset < 0
-  const macros = totalMacros(entries)
+
   const dateLabel = dayOffset === 0 ? 'วันนี้' : `${d.getDate()} ${THAI_MONTHS[d.getMonth()]}`
 
   return (
@@ -117,7 +118,7 @@ export function Today({ dayOffset, onDayChange, onAdd, onScan, onEditEntry, load
           )}
         </View>
 
-        {showMacros && !loading && entries.length > 0 && <MacroBar macros={macros} />}
+        {showMacros && !loading && profile && <NutrientCard profile={profile} entries={entries} historical={readOnly} />}
 
         {loading ? (
           <View style={{ gap: 10, marginTop: 24 }}>

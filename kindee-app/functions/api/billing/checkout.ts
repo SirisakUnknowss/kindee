@@ -9,6 +9,9 @@ const paidPlans = new Set<PaidPlan>(['plus', 'pro', 'unlimited'])
 const intervals = new Set<BillingInterval>(['month', 'year'])
 
 export async function onRequestPost({ request, env }: PagesContext) {
+  if (env.BILLING_ENABLED !== 'true') {
+    return error(503, 'billing_disabled', 'Paid plans are not available right now')
+  }
   if (!env.STRIPE_SECRET_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
     return error(503, 'billing_unconfigured', 'Billing is not configured')
   }

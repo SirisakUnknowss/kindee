@@ -53,6 +53,22 @@ export interface FavoriteItem {
   dirty: number
 }
 
+export interface BodyMeasurementItem {
+  /** YYYY-MM-DD — หนึ่งชุดต่อวัน */
+  measured_on: string
+  weight?: number
+  height?: number
+  shoulder?: number
+  chest?: number
+  waist?: number
+  hip?: number
+  thigh?: number
+  calf?: number
+  deleted_at?: string | null
+  updated_at: string
+  dirty: number
+}
+
 export interface ScanQueueItem {
   barcode: string
   scanned_at: string
@@ -62,6 +78,7 @@ type Snapshot = {
   entries: Record<string, LocalEntry>
   outbox: OutboxItem[]
   favorites: Record<string, FavoriteItem>
+  bodyMeasurements: Record<string, BodyMeasurementItem>
   meta: Record<string, unknown>
   scanQueue: ScanQueueItem[]
   nextSeq: number
@@ -69,7 +86,7 @@ type Snapshot = {
 
 const KEY = 'kindee.db.v1'
 const emptySnapshot = (): Snapshot => ({
-  entries: {}, outbox: [], favorites: {}, meta: {}, scanQueue: [], nextSeq: 1,
+  entries: {}, outbox: [], favorites: {}, bodyMeasurements: {}, meta: {}, scanQueue: [], nextSeq: 1,
 })
 
 /**
