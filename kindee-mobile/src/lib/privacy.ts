@@ -6,7 +6,7 @@ import { API_BASE, supabase } from './supabase'
 import type { Profile, Session } from './types'
 
 const EXPORT_TABLES = [
-  'profiles', 'weight_logs', 'entries', 'daily_summaries', 'food_reports',
+  'profiles', 'weight_logs', 'body_measurements', 'entries', 'daily_summaries', 'food_reports',
   'photo_jobs', 'privacy_consents',
 ] as const
 
@@ -31,6 +31,7 @@ export async function downloadMyData(session: Session, profile: Profile | null) 
     deviceData: {
       entries: Object.values(db.entries),
       favorites: Object.values(db.favorites),
+      bodyMeasurements: Object.values(db.bodyMeasurements),
       pendingSyncOperations: db.outbox,
       settings: db.meta,
       pendingBarcodeScans: db.scanQueue,

@@ -11,6 +11,7 @@ import { flushOutbox } from './src/lib/sync'
 import { supabase } from './src/lib/supabase'
 import type { Meal, Profile } from './src/lib/types'
 import { AddPanel, type AddTab } from './src/screens/AddPanel'
+import { Body } from './src/screens/Body'
 import { Auth } from './src/screens/Auth'
 import { Calendar } from './src/screens/Calendar'
 import { Me } from './src/screens/Me'
@@ -60,6 +61,7 @@ function Root() {
   const [addOpen, setAddOpen] = useState<{ tab: AddTab; meal: Meal } | null>(null)
   const [qty, setQty] = useState<QtyTarget | null>(null)
   const [editTarget, setEditTarget] = useState(false)
+  const [bodyOpen, setBodyOpen] = useState(false)
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
 
   useEffect(() => {
@@ -137,6 +139,21 @@ function Root() {
     )
   }
 
+  if (bodyOpen) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <Body
+          onBack={() => setBodyOpen(false)}
+          onProfileUpdate={(p) => {
+            setProfile(p)
+            void persistCloudProfile(p)
+          }}
+        />
+        {toast && <Toast text={toast.text} />}
+      </View>
+    )
+  }
+
   const today = dayKey(dayOffset)
   const mealTotal = (m: Meal) => entriesFor(today).filter((e) => e.meal === m).reduce((s, e) => s + e.kcal, 0)
   const openAdd = (t: AddTab = 'recent', meal?: Meal) => setAddOpen({ tab: t, meal: meal ?? mealForHour(new Date().getHours()) })
@@ -153,7 +170,7 @@ function Root() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {tab === 'overview' && <Overview onOpenHealth={() => { setDayOffset(0); setTab('health') }} onAdd={() => { setDayOffset(0); openAdd('recent') }} />}
+      {tab === 'overview' && <Overview onOpenBody={() => setBodyOpen(true)} onOpenHealth={() => { setDayOffset(0); setTab('health') }} onAdd={() => { setDayOffset(0); openAdd('recent') }} />}
       {tab === 'health' && (
         <Today dayOffset={dayOffset} onDayChange={setDayOffset} onAdd={(m) => openAdd('recent', m)} onScan={() => openAdd('scan')} onEditEntry={editEntry} loading={loading} />
       )}
@@ -167,7 +184,7 @@ function Root() {
           }}
         />
       )}
-      {tab === 'me' && <Me onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} />}
+      {tab === 'me' && <Me onOpenBody={() => setBodyOpen(true)} onEditTarget={() => setEditTarget(true)} onOpenLegal={setLegalOpen} />}
 
       <TabBar tab={tab} onTab={setTab} onAdd={() => { setDayOffset(0); openAdd('recent') }} />
 

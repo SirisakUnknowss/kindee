@@ -68,6 +68,9 @@ export const entryKcal = (e: Entry) => {
 }
 
 export function entryMacros(e: Entry) {
+  if (e.protein != null && e.carb != null && e.fat != null) {
+    return { protein: e.protein, carb: e.carb, fat: e.fat }
+  }
   if (e.entrySource === 'manual') {
     return { protein: e.protein ?? 0, carb: e.carb ?? 0, fat: e.fat ?? 0 }
   }

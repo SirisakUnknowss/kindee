@@ -10,6 +10,8 @@ export interface Env {
   GEMINI_MODEL?: string
   BARCODE_PROVIDER_URL?: string
   APP_URL?: string
+  /** "true" lets new Stripe checkouts start; KinDee is free + donation for now. */
+  BILLING_ENABLED?: string
   STRIPE_SECRET_KEY?: string
   STRIPE_WEBHOOK_SECRET?: string
   STRIPE_PRICE_PLUS_MONTH?: string
